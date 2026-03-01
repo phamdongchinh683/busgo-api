@@ -1,4 +1,4 @@
-import { Transaction } from 'kysely'
+import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import { db } from '../../../datasource/db.js'
 import { BusCompanyListQuery } from '../../../model/query/bus-company/index.js'
@@ -30,4 +30,13 @@ export async function findAll(query: BusCompanyListQuery) {
         .limit(limit + 1)
         .orderBy('bc.id', 'asc')
         .execute()
+}
+
+export async function countAll() {
+    const r = await db
+        .selectFrom('organization.bus_company')
+        .select(sql<number>`count(*)::int`.as('total'))
+        .executeTakeFirstOrThrow()
+    
+    return Number(r.total)
 }

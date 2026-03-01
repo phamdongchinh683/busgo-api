@@ -4,6 +4,7 @@ export const DashboardOverviewSchema = z.object({
     totalUsers: z.number(),
     totalBookings: z.number(),
     totalRevenue: z.number(),
+    totalCompanies: z.number(),
 })
 
 export type DashboardOverviewSchema = z.infer<typeof DashboardOverviewSchema>

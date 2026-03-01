@@ -35,3 +35,15 @@ export const MessageResponse = z.object({
     message: z.string(),
 })
 export type MessageResponse = z.infer<typeof MessageResponse>
+
+export const PeriodFilter = z.object({
+    type: z.enum(['monthly', 'yearly']),
+    year: z.coerce.number().optional(),
+    month: z.coerce.number().optional(),
+})
+export type PeriodFilter = z.infer<typeof PeriodFilter>
+
+export const PeriodResponse = z.object({
+    data: z.array(z.array(z.number())),
+})
+export type PeriodResponse = z.infer<typeof PeriodResponse>

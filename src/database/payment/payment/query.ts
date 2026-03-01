@@ -3,8 +3,9 @@ import { Database } from '../../../datasource/type.js'
 import { BookingId } from '../../booking/booking/type.js'
 import { PaymentStatus } from './type.js'
 import { db } from '../../../datasource/db.js'
-import { PaymentFilter } from '../../../model/query/payment/index.js'
+import { PaymentFilter, PeriodPaymentQuery } from '../../../model/query/payment/index.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
+import { utils } from '../../../utils/index.js'
 
 export async function updatePaymentTransactionByCode(
     transactionCode: string,
@@ -141,4 +142,42 @@ export async function getTotalRevenueByCompanyId(
         )
         .select(sql<number>`coalesce(sum(${sql.ref('pp.amount')}), 0)`.as('total'))
         .executeTakeFirstOrThrow()
+}
+
+
+export async function getPeriodRevenue(q: PeriodPaymentQuery) {
+    const year = q.year ?? utils.time.getNow().year()
+    const { start, end } = utils.time.getPeriodStartAndEnd(year)
+
+    const baseWhere = (eb: any) => {
+        const cond = [
+            eb('pp.paidAt', '>=', start),
+            eb('pp.paidAt', '<=', end),
+        ]
+        if (q.method) cond.push(eb('pp.method', '=', q.method))
+        if (q.status) cond.push(eb('pp.status', '=', q.status))
+            
+        return eb.and(cond)
+    }
+
+    if (q.type === 'monthly') {
+        const rows = await db
+            .selectFrom('payment.payment as pp')
+            .where(baseWhere)
+            .select([
+                sql<number>`EXTRACT(MONTH FROM pp.paid_at)::int`.as('month'),
+                sql<number>`coalesce(sum(pp.amount), 0)::int`.as('total'),
+            ])
+            .groupBy(sql`EXTRACT(MONTH FROM pp.paid_at)`)
+            .orderBy(sql`EXTRACT(MONTH FROM pp.paid_at)`)
+            .execute()
+        return rows.map(r => [r.month, r.total])
+    }
+
+    const r = await db
+        .selectFrom('payment.payment as pp')
+        .where(baseWhere)
+        .select(sql<number>`coalesce(sum(pp.amount), 0)::int`.as('total'))
+        .executeTakeFirstOrThrow()
+    return [[year, r.total]]
 }

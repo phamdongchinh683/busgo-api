@@ -8,7 +8,7 @@ import { BookingId } from '../../database/booking/booking/type.js'
 import { db } from '../../datasource/db.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { PaymentFilter } from '../../model/query/payment/index.js'
+import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
 
 async function preparePayment(bookingId: BookingId, method: PaymentMethod) {
@@ -59,7 +59,7 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 
     const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
         userId: userId,
-        bookingId: params.bookingId,
+        bookingId: params.id,
     })
 
     if (!bookingInfo) {
@@ -80,7 +80,7 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 }
 
 export async function createCashPayment(params: PaymentMethodRequest) {
-    const payment = await preparePayment(params.bookingId, PaymentMethod.enum.cash)
+    const payment = await preparePayment(params.id, PaymentMethod.enum.cash)
 
     return {
         message: 'Please pay when you board the bus',
@@ -89,7 +89,7 @@ export async function createCashPayment(params: PaymentMethodRequest) {
 }
 
 export async function createVnpayPayment(params: PaymentMethodRequest, ip: string) {
-    const payment = await preparePayment(params.bookingId, PaymentMethod.enum.vnpay)
+    const payment = await preparePayment(params.id, PaymentMethod.enum.vnpay)
 
     return {
         message: 'OK',
@@ -152,4 +152,9 @@ export async function getRevenueByCompanyId(companyId: OrganizationBusCompanyId)
 
 export async function updateByTransactionCode(transactionCode: string) {
     return await dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
+}
+
+export async function getPeriodRevenue(params: PeriodPaymentQuery) {
+    const data = await dal.payment.payment.query.getPeriodRevenue(params)
+    return { data: data }
 }

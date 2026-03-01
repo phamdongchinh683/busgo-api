@@ -4,6 +4,8 @@ import { DriverQuery } from '../../../model/query/driver/index.js'
 import { AuthUserTableInsert } from './table.js'
 import { AuthUserRole, AuthUserId } from './type.js'
 import { UserListQuery } from '../../../model/body/user/index.js'
+import { PeriodUserQuery } from '../../../model/query/user/index.js'
+import { utils } from '../../../utils/index.js'
 
 export async function insertOne(params: AuthUserTableInsert) {
     return db.insertInto('auth.user').values(params).returningAll().executeTakeFirstOrThrow()
@@ -99,3 +101,53 @@ export function findAll(query: UserListQuery) {
         .orderBy('u.id', 'asc')
         .execute()
 }
+export async function getPeriod(
+    q: PeriodUserQuery
+  ){
+
+    const year = q.year ?? utils.time.getNow().year()
+
+    const { start, end } = utils.time.getPeriodStartAndEnd(year)
+  
+    if (q.type === 'monthly') {
+      const rows = await db
+        .selectFrom('auth.user as u')
+        .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
+        .select([
+          sql<number>`EXTRACT(MONTH FROM u.created_at)::int`.as('month'),
+          sql<number>`count(*)::int`.as('count'),
+        ])
+        .where(eb => {
+            const cond = []
+            cond.push(eb('u.createdAt', '>=', start))
+            cond.push(eb('u.createdAt', '<=', end))
+            if (q.status) cond.push(eb('u.status', '=', q.status))
+            if (q.role) cond.push(eb('u.role', '=', q.role))
+            return eb.and(cond)
+        })
+        .groupBy(sql`EXTRACT(MONTH FROM u.created_at)`)
+        .orderBy(sql`EXTRACT(MONTH FROM u.created_at)`)
+        .execute()
+  
+      return rows.map(r => [r.month, r.count])
+    }
+  
+    const rows = await db
+      .selectFrom('auth.user as u')
+      .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
+      .select([
+        sql<number>`EXTRACT(YEAR FROM u.created_at)::int`.as('year'),
+        sql<number>`count(*)::int`.as('total'),
+      ])
+      .where(eb => {
+        const cond = []
+        if (q.status) cond.push(eb('u.status', '=', q.status))
+        if (q.role) cond.push(eb('u.role', '=', q.role))
+        return eb.and(cond)
+      })
+      .groupBy(sql`EXTRACT(YEAR FROM u.created_at)`)
+      .orderBy(sql`EXTRACT(YEAR FROM u.created_at)`)
+      .execute()
+  
+    return rows.map(r => [r.year, r.total])
+  }

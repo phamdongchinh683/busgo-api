@@ -43,7 +43,7 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             'b.status',
             'trip.departureDate',
         ])
-        .orderBy('trip.departureDate', 'desc')
+        // .orderBy('trip.departureDate', 'desc')
         .limit(limit + 1)
         .execute()
 }
