@@ -52,7 +52,9 @@ export const UserUpdatePasswordBody = z.object({
 export type UserUpdatePasswordBody = z.infer<typeof UserUpdatePasswordBody>
 
 export const UserListResponse = z.object({
-    users: z.array(UserBody),
+    users: z.array(UserBody.extend({
+        id: AuthUserId,
+    })),
     next: AuthUserId.nullable(),
 })
 
