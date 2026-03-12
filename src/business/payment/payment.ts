@@ -11,7 +11,7 @@ import { OrganizationBusCompanyId } from '../../database/organization/bus_compan
 import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
 
-async function preparePayment(bookingId: BookingId, method: PaymentMethod) {
+async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
 
     if (payment) {

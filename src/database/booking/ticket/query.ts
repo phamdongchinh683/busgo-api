@@ -13,41 +13,39 @@ import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js
 
 export async function findAll(q: TicketFilter, userId: AuthUserId) {
     const { limit, next } = q
-    return (
-        db
-            .selectFrom('booking.ticket as t')
-            .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
-            .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
-            .where(eb => {
-                const cond = []
-                cond.push(eb('trip.status', '!=', OperationTripStatus.enum.cancelled))
-                cond.push(eb('b.userId', '=', userId))
-                if (next) {
-                    cond.push(eb('t.id', '>', next))
-                }
-                if (q.type) {
-                    cond.push(eb('b.bookingType', '=', q.type))
-                }
-                if (q.status) {
-                    cond.push(eb('t.status', '=', q.status))
-                }
+    return db
+        .selectFrom('booking.ticket as t')
+        .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
+        .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .where(eb => {
+            const cond = []
+            cond.push(eb('trip.status', '!=', OperationTripStatus.enum.cancelled))
+            cond.push(eb('b.userId', '=', userId))
+            if (next) {
+                cond.push(eb('t.id', '>', next))
+            }
+            if (q.type) {
+                cond.push(eb('b.bookingType', '=', q.type))
+            }
+            if (q.status) {
+                cond.push(eb('t.status', '=', q.status))
+            }
 
-                return eb.and(cond)
-            })
-            .select([
-                't.id',
-                'b.code',
-                'b.bookingType',
-                'b.originalAmount',
-                'b.discountAmount',
-                'b.totalAmount',
-                'b.status',
-                'trip.departureDate',
-            ])
-            // .orderBy('trip.departureDate', 'desc')
-            .limit(limit + 1)
-            .execute()
-    )
+            return eb.and(cond)
+        })
+        .select([
+            't.id',
+            'b.code',
+            'b.bookingType',
+            'b.id as bookingId',
+            'b.originalAmount',
+            'b.discountAmount',
+            'b.totalAmount',
+            'b.status',
+            'trip.departureDate',
+        ])
+        .limit(limit + 1)
+        .execute()
 }
 
 export async function findById(id: BookingTicketId, userId: AuthUserId) {
@@ -172,6 +170,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'b.originalAmount',
             'b.discountAmount',
             'b.totalAmount',
+            'b.id as bookingId',
             'b.status',
             'trip.departureDate',
         ])

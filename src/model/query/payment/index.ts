@@ -55,7 +55,7 @@ export const PaymentResponse = z.object({
     id: PaymentId,
     bookingId: BookingId,
     amount: z.number(),
-    method: PaymentMethod,
+    method: PaymentMethod.nullable(),
     status: PaymentStatus,
     transactionCode: z.string(),
     paidAt: z.date().nullable(),

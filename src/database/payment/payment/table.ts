@@ -7,7 +7,7 @@ export interface PaymentTable extends Timestamps {
     id: GeneratedAlways<PaymentId>
     bookingId: BookingId
     amount: number
-    method: PaymentMethod
+    method: PaymentMethod | null
     status: PaymentStatus
     transactionCode: string
     paidAt: Date | null
