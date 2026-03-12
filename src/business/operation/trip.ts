@@ -78,3 +78,10 @@ export async function updateTrip(
         trip: await dal.operation.trip.query.updateOneById(ids, body),
     }
 }
+
+export async function cleanupTrips() {
+    await dal.operation.trip.cmd.deleteTripsBeforeToday()
+    return {
+        message: 'OK',
+    }
+}

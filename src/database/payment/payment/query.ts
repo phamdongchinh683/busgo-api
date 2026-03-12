@@ -144,19 +144,15 @@ export async function getTotalRevenueByCompanyId(
         .executeTakeFirstOrThrow()
 }
 
-
 export async function getPeriodRevenue(q: PeriodPaymentQuery) {
     const year = q.year ?? utils.time.getNow().year()
     const { start, end } = utils.time.getPeriodStartAndEnd(year)
 
     const baseWhere = (eb: any) => {
-        const cond = [
-            eb('pp.paidAt', '>=', start),
-            eb('pp.paidAt', '<=', end),
-        ]
+        const cond = [eb('pp.paidAt', '>=', start), eb('pp.paidAt', '<=', end)]
         if (q.method) cond.push(eb('pp.method', '=', q.method))
         if (q.status) cond.push(eb('pp.status', '=', q.status))
-            
+
         return eb.and(cond)
     }
 

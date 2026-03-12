@@ -37,6 +37,6 @@ export async function countAll() {
         .selectFrom('organization.bus_company')
         .select(sql<number>`count(*)::int`.as('total'))
         .executeTakeFirstOrThrow()
-    
+
     return Number(r.total)
 }

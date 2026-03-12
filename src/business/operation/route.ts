@@ -35,7 +35,10 @@ export async function getRoutes(q: RouteFilter) {
     }
 }
 
-export async function updateRoute(params: { id: OperationRouteId; body: OperationRouteTableUpdate }) {
+export async function updateRoute(params: {
+    id: OperationRouteId
+    body: OperationRouteTableUpdate
+}) {
     const { id, body } = params
 
     const data = _.omitBy(body, v => _.isNil(v)) as OperationRouteTableUpdate

@@ -46,49 +46,46 @@ export async function getBookingByUserIdAndBookingId(
         .executeTakeFirst()
 }
 
-export async function getPeriod(
-    q: PeriodBookingQuery
-  ){
-
+export async function getPeriod(q: PeriodBookingQuery) {
     const year = q.year ?? utils.time.getNow().year()
 
     const { start, end } = utils.time.getPeriodStartAndEnd(year)
-  
+
     if (q.type === 'monthly') {
-      const rows = await db
+        const rows = await db
+            .selectFrom('booking.booking as b')
+            .select([
+                sql<number>`EXTRACT(MONTH FROM b.created_at)::int`.as('month'),
+                sql<number>`count(*)::int`.as('count'),
+            ])
+            .where(eb => {
+                const cond = []
+                cond.push(eb('b.createdAt', '>=', start))
+                cond.push(eb('b.createdAt', '<=', end))
+                if (q.status) cond.push(eb('b.status', '=', q.status))
+                return eb.and(cond)
+            })
+            .groupBy(sql`EXTRACT(MONTH FROM b.created_at)`)
+            .orderBy(sql`EXTRACT(MONTH FROM b.created_at)`)
+            .execute()
+
+        return rows.map(r => [r.month, r.count])
+    }
+
+    const rows = await db
         .selectFrom('booking.booking as b')
         .select([
-          sql<number>`EXTRACT(MONTH FROM b.created_at)::int`.as('month'),
-          sql<number>`count(*)::int`.as('count'),
+            sql<number>`EXTRACT(YEAR FROM b.created_at)::int`.as('year'),
+            sql<number>`count(*)::int`.as('total'),
         ])
         .where(eb => {
             const cond = []
-            cond.push(eb('b.createdAt', '>=', start))
-            cond.push(eb('b.createdAt', '<=', end))
             if (q.status) cond.push(eb('b.status', '=', q.status))
             return eb.and(cond)
         })
-        .groupBy(sql`EXTRACT(MONTH FROM b.created_at)`)
-        .orderBy(sql`EXTRACT(MONTH FROM b.created_at)`)
+        .groupBy(sql`EXTRACT(YEAR FROM b.created_at)`)
+        .orderBy(sql`EXTRACT(YEAR FROM b.created_at)`)
         .execute()
-  
-      return rows.map(r => [r.month, r.count])
-    }
-  
-    const rows = await db
-      .selectFrom('booking.booking as b')
-      .select([
-        sql<number>`EXTRACT(YEAR FROM b.created_at)::int`.as('year'),
-        sql<number>`count(*)::int`.as('total'),
-      ])
-      .where(eb => {
-        const cond = []
-        if (q.status) cond.push(eb('b.status', '=', q.status))
-        return eb.and(cond)
-      })
-      .groupBy(sql`EXTRACT(YEAR FROM b.created_at)`)
-      .orderBy(sql`EXTRACT(YEAR FROM b.created_at)`)
-      .execute()
-  
+
     return rows.map(r => [r.year, r.total])
-  }
+}
