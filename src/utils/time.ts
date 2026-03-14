@@ -6,11 +6,11 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 export const getNow = () => {
-    return dayjs().utc()
+    return dayjs().tz('Asia/Ho_Chi_Minh')
 }
 
-export const getNext = (params: { second: number }) => {
-    return getNow().add(params.second, 'seconds').toDate()
+export const getNext = (params: { milliseconds: number }) => {
+    return getNow().add(params.milliseconds, 'milliseconds').toDate()
 }
 
 export const coolDownTime = 60 * 10 * 1000

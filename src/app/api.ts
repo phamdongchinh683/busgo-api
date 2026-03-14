@@ -1,7 +1,6 @@
 import Fastify, { type FastifyInstance } from 'fastify'
 import swagger from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
-import fastifyStatic from '@fastify/static'
 import {
     jsonSchemaTransform,
     serializerCompiler,
@@ -14,12 +13,11 @@ import { fileURLToPath, pathToFileURL } from 'url'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import QueryString from 'qs'
 import _ from 'lodash'
-import dotenv from 'dotenv'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
-
-dotenv.config()
+import { startJobs } from '../job/index.js'
+import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -29,6 +27,7 @@ const apiDir = path.join(rootDir, 'api')
 const isProduction = process.env.NODE_ENV === 'production'
 
 const api = Fastify({
+    trustProxy: true,
     routerOptions: {
         querystringParser: (query: string) => {
             const parsed = QueryString.parse(query)
@@ -148,7 +147,6 @@ const start = async () => {
         })
 
         await apiRouter(api)
-
         await api.ready()
 
         const port = process.env.PORT
@@ -158,6 +156,8 @@ const start = async () => {
         if (!host) throw new Error('env HOST not found')
 
         await api.listen({ host, port: +port })
+
+        startJobs()
 
         console.log({
             swagger: `http://${host}:${port}/swagger/docs`,

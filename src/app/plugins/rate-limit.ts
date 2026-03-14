@@ -5,8 +5,8 @@ import { HttpErr } from '../index.js'
 
 export const rateLimitPlugin = fastifyPlugin(async (app: FastifyInstance) => {
     await app.register(rateLimit, {
-        global: false, // Only apply to routes with explicit config.rateLimit
-        max: 10000, // Very high default (only used if route doesn't specify)
+        global: false,
+        max: 4000,
         timeWindow: '1m',
         keyGenerator: req => req.ip,
         errorResponseBuilder: (request, context) => {

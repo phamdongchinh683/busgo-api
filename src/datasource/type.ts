@@ -3,7 +3,6 @@ import { AuthStaffProfileTable } from '../database/auth/staff_profile/table.js'
 import { AuthUserTable } from '../database/auth/user/table.js'
 import { PaymentTable } from '../database/payment/payment/table.js'
 import { PaymentRefundTable } from '../database/payment/refund/table.js'
-import { AuditLogTable } from '../database/audit/audit_log/table.js'
 import { BookingTable } from '../database/booking/booking/table.js'
 import { BookingTicketTable } from '../database/booking/ticket/table.js'
 import { BookingSeatSegmentTable } from '../database/booking/seat_segment/table.js'
@@ -14,7 +13,6 @@ import { OrganizationBusCompanyTable } from '../database/organization/bus_compan
 import { OrganizationVehicleTable } from '../database/organization/vehicle/table.js'
 import { OrganizationSeatTable } from '../database/organization/seat/table.js'
 import { OperationRouteTable } from '../database/operation/route/table.js'
-import { OperationTripEventTable } from '../database/operation/trip_event/table.js'
 import { OperationTripScheduleTable } from '../database/operation/trip-schedule/table.js'
 import { OperationTripStopTemplateTable } from '../database/operation/trip-stop-template/table.js'
 import { OperationTripPriceTemplateTable } from '../database/operation/trip_price_template/table.js'
@@ -25,7 +23,6 @@ export interface Database {
     'auth.staff_detail': AuthStaffDetailTable
     'payment.payment': PaymentTable
     'payment.refund': PaymentRefundTable
-    'audit.audit_log': AuditLogTable
     'booking.booking': BookingTable
     'booking.coupon': BookingCouponTable
     'booking.ticket': BookingTicketTable
@@ -36,7 +33,6 @@ export interface Database {
     'organization.vehicle': OrganizationVehicleTable
     'organization.seat': OrganizationSeatTable
     'operation.route': OperationRouteTable
-    'operation.trip_event': OperationTripEventTable
     'operation.trip_schedule': OperationTripScheduleTable
     'operation.trip_stop_template': OperationTripStopTemplateTable
     'operation.trip_price_template': OperationTripPriceTemplateTable
