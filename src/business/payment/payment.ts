@@ -10,6 +10,7 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
+import { RefundPaymentBody } from '../../model/refund/index.js'
 
 async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
@@ -29,13 +30,6 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
             throw new HttpErr.UnprocessableEntity(
                 'Payment failed or expired',
                 'PAYMENT_FAILED_OR_EXPIRED'
-            )
-        }
-
-        if (payment.method !== method) {
-            throw new HttpErr.UnprocessableEntity(
-                'Another payment method already exists',
-                'PAYMENT_METHOD_CONFLICT'
             )
         }
 
@@ -104,7 +98,7 @@ export async function vnpayIpn(query: Record<string, string>, reply: FastifyRepl
         return vnpParams
     }
 
-    const { vnp_TxnRef, vnp_Amount, vnp_ResponseCode, vnp_TransactionNo } = vnpParams
+    const { vnp_TxnRef, vnp_Amount, vnp_ResponseCode, vnp_TransactionNo, vnp_PayDate } = vnpParams
 
     if (!vnp_TxnRef || vnp_Amount == null || !vnp_ResponseCode) {
         return { RspCode: '99', Message: 'Invalid request' }
@@ -130,7 +124,7 @@ export async function vnpayIpn(query: Record<string, string>, reply: FastifyRepl
             return { RspCode: '24', Message: 'Payment failed' }
         }
 
-        await dal.payment.payment.cmd.updatePaymentStatusSuccess(vnp_TxnRef, vnp_TransactionNo, tx)
+        await dal.payment.payment.cmd.updatePaymentStatusSuccess(vnp_TxnRef, vnp_TransactionNo, vnp_PayDate, tx)
         return { RspCode: '00', Message: 'Confirm Success' }
     })
 }
@@ -157,4 +151,8 @@ export async function updateByTransactionCode(transactionCode: string) {
 export async function getPeriodRevenue(params: PeriodPaymentQuery) {
     const data = await dal.payment.payment.query.getPeriodRevenue(params)
     return { data: data }
+}
+
+export async function refundPayment(ip: string) {
+    return await service.vnpay.refundPayment(ip)
 }

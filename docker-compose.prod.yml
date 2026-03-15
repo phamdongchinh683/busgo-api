@@ -11,7 +11,17 @@ services:
       - internal-net
     depends_on:
       - db
-
+  job:
+    image: phamdongchinh683/backend-fastify:latest
+    container_name: cron
+    restart: always
+    command: yarn cron-start
+    env_file:
+      - .env
+    networks:
+      - internal-net
+    depends_on:
+      - db
   db:
     image: postgres:16
     container_name: postgres

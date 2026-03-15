@@ -16,7 +16,6 @@ import _ from 'lodash'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
-import { startJobs } from '../job/index.js'
 import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -156,8 +155,6 @@ const start = async () => {
         if (!host) throw new Error('env HOST not found')
 
         await api.listen({ host, port: +port })
-
-        startJobs()
 
         console.log({
             swagger: `http://${host}:${port}/swagger/docs`,

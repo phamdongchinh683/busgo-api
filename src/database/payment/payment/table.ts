@@ -11,6 +11,7 @@ export interface PaymentTable extends Timestamps {
     status: PaymentStatus
     transactionCode: string
     paidAt: Date | null
+    payDate: string | null
     transactionNo: string | null
 }
 

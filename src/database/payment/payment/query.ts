@@ -13,6 +13,7 @@ export async function updatePaymentTransactionByCode(
         status: PaymentStatus
         paidAt?: Date
         transactionNo?: string
+        payDate?: string
     },
     trx?: Transaction<Database>
 ) {

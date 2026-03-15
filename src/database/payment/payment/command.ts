@@ -32,6 +32,7 @@ export async function upsertPayment(params: PaymentTableInsert) {
 export async function updatePaymentStatusSuccess(
     transactionCode: string,
     transactionNo: string,
+    payDate: string,
     trx: Transaction<Database>
 ) {
     const payment = await dal.payment.payment.query.updatePaymentTransactionByCode(
@@ -39,6 +40,7 @@ export async function updatePaymentStatusSuccess(
         {
             status: PaymentStatus.enum.success,
             paidAt: utils.time.getNow().toDate(),
+            payDate,
             transactionNo,
         },
         trx
