@@ -10,7 +10,7 @@ import {
 const vnpayUrl = process.env.VNPAY_URL ?? ''
 
 export function initiatePayment(amount: number, transactionCode: string, ip: string) {
-    const now = utils.time.getNow().tz('Asia/Ho_Chi_Minh')
+    const now = utils.time.getNow()
 
     const vnpParams: Record<string, string> = {
         vnp_Version: '2.1.0',

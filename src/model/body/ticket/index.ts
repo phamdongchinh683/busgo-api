@@ -30,6 +30,7 @@ export const TicketsResponse = z.object({
     tickets: z.array(
         TicketBody.extend({
             bookingId: BookingId,
+            departureDate: z.date(),
         })
     ),
     next: BookingTicketId.nullable(),

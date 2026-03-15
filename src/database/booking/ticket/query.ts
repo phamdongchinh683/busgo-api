@@ -38,12 +38,14 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             'b.code',
             'b.bookingType',
             'b.id as bookingId',
+            'trip.departureDate',
             'b.originalAmount',
             'b.discountAmount',
             'b.totalAmount',
             'b.status',
             'trip.departureDate',
         ])
+        .orderBy('trip.departureDate', 'desc')
         .limit(limit + 1)
         .execute()
 }
