@@ -8,7 +8,6 @@ import { PaymentStatus } from './type.js'
 import { utils } from '../../../utils/index.js'
 import { BookingId, BookingStatus } from '../../booking/booking/type.js'
 import { BookingTicketStatus } from '../../booking/ticket/type.js'
-import { HttpErr } from '../../../app/index.js'
 
 export async function createPaymentTransaction(
     params: PaymentTableInsert,

@@ -207,3 +207,11 @@ export async function updateBookingStatus(
         .where('id', '=', bookingId)
         .execute()
 }
+
+export async function updateExpiredBooking(id: BookingId, trx?: Transaction<Database>) {
+    return (trx ?? db)
+        .updateTable('booking.booking')
+        .set({ expiredAt: null })
+        .where('id', '=', id)
+        .executeTakeFirstOrThrow()
+}

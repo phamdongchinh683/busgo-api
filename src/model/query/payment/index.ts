@@ -59,7 +59,7 @@ export const PaymentResponse = z.object({
     status: PaymentStatus,
     transactionCode: z.string(),
     paidAt: z.date().nullable(),
-    expiredAt: z.date(),
+    expiredAt: z.date().nullable(),
 })
 
 export type PaymentResponse = z.infer<typeof PaymentResponse>

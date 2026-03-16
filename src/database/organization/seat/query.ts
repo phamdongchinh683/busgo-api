@@ -24,7 +24,7 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
 }
 
 function getOccupiedSeatsSubQuery(params: TripSeatParam) {
-    const { id, pickup, dropoff } = params
+    const { id, stopOrderPickup, stopOrderDropoff } = params
     return db
         .selectFrom('booking.seat_segment as ss')
         .innerJoin('operation.trip as t', 't.id', 'ss.tripId')
@@ -41,8 +41,8 @@ function getOccupiedSeatsSubQuery(params: TripSeatParam) {
         .where(eb => {
             const cond = []
             cond.push(eb('ss.tripId', '=', id))
-            cond.push(eb('ts.stopOrder', '<', dropoff))
-            cond.push(eb('fs.stopOrder', '>', pickup))
+            cond.push(eb('ts.stopOrder', '<', stopOrderDropoff))
+            cond.push(eb('fs.stopOrder', '>', stopOrderPickup))
             return eb.and(cond)
         })
         .select(['ss.seatId'])

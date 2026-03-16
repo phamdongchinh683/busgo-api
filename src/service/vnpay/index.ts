@@ -11,7 +11,6 @@ import {
 const vnpayUrl = process.env.VNPAY_URL ?? ''
 
 export function initiatePayment(amount: number, transactionCode: string, ip: string) {
-
     const vnpParams: Record<string, string> = {
         vnp_Version: '2.1.0',
         vnp_Command: 'pay',
@@ -56,24 +55,24 @@ export function verifyIpn(query: Record<string, string>) {
     return vnpParams
 }
 
-export async  function refundPayment(ip: string) {
+export async function refundPayment(ip: string) {
     const now = utils.time.getNow()
 
     const vnpParams: Record<string, string> = {
         vnp_RequestId: utils.random.generateRandomNumber(10).toString(),
-        vnp_Version: "2.1.0",
-        vnp_Command: "refund",
+        vnp_Version: '2.1.0',
+        vnp_Command: 'refund',
         vnp_TmnCode: tmnCode,
-        vnp_TransactionType: "02",
-        vnp_TxnRef: "314129036824",
+        vnp_TransactionType: '02',
+        vnp_TxnRef: '314129036824',
         vnp_Amount: String(220000 * 100),
-        vnp_OrderInfo: "Refund",
-        vnp_TransactionNo: "15451630",
-        vnp_TransactionDate: "20260315231959",
-        vnp_CreateBy: "admin",
-        vnp_CreateDate: now.format("YYYYMMDDHHmmss"),
-        vnp_IpAddr: ip
-      }
+        vnp_OrderInfo: 'Refund',
+        vnp_TransactionNo: '15451630',
+        vnp_TransactionDate: '20260315231959',
+        vnp_CreateBy: 'admin',
+        vnp_CreateDate: now.format('YYYYMMDDHHmmss'),
+        vnp_IpAddr: ip,
+    }
 
     const fields = [
         'vnp_RequestId',
@@ -99,7 +98,7 @@ export async  function refundPayment(ip: string) {
         vnp_SecureHash,
     }
 
-    const res = await fetch("https://sandbox.vnpayment.vn/merchant_webapi/api/transaction", {
+    const res = await fetch('https://sandbox.vnpayment.vn/merchant_webapi/api/transaction', {
         method: 'POST',
         body: JSON.stringify(body),
         headers: {
@@ -111,6 +110,6 @@ export async  function refundPayment(ip: string) {
 
     console.log(data)
     return {
-        message: "OK"
+        message: 'OK',
     }
 }

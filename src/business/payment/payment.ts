@@ -10,7 +10,6 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
-import { RefundPaymentBody } from '../../model/refund/index.js'
 
 async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
@@ -25,7 +24,7 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
 
         if (
             payment.status === PaymentStatus.enum.failed ||
-            payment.expiredAt < utils.time.getNow().toDate()
+            (payment.expiredAt && payment.expiredAt < utils.time.getNow().toDate())
         ) {
             throw new HttpErr.UnprocessableEntity(
                 'Payment failed or expired',
@@ -44,7 +43,6 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
         method,
         status: PaymentStatus.enum.pending,
         amount,
-        paidAt: null,
     })
 }
 
@@ -75,6 +73,8 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 
 export async function createCashPayment(params: PaymentMethodRequest) {
     const payment = await preparePayment(params.id, PaymentMethod.enum.cash)
+
+    await dal.booking.booking.cmd.updateExpiredBooking(params.id)
 
     return {
         message: 'Please pay when you board the bus',
@@ -124,7 +124,12 @@ export async function vnpayIpn(query: Record<string, string>, reply: FastifyRepl
             return { RspCode: '24', Message: 'Payment failed' }
         }
 
-        await dal.payment.payment.cmd.updatePaymentStatusSuccess(vnp_TxnRef, vnp_TransactionNo, vnp_PayDate, tx)
+        await dal.payment.payment.cmd.updatePaymentStatusSuccess(
+            vnp_TxnRef,
+            vnp_TransactionNo,
+            vnp_PayDate,
+            tx
+        )
         return { RspCode: '00', Message: 'Confirm Success' }
     })
 }

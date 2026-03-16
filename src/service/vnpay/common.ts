@@ -35,5 +35,5 @@ export const createSecureHash = (signData: string, secret: string) =>
     crypto.createHmac('sha512', secret).update(signData).digest('hex')
 
 export const buildVnpSignData = (params: Record<string, string>, fields: string[]) => {
-    return fields.map((field) => params[field] ?? '').join('|')
-  }
+    return fields.map(field => params[field] ?? '').join('|')
+}
