@@ -157,7 +157,3 @@ export async function getPeriodRevenue(params: PeriodPaymentQuery) {
     const data = await dal.payment.payment.query.getPeriodRevenue(params)
     return { data: data }
 }
-
-export async function refundPayment(ip: string) {
-    return await service.vnpay.refundPayment(ip)
-}
