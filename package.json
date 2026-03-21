@@ -4,8 +4,8 @@
   "packageManager": "yarn@4.11.0",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec tsx src/app/api.ts",
-    "cron-dev": "tsx src/job/runner.ts",
-    "cron-start": "node dist/job/runner.js",
+    "cron-dev": "tsx src/cron/index.ts",
+    "cron-start": "node dist/cron/index.js",
     "clean": "rm -rf dist",
     "build": "yarn clean && tsc",
     "prestart": "yarn build",

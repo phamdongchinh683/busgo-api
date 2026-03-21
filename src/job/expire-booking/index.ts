@@ -5,7 +5,7 @@ import { utils } from '../../utils/index.js'
 import { Kysely } from 'kysely'
 import { Database } from '../../datasource/type.js'
 
-export default function expireBooking(db: Kysely<Database>) {
+export function expireBooking(db: Kysely<Database>) {
     cron.schedule(
         '*/15 * * * *',
         async () => {
