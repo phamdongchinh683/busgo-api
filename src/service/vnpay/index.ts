@@ -6,12 +6,11 @@ import {
     normalizeQueryValue,
     returnUrl,
     tmnCode,
+    buildVnpSignData,
 } from './common.js'
 const vnpayUrl = process.env.VNPAY_URL ?? ''
 
 export function initiatePayment(amount: number, transactionCode: string, ip: string) {
-    const now = utils.time.getNow().tz('Asia/Ho_Chi_Minh')
-
     const vnpParams: Record<string, string> = {
         vnp_Version: '2.1.0',
         vnp_Command: 'pay',
@@ -23,8 +22,8 @@ export function initiatePayment(amount: number, transactionCode: string, ip: str
         vnp_Locale: 'vn',
         vnp_IpAddr: ip,
         vnp_OrderType: 'other',
-        vnp_CreateDate: now.format('YYYYMMDDHHmmss'),
-        vnp_ExpireDate: now.add(10, 'minutes').format('YYYYMMDDHHmmss'),
+        vnp_CreateDate: utils.time.getNow().format('YYYYMMDDHHmmss'),
+        vnp_ExpireDate: utils.time.getNow().add(10, 'minutes').format('YYYYMMDDHHmmss'),
         vnp_ReturnUrl: returnUrl,
     }
 

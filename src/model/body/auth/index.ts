@@ -1,8 +1,6 @@
 import { z } from 'zod'
 import { ContactInfo, Email, Phone, UserInfo } from '../../common.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
-import { AuthUserStatus } from '../../../database/auth/user/type.js'
 
 const regPassword = `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@\\$%&!\\*\\?\\^_])(?!.*\\s).+$`
 const message =
@@ -42,6 +40,7 @@ export const AuthCompanyAdminSignUpBody = z.object({
     fullName: z.string().min(7),
     contactInfo: ContactInfo,
     password: AuthPassword,
+    companyId: OrganizationBusCompanyId.nullable(),
 })
 
 export type AuthCompanyAdminSignUpBody = z.infer<typeof AuthCompanyAdminSignUpBody>

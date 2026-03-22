@@ -18,13 +18,16 @@ api.route({
     },
     handler: async request => {
         return await bus.auth.adminRegister.register(
-            request.body,
+            {
+                ...request.body,
+                companyId: null,
+            },
             AuthStaffProfileRole.enum.super_admin
         )
     },
 
     schema: {
-        body: AuthCompanyAdminSignUpBody,
+        body: AuthCompanyAdminSignUpBody.omit({ companyId: true }),
         response: { 200: AuthCompanyAdminSignUpResponse },
         tags: tags(__filename),
     },

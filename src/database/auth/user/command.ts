@@ -107,6 +107,7 @@ export async function signUpCompanyAdmin(
                 phone: phone,
                 email: email,
                 status: AuthUserStatus.enum.inactive,
+                companyId: params.companyId ?? null,
             },
             trx
         )

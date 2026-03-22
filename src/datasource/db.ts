@@ -3,6 +3,8 @@ import { Pool, type PoolConfig, types } from 'pg'
 
 import { Database } from './type.js'
 
+import 'dotenv/config'
+
 const toNumber = (v: null | string) => (v ? +v : null)
 
 types.setTypeParser(types.builtins.INT2, toNumber)

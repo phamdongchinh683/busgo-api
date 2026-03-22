@@ -37,6 +37,8 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             't.id',
             'b.code',
             'b.bookingType',
+            'b.id as bookingId',
+            'trip.departureDate',
             'b.originalAmount',
             'b.discountAmount',
             'b.totalAmount',
@@ -170,6 +172,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'b.originalAmount',
             'b.discountAmount',
             'b.totalAmount',
+            'b.id as bookingId',
             'b.status',
             'trip.departureDate',
         ])

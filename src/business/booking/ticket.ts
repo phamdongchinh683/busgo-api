@@ -3,7 +3,6 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { TicketFilter, TicketSupportFilter } from '../../model/query/ticket/index.js'
 import { HttpErr } from '../../app/index.js'
-import { BookingStatus } from '../../database/booking/booking/type.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
@@ -33,13 +32,6 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
 
     if (!data) {
         throw new HttpErr.Forbidden('You are not allowed to cancel this ticket')
-    }
-
-    if (
-        data.status !== BookingStatus.enum.pending ||
-        data.expiredAt < utils.time.getNow().toDate()
-    ) {
-        throw new HttpErr.Forbidden('This ticket has already been processed')
     }
 
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)

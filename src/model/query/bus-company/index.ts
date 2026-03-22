@@ -3,6 +3,7 @@ import { OrganizationBusCompanyId } from '../../../database/organization/bus_com
 
 export const BusCompanyListQuery = z.object({
     limit: z.coerce.number().min(1).max(100).default(10),
+    name: z.string().optional(),
     next: OrganizationBusCompanyId.optional(),
 })
 

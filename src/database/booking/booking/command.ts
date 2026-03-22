@@ -15,15 +15,6 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
     const { couponId, outBound } = params
 
     return db.transaction().execute(async tx => {
-        const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
-
-        if (seatConflict) {
-            throw new HttpErr.UnprocessableEntity(
-                'Seat is already reserved for the selected segment',
-                'SEAT_CONFLICT'
-            )
-        }
-
         const { originalAmount, discountAmount, totalAmount } =
             await dal.booking.coupon.cmd.resultAmountOneWay(outBound, tx, couponId)
 
@@ -37,7 +28,7 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
                 totalAmount: totalAmount,
                 discountAmount: discountAmount,
                 status: BookingStatus.enum.pending,
-                expiredAt: utils.time.getNow().add(utils.time.coolDownTime, 'seconds').toDate(),
+                expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
             },
             tx
         )
@@ -84,7 +75,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
             const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
             if (seatConflict) {
                 throw new HttpErr.UnprocessableEntity(
-                    'Seat is already reserved for the selected segment',
+                    'Seat is already reserved',
                     'SEAT_CONFLICT_OUTBOUND'
                 )
             }
@@ -95,7 +86,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
             )
             if (seatConflictReturn) {
                 throw new HttpErr.UnprocessableEntity(
-                    'Seat is already reserved for the selected segment',
+                    'Seat is already reserved',
                     'SEAT_CONFLICT_RETURNBOUND'
                 )
             }
@@ -141,7 +132,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
                     discountAmount: discount,
                     originalAmount: original,
                     status: BookingStatus.enum.pending,
-                    expiredAt: utils.time.getNext({ second: utils.time.coolDownTime }),
+                    expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
                 },
                 tx
             )
@@ -215,4 +206,12 @@ export async function updateBookingStatus(
         .returning('booking.booking.couponId')
         .where('id', '=', bookingId)
         .execute()
+}
+
+export async function updateExpiredBooking(id: BookingId, trx?: Transaction<Database>) {
+    return (trx ?? db)
+        .updateTable('booking.booking')
+        .set({ expiredAt: null })
+        .where('id', '=', id)
+        .executeTakeFirstOrThrow()
 }

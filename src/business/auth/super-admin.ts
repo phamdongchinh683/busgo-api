@@ -7,18 +7,21 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { UserBody, UserUpdateBody } from '../../model/body/user/index.js'
 import { AuthPassword } from '../../model/body/auth/index.js'
 import { UserListQuery } from '../../model/body/user/index.js'
+import { PeriodUserQuery } from '../../model/query/user/index.js'
 
 export async function getDashboard() {
-    const [totalUsers, totalBookings, totalRevenue] = await Promise.all([
+    const [totalUsers, totalBookings, totalRevenue, totalCompanies] = await Promise.all([
         dal.auth.user.query.countAll(),
         dal.booking.booking.query.countAll(),
         dal.payment.payment.query.getTotalRevenue(),
+        dal.organization.busCompany.query.countAll(),
     ])
     return {
         overview: {
             totalUsers,
             totalBookings,
             totalRevenue,
+            totalCompanies,
         },
     }
 }
@@ -81,4 +84,9 @@ export async function deleteOne(id: AuthUserId) {
         message: 'OK',
         user: user,
     }
+}
+
+export async function getPeriodUsers(params: PeriodUserQuery) {
+    const data = await dal.auth.user.query.getPeriod(params)
+    return { data: data }
 }

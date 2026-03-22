@@ -1,6 +1,7 @@
 import z from 'zod'
 import { BookingId } from '../../../database/booking/booking/type.js'
 import { PaymentId, PaymentMethod, PaymentStatus } from '../../../database/payment/payment/type.js'
+import { PeriodFilter } from '../../common.js'
 
 export const PaymentIdParam = z.object({
     id: PaymentId,
@@ -15,7 +16,7 @@ export const PaymentTransactionCodeParam = z.object({
 export type PaymentTransactionCodeParam = z.infer<typeof PaymentTransactionCodeParam>
 
 export const PaymentMethodRequest = z.object({
-    bookingId: BookingId,
+    id: BookingId,
     method: PaymentMethod,
 })
 
@@ -54,11 +55,11 @@ export const PaymentResponse = z.object({
     id: PaymentId,
     bookingId: BookingId,
     amount: z.number(),
-    method: PaymentMethod,
+    method: PaymentMethod.nullable(),
     status: PaymentStatus,
     transactionCode: z.string(),
     paidAt: z.date().nullable(),
-    expiredAt: z.date(),
+    expiredAt: z.date().nullable(),
 })
 
 export type PaymentResponse = z.infer<typeof PaymentResponse>
@@ -73,3 +74,10 @@ export const PaymentListResponse = z.object({
 })
 
 export type PaymentListResponse = z.infer<typeof PaymentListResponse>
+
+export const PeriodPaymentQuery = PeriodFilter.extend({
+    method: PaymentMethod.optional(),
+    status: PaymentStatus.optional(),
+})
+
+export type PeriodPaymentQuery = z.infer<typeof PeriodPaymentQuery>

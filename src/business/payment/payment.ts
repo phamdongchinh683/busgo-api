@@ -1,16 +1,17 @@
 import { dal } from '../../database/index.js'
 import { utils } from '../../utils/index.js'
 import { PaymentMethodRequest } from '../../model/query/payment/index.js'
-import { PaymentId, PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { BookingId } from '../../database/booking/booking/type.js'
 import { db } from '../../datasource/db.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { PaymentFilter } from '../../model/query/payment/index.js'
+import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
+import { FastifyReply } from 'fastify'
 
-async function preparePayment(bookingId: BookingId, method: PaymentMethod) {
+async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
 
     if (payment) {
@@ -23,18 +24,11 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod) {
 
         if (
             payment.status === PaymentStatus.enum.failed ||
-            payment.expiredAt < utils.time.getNow().toDate()
+            (payment.expiredAt && payment.expiredAt < utils.time.getNow().toDate())
         ) {
             throw new HttpErr.UnprocessableEntity(
                 'Payment failed or expired',
                 'PAYMENT_FAILED_OR_EXPIRED'
-            )
-        }
-
-        if (payment.method !== method) {
-            throw new HttpErr.UnprocessableEntity(
-                'Another payment method already exists',
-                'PAYMENT_METHOD_CONFLICT'
             )
         }
 
@@ -49,7 +43,6 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod) {
         method,
         status: PaymentStatus.enum.pending,
         amount,
-        paidAt: null,
     })
 }
 
@@ -58,7 +51,7 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 
     const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
         userId: userId,
-        bookingId: params.bookingId,
+        bookingId: params.id,
     })
 
     if (!bookingInfo) {
@@ -79,7 +72,9 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 }
 
 export async function createCashPayment(params: PaymentMethodRequest) {
-    const payment = await preparePayment(params.bookingId, PaymentMethod.enum.cash)
+    const payment = await preparePayment(params.id, PaymentMethod.enum.cash)
+
+    await dal.booking.booking.cmd.updateExpiredBooking(params.id)
 
     return {
         message: 'Please pay when you board the bus',
@@ -88,7 +83,7 @@ export async function createCashPayment(params: PaymentMethodRequest) {
 }
 
 export async function createVnpayPayment(params: PaymentMethodRequest, ip: string) {
-    const payment = await preparePayment(params.bookingId, PaymentMethod.enum.vnpay)
+    const payment = await preparePayment(params.id, PaymentMethod.enum.vnpay)
 
     return {
         message: 'OK',
@@ -96,14 +91,14 @@ export async function createVnpayPayment(params: PaymentMethodRequest, ip: strin
     }
 }
 
-export async function vnpayIpn(query: Record<string, string>) {
+export async function vnpayIpn(query: Record<string, string>, reply: FastifyReply) {
     const vnpParams = service.vnpay.verifyIpn(query)
 
     if ('RspCode' in vnpParams) {
         return vnpParams
     }
 
-    const { vnp_TxnRef, vnp_Amount, vnp_ResponseCode, vnp_TransactionNo } = vnpParams
+    const { vnp_TxnRef, vnp_Amount, vnp_ResponseCode, vnp_TransactionNo, vnp_PayDate } = vnpParams
 
     if (!vnp_TxnRef || vnp_Amount == null || !vnp_ResponseCode) {
         return { RspCode: '99', Message: 'Invalid request' }
@@ -129,7 +124,12 @@ export async function vnpayIpn(query: Record<string, string>) {
             return { RspCode: '24', Message: 'Payment failed' }
         }
 
-        await dal.payment.payment.cmd.updatePaymentStatusSuccess(vnp_TxnRef, vnp_TransactionNo, tx)
+        await dal.payment.payment.cmd.updatePaymentStatusSuccess(
+            vnp_TxnRef,
+            vnp_TransactionNo,
+            vnp_PayDate,
+            tx
+        )
         return { RspCode: '00', Message: 'Confirm Success' }
     })
 }
@@ -151,4 +151,9 @@ export async function getRevenueByCompanyId(companyId: OrganizationBusCompanyId)
 
 export async function updateByTransactionCode(transactionCode: string) {
     return await dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
+}
+
+export async function getPeriodRevenue(params: PeriodPaymentQuery) {
+    const data = await dal.payment.payment.query.getPeriodRevenue(params)
+    return { data: data }
 }

@@ -1,6 +1,6 @@
 # Ticketing System – Backend API
 
-Backend for a **bus ticketing system**: multiple bus companies, routes, trip schedules, seat booking, and online payments.
+Backend for a **bus ticketing system**: multiple bus companies, routes, trip schedules, seat booking, online payments, and background cron jobs.
 
 - **Multi-tenant**: Each bus company has its own admins, drivers, vehicles, and trips.
 - **Roles**: Super admin, company admin (operator / support / accountant), driver, customer.
@@ -12,7 +12,8 @@ Backend for a **bus ticketing system**: multiple bus companies, routes, trip sch
 - **Company admin**: Manage drivers, staff, vehicles, profile; operators handle stations, trip schedules, and price templates; support handles tickets and coupons; accountants handle payments and revenue.
 - **Drivers**: View trips, passengers, and perform check-in.
 - **Customers**: Sign up, search trip schedules, book seats, manage tickets and coupons.
-- **Payments**: Payment method creation and VNPay IPN webhook.
+- **Payments**: Payment method creation, VNPay IPN webhook.
+- **Background jobs**: Expire unpaid bookings via a separate cron runner process.
 
 
 ## 🚀 Features
@@ -86,13 +87,19 @@ yarn migrate
 
 ### Development Mode
 
-Run the server with hot-reload:
+Run the API server with hot-reload:
 
 ```bash
 yarn dev
 ```
 
 The server will start on `http://127.0.0.1:3000` (or the port specified in your `.env` file).
+
+Run cron jobs in a separate terminal:
+
+```bash
+yarn cron-dev
+```
 
 ### Production Mode
 
@@ -102,8 +109,11 @@ The server will start on `http://127.0.0.1:3000` (or the port specified in your 
 # Build the project
 yarn build
 
-# Start the server
+# Start API server
 yarn start
+
+# Start cron runner (separate process)
+yarn cron-start
 ```
 
 #### Docker Production
@@ -121,6 +131,11 @@ docker run -p 3000:3000 \
 # Or use docker-compose for production
 docker compose -f docker-compose.prod.yml up -d
 ```
+
+This starts 3 services:
+- `api`: Fastify API server
+- `job`: cron runner (`yarn cron-start`)
+- `db`: PostgreSQL
 
 ## 📖 API Documentation
 
@@ -151,9 +166,10 @@ The project includes two Docker Compose files:
   - Persistent volume: `pg_data`
 
 - **`docker-compose.prod.yml`** - Production deployment
-  - Pulls `phamdongchinh683/backend-fastify:latest` image
+  - Uses `phamdongchinh683/backend-fastify:latest` for both API and cron services
+  - Runs cron in a dedicated `job` container
   - Uses `.env` file for configuration
-  - Port: `3000`
+  - API port: `3000`
 
 #### Docker Compose Commands
 
@@ -168,7 +184,10 @@ docker compose -f docker-compose.db.yml down
 docker compose -f docker-compose.db.yml logs -f
 
 # Production deployment
-docker compose -f docker-compose.prod.yml pull
+docker compose -f docker-compose.prod.yml up -d
+
+# Recreate production services
+docker compose -f docker-compose.prod.yml down
 docker compose -f docker-compose.prod.yml up -d
 ```
 
@@ -230,8 +249,10 @@ postgres://[user]:[password]@[host]:[port]/[database]
 | Script | Description |
 |--------|-------------|
 | `yarn dev` | Start development server with hot-reload |
+| `yarn cron-dev` | Start cron runner in development (tsx) |
 | `yarn build` | Build TypeScript to JavaScript |
 | `yarn start` | Start production server (runs `build` first) |
+| `yarn cron-start` | Start compiled cron runner (`dist/job/runner.js`) |
 | `yarn format` | Format code using Prettier |
 | `yarn format:check` | Check code formatting without changes |
 | `yarn migrate` | Run database migrations |

@@ -86,6 +86,7 @@ export type TripSeatResponse = z.infer<typeof TripSeatResponse>
 
 export const TripBody = z.object({
     scheduleId: OperationTripScheduleId,
+    companyId: OrganizationBusCompanyId,
     departureDate: z.coerce.date(),
 })
 

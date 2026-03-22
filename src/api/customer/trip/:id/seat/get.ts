@@ -13,8 +13,8 @@ api.route({
     handler: async request => {
         requireRoles(request.headers, [AuthUserRole.enum.customer])
         const { id } = request.params
-        const { pickup, dropoff } = request.query
-        return await bus.organization.seat.getSeats({ id, pickup, dropoff })
+        const { stopOrderPickup, stopOrderDropoff } = request.query
+        return await bus.organization.seat.getSeats({ id, stopOrderPickup, stopOrderDropoff })
     },
 
     schema: {

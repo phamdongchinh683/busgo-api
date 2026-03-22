@@ -7,8 +7,8 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
-    handler: async request => {
-        return await bus.payment.payment.vnpayIpn(request.query)
+    handler: async (request, reply) => {
+        return await bus.payment.payment.vnpayIpn(request.query, reply)
     },
     schema: {
         querystring: VnPayIpnRequest,

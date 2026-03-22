@@ -1,9 +1,10 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
-import { requireRoles } from '../../../app/jwt/handler.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { StaffRoleQuery } from '../../../model/query/staff/index.js'
 import { StaffListResponse } from '../../../model/body/staff/index.js'
+import { requireStaffProfileRole } from '../../../app/jwt/handler.js'
+import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -16,7 +17,11 @@ api.route({
         },
     },
     handler: async request => {
-        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.admin])
+        const userInfo = requireStaffProfileRole(
+            request.headers,
+            [AuthUserRole.enum.admin],
+            [AuthStaffProfileRole.enum.company_admin]
+        )
         return await bus.auth.staffRole.getStaffRole(request.query, userInfo.companyId)
     },
 

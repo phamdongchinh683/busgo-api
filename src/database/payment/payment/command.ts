@@ -8,7 +8,6 @@ import { PaymentStatus } from './type.js'
 import { utils } from '../../../utils/index.js'
 import { BookingId, BookingStatus } from '../../booking/booking/type.js'
 import { BookingTicketStatus } from '../../booking/ticket/type.js'
-import { HttpErr } from '../../../app/index.js'
 
 export async function createPaymentTransaction(
     params: PaymentTableInsert,
@@ -32,6 +31,7 @@ export async function upsertPayment(params: PaymentTableInsert) {
 export async function updatePaymentStatusSuccess(
     transactionCode: string,
     transactionNo: string,
+    payDate: string,
     trx: Transaction<Database>
 ) {
     const payment = await dal.payment.payment.query.updatePaymentTransactionByCode(
@@ -39,6 +39,7 @@ export async function updatePaymentStatusSuccess(
         {
             status: PaymentStatus.enum.success,
             paidAt: utils.time.getNow().toDate(),
+            payDate,
             transactionNo,
         },
         trx

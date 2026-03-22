@@ -1,6 +1,6 @@
 import z from 'zod'
 import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
-import { BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
+import { BookingId, BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OrganizationVehicleType } from '../../../database/organization/vehicle/type.js'
 
 export const TicketBody = z.object({
@@ -27,7 +27,12 @@ export const TicketCancelResponse = z.object({
 export type TicketCancelResponse = z.infer<typeof TicketCancelResponse>
 
 export const TicketsResponse = z.object({
-    tickets: z.array(TicketBody),
+    tickets: z.array(
+        TicketBody.extend({
+            bookingId: BookingId,
+            departureDate: z.date(),
+        })
+    ),
     next: BookingTicketId.nullable(),
 })
 

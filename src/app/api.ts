@@ -13,12 +13,10 @@ import { fileURLToPath, pathToFileURL } from 'url'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import QueryString from 'qs'
 import _ from 'lodash'
-import dotenv from 'dotenv'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
-
-dotenv.config()
+import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -28,6 +26,7 @@ const apiDir = path.join(rootDir, 'api')
 const isProduction = process.env.NODE_ENV === 'production'
 
 const api = Fastify({
+    trustProxy: true,
     routerOptions: {
         querystringParser: (query: string) => {
             const parsed = QueryString.parse(query)
@@ -147,7 +146,6 @@ const start = async () => {
         })
 
         await apiRouter(api)
-
         await api.ready()
 
         const port = process.env.PORT
