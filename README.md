@@ -162,7 +162,7 @@ The project includes two Docker Compose files:
   - Database: `app_db`
   - User: `app_user`
   - Password: `app_password`
-  - Port: `5432`
+  - Port: `5433`
   - Persistent volume: `pg_data`
 
 - **`docker-compose.prod.yml`** - Production deployment
