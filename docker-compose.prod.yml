@@ -3,7 +3,7 @@ services:
     image: phamdongchinh683/backend-fastify:latest
     container_name: api
     restart: always
-    mem_limit: 512m
+    mem_limit: 256m
     env_file:
       - .env
     ports:
@@ -16,7 +16,7 @@ services:
     image: phamdongchinh683/backend-fastify:latest
     container_name: cron
     restart: always
-    mem_limit: 256m
+    mem_limit: 128m
     command: yarn cron-start
     env_file:
       - .env
@@ -28,7 +28,7 @@ services:
     image: postgres:15
     container_name: postgres
     restart: always
-    mem_limit: 1536m
+    mem_limit: 768m
     environment:
       POSTGRES_DB: app
       POSTGRES_USER: app
