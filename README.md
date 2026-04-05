@@ -67,6 +67,12 @@ HOST=127.0.0.1
 # App
 APP_ENV=local
 NODE_ENV=development
+
+# VNPay (optional - for payment integration)
+VNPAY_TMN_CODE=your-terminal-code
+VNPAY_SECRET=your-secret-key
+VNPAY_URL=https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+VNPAY_RETURN_URL=http://127.0.0.1:3000/payment/vnpay/ipn
 ```
 
 ### 4. Start the Database
@@ -170,6 +176,7 @@ The project includes two Docker Compose files:
   - Runs cron in a dedicated `job` container
   - Uses `.env` file for configuration
   - API port: `3000`
+  - Database: `app`, User: `app`, Password: `secret` (configure via `DB_URL` in `.env`)
 
 #### Docker Compose Commands
 
@@ -252,7 +259,7 @@ postgres://[user]:[password]@[host]:[port]/[database]
 | `yarn cron-dev` | Start cron runner in development (tsx) |
 | `yarn build` | Build TypeScript to JavaScript |
 | `yarn start` | Start production server (runs `build` first) |
-| `yarn cron-start` | Start compiled cron runner (`dist/job/runner.js`) |
+| `yarn cron-start` | Start compiled cron runner (`dist/cron/index.js`) |
 | `yarn format` | Format code using Prettier |
 | `yarn format:check` | Check code formatting without changes |
 | `yarn migrate` | Run database migrations |
@@ -270,6 +277,10 @@ postgres://[user]:[password]@[host]:[port]/[database]
 | `APP_ENV` | Environment (`local`, `development`, `production`) | `local` | No |
 | `NODE_ENV` | Node environment | `development` | No |
 | `CORS_ORIGIN` | Allowed CORS origin | `*` | No |
+| `VNPAY_TMN_CODE` | VNPay terminal code | - | No (payment) |
+| `VNPAY_SECRET` | VNPay secret key | - | No (payment) |
+| `VNPAY_URL` | VNPay payment URL | - | No (payment) |
+| `VNPAY_RETURN_URL` | VNPay IPN callback URL | - | No (payment) |
 
 ### Environment-Specific Behavior
 
@@ -290,12 +301,16 @@ backend-fastify-setting/
 │   │   ├── company-admin-accountant/  # Payments, revenue
 │   │   ├── driver/             # Trips, passengers, check-in
 │   │   ├── customer/           # Sign-up, booking, tickets, trips, coupons
-│   │   └── payment/            # Method, VNPay IPN
+│   │   ├── payment/            # Method, VNPay IPN
+│   │   └── public/             # Public endpoints
 │   ├── app/                    # Fastify setup, JWT, errors, plugins
 │   ├── business/               # Business logic (auth, booking, payment, organization, operation)
+│   ├── cron/                   # Cron runner entry point
 │   ├── database/               # Kysely queries/commands (auth, booking, payment, organization, operation)
 │   ├── datasource/             # db.ts, migrations
+│   ├── job/                    # Background jobs (expire-booking, etc.)
 │   ├── model/                  # body/, query/, params/ (Zod schemas)
+│   ├── service/                # External services (VNPay)
 │   └── utils/                  # password, common helpers
 ├── Dockerfile.prod
 ├── docker-compose.db.yml       # PostgreSQL for local dev
