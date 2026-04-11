@@ -69,7 +69,9 @@ export async function getPeriod(q: PeriodBookingQuery) {
             .orderBy(sql`EXTRACT(MONTH FROM b.created_at)`)
             .execute()
 
-        return rows.map(r => [r.month, r.count])
+        return utils.time.normalizeMonthlySeries(rows.map(r => [r.month, r.count]), {
+            maxMonthInclusive: utils.time.getMaxMonthInclusiveForPeriodYear(year),
+        })
     }
 
     const rows = await db
