@@ -39,7 +39,6 @@ export type MessageResponse = z.infer<typeof MessageResponse>
 export const PeriodFilter = z.object({
     type: z.enum(['monthly', 'yearly']),
     year: z.coerce.number().optional(),
-    month: z.coerce.number().optional(),
 })
 export type PeriodFilter = z.infer<typeof PeriodFilter>
 
