@@ -15,6 +15,7 @@ import { OperationRouteTable } from '../database/operation/route/table.js'
 import { OperationTripScheduleTable } from '../database/operation/trip-schedule/table.js'
 import { OperationTripStopTemplateTable } from '../database/operation/trip-stop-template/table.js'
 import { OperationTripPriceTemplateTable } from '../database/operation/trip_price_template/table.js'
+import { OrganizationCompanyDriverTable } from '../database/organization/company_driver/table.js'
 
 export interface Database {
     'auth.user': AuthUserTable
@@ -34,4 +35,5 @@ export interface Database {
     'operation.trip_schedule': OperationTripScheduleTable
     'operation.trip_stop_template': OperationTripStopTemplateTable
     'operation.trip_price_template': OperationTripPriceTemplateTable
+    'organization.company_driver': OrganizationCompanyDriverTable
 }

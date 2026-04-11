@@ -3,8 +3,9 @@ import { dal } from '../../database/index.js'
 import { AuthBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
 import { DriverQuery } from '../../model/query/driver/index.js'
+import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 
-export async function register(body: AuthBody, role: AuthUserRole) {
+export async function register(body: AuthBody, role: AuthUserRole, companyId: OrganizationBusCompanyId) {
     const data = {
         username: body.username,
         fullName: body.fullName,
@@ -14,11 +15,11 @@ export async function register(body: AuthBody, role: AuthUserRole) {
         status: AuthUserStatus.enum.active,
     }
 
-    return dal.auth.user.cmd.signUp(data)
+    return dal.auth.user.cmd.insertDriver(data, companyId)
 }
 
-export async function getDrivers(query: DriverQuery) {
-    const drivers = await dal.auth.user.query.findAllDrivers(query)
+export async function getDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {
+    const drivers = await dal.auth.user.query.findAllDrivers(query, companyId)
     const { data, next } = utils.common.paginateByCursor(drivers, query.limit)
     return {
         drivers: data,

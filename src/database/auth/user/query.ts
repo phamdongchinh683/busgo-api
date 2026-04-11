@@ -6,6 +6,7 @@ import { AuthUserRole, AuthUserId } from './type.js'
 import { UserListQuery } from '../../../model/body/user/index.js'
 import { PeriodUserQuery } from '../../../model/query/user/index.js'
 import { utils } from '../../../utils/index.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export async function insertOne(params: AuthUserTableInsert) {
     return db.insertInto('auth.user').values(params).returningAll().executeTakeFirstOrThrow()
@@ -53,13 +54,16 @@ export async function countAll() {
     return r.total
 }
 
-export async function findAllDrivers(query: DriverQuery) {
+export async function findAllDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {
     const { limit, next, phone, status } = query
     return db
         .selectFrom('auth.user as u')
+        .leftJoin('organization.company_driver as cd', 'cd.userId', 'u.id')
+        .leftJoin('organization.bus_company as bc', 'bc.id', 'cd.companyId')
         .where(eb => {
             const cond = []
             cond.push(eb('u.role', '=', AuthUserRole.enum.driver))
+            cond.push(eb('cd.companyId', '=', companyId))
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (status) cond.push(eb('u.status', '=', status))
             if (next) cond.push(eb('u.id', '>', next))

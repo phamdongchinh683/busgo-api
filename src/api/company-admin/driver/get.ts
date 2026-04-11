@@ -18,7 +18,7 @@ api.route({
     },
     handler: async request => {
         const userInfo = requireRoles(request.headers, [AuthUserRole.enum.admin])
-        return await bus.auth.driver.getDrivers(request.query)
+        return await bus.auth.driver.getDrivers(request.query, userInfo.companyId)
     },
 
     schema: {

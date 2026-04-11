@@ -18,6 +18,12 @@ export const AuthBody = z.object({
 
 export type AuthBody = z.infer<typeof AuthBody>
 
+export const DriverSignUpBody = AuthBody.extend({
+    companyId: OrganizationBusCompanyId,
+})
+
+export type DriverSignUpBody = z.infer<typeof DriverSignUpBody>
+
 export const AuthResponse = z.object({
     message: z.string().optional(),
     token: z.string(),
