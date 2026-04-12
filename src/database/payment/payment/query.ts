@@ -168,9 +168,12 @@ export async function getPeriodRevenue(q: PeriodPaymentQuery) {
             .groupBy(sql`EXTRACT(MONTH FROM pp.paid_at)`)
             .orderBy(sql`EXTRACT(MONTH FROM pp.paid_at)`)
             .execute()
-        return utils.time.normalizeMonthlySeries(rows.map(r => [r.month, r.total]), {
-            maxMonthInclusive: utils.time.getMaxMonthInclusiveForPeriodYear(year),
-        })
+        return utils.time.normalizeMonthlySeries(
+            rows.map(r => [r.month, r.total]),
+            {
+                maxMonthInclusive: utils.time.getMaxMonthInclusiveForPeriodYear(year),
+            }
+        )
     }
 
     const r = await db

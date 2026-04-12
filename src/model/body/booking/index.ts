@@ -1,4 +1,3 @@
-import { AuthUserId } from '../../../database/auth/user/type.js'
 import { BookingId, BookingType } from '../../../database/booking/booking/type.js'
 import { BookingCouponId } from '../../../database/booking/coupon/type.js'
 import z from 'zod'

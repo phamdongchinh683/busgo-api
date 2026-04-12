@@ -87,12 +87,12 @@ export async function createVnpayPayment(params: PaymentMethodRequest, ip: strin
 
     return {
         message: 'OK',
-        paymentUrl: service.vnpay.initiatePayment(payment.amount, payment.transactionCode, ip),
+        paymentUrl: service.vnpay.init.initiatePayment(payment.amount, payment.transactionCode, ip),
     }
 }
 
 export async function vnpayIpn(query: Record<string, string>, reply: FastifyReply) {
-    const vnpParams = service.vnpay.verifyIpn(query)
+    const vnpParams = service.vnpay.verify.verifyIpn(query)
 
     if ('RspCode' in vnpParams) {
         return vnpParams

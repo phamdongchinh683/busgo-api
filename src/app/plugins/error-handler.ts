@@ -43,7 +43,7 @@ export const errorHandlerPlugin = fastifyPlugin((app: FastifyInstance) => {
             })
         }
 
-        console.error(err)
+        request.log.error(err, err.message)
         return reply.code(500).send({
             message: 'Internal Server Error',
         })

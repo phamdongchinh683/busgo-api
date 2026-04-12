@@ -27,9 +27,9 @@ const DOWN = sql`
 `
 
 export async function up(db: Kysely<any>): Promise<void> {
-	await UP.execute(db)
+    await UP.execute(db)
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
-	await DOWN.execute(db)
+    await DOWN.execute(db)
 }

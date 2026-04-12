@@ -130,9 +130,12 @@ export async function getPeriod(q: PeriodUserQuery) {
             .orderBy(sql`EXTRACT(MONTH FROM u.created_at)`)
             .execute()
 
-        return utils.time.normalizeMonthlySeries(rows.map(r => [r.month, r.count]), {
-            maxMonthInclusive: utils.time.getMaxMonthInclusiveForPeriodYear(year),
-        })
+        return utils.time.normalizeMonthlySeries(
+            rows.map(r => [r.month, r.count]),
+            {
+                maxMonthInclusive: utils.time.getMaxMonthInclusiveForPeriodYear(year),
+            }
+        )
     }
 
     const rows = await db

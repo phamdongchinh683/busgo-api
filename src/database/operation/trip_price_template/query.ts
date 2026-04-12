@@ -11,6 +11,9 @@ export async function findAllByCompanyId(params: {
     const { q, companyId } = params
     return db
         .selectFrom('operation.trip_price_template as tpt')
+        .innerJoin('operation.route as r', 'tpt.routeId', 'r.id')
+        .innerJoin('operation.station as s', 'tpt.fromStationId', 's.id')
+        .innerJoin('operation.station as s2', 'tpt.toStationId', 's2.id')
         .where('tpt.companyId', '=', companyId)
         .where(eb => {
             const cond = []
@@ -20,7 +23,20 @@ export async function findAllByCompanyId(params: {
             }
             return eb.and(cond)
         })
-        .selectAll()
+        .select([
+            'tpt.id',
+            'tpt.price',
+            'tpt.status',
+            'r.id as routeId',
+            'r.fromLocation as routeFromLocation',
+            'r.toLocation as routeToLocation',
+            's.id as fromStationId',
+            's.address as fromStationAddress',
+            's.city as fromStationCity',
+            's2.id as toStationId',
+            's2.address as toStationAddress',
+            's2.city as toStationCity',
+        ])
         .limit(q.limit + 1)
         .orderBy('tpt.id')
         .execute()

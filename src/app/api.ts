@@ -90,12 +90,15 @@ async function apiRouter(app: FastifyInstance) {
     const walk = async (dir: string): Promise<void> => {
         const entries = await readdir(dir)
         await Promise.all(
-            entries.map(async (entry) => {
+            entries.map(async entry => {
                 const fullPath = path.join(dir, entry)
                 const statInfo = await stat(fullPath)
                 if (statInfo.isDirectory()) {
                     await walk(fullPath)
-                } else if (statInfo.isFile() && allowedExtensions.includes(path.extname(fullPath))) {
+                } else if (
+                    statInfo.isFile() &&
+                    allowedExtensions.includes(path.extname(fullPath))
+                ) {
                     files.push(fullPath)
                 }
             })
@@ -107,7 +110,7 @@ async function apiRouter(app: FastifyInstance) {
     const registeredRoutes: Array<{ method: string; url: string; file: string }> = []
 
     await Promise.all(
-        files.map(async (file) => {
+        files.map(async file => {
             const { method, url } = endpoint(file)
             await import(pathToFileURL(file).href)
             registeredRoutes.push({ method, url, file: relative(apiDir, file) })

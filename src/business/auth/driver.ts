@@ -5,7 +5,11 @@ import { utils } from '../../utils/index.js'
 import { DriverQuery } from '../../model/query/driver/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 
-export async function register(body: AuthBody, role: AuthUserRole, companyId: OrganizationBusCompanyId) {
+export async function register(
+    body: AuthBody,
+    role: AuthUserRole,
+    companyId: OrganizationBusCompanyId
+) {
     const data = {
         username: body.username,
         fullName: body.fullName,

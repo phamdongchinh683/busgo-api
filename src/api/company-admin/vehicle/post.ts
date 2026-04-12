@@ -3,7 +3,6 @@ import { bus } from '../../../business/index.js'
 import { requireStaffProfileRole } from '../../../app/jwt/handler.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
-import { VehicleFilter } from '../../../model/query/vehicle/index.js'
 import { VehicleBody, VehicleResponse } from '../../../model/body/vehicle/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
