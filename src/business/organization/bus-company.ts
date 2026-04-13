@@ -28,3 +28,7 @@ export async function updateOne(
 ) {
     return { company: await dal.organization.busCompany.cmd.updateOne(id, body) }
 }
+
+export async function getOne(id: OrganizationBusCompanyId) {
+    return { company: await dal.organization.busCompany.cmd.getOne(id) }
+}
