@@ -113,7 +113,6 @@ export async function signUpCompanyAdmin(
             trx
         )
 
-
         const fcmTokens = await dal.auth.userDevice.cmd.findBySuperAdmin(trx)
 
         await service.firebase.sendFcm.sendFcm({
