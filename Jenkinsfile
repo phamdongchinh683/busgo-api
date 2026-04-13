@@ -30,7 +30,7 @@ pipeline {
             steps {
                 withCredentials([file(credentialsId: 'env', variable: 'ENV_FILE')]) {
                     sh '''
-                        cat "$ENV_FILE" | jq -r '. | to_entries[] | .key + "=" + (.value | tostring)' > .env
+                        cat "$ENV_FILE" | jq -r '. | to_entries[] | .key + "=" + "\"" + (.value | tostring | gsub("\n"; "\\n")) + "\""' > .env
                         cat .env
                         '''
                 }
