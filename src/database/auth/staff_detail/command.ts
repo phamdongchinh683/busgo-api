@@ -1,9 +1,10 @@
 import { db } from '../../../datasource/db.js'
 import { AuthStaffDetailTableInsert, AuthStaffDetailTableUpdate } from './table.js'
-import { Transaction } from 'kysely'
+import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import _ from 'lodash'
-import { AuthUserId } from '../user/type.js'
+import { AuthUserId, AuthUserStatus } from '../user/type.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export async function upsertOne(params: AuthStaffDetailTableInsert, trx?: Transaction<Database>) {
     const data = _.omitBy(params, v => _.isNil(v)) as AuthStaffDetailTableInsert
@@ -36,4 +37,21 @@ export async function getOne(userId: AuthUserId, trx?: Transaction<Database>) {
         .selectAll()
         .where('userId', '=', userId)
         .executeTakeFirst()
+}
+
+export async function getOneByCompanyId(
+    companyId: OrganizationBusCompanyId,
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
+        .selectFrom('auth.staff_detail')
+        .select(['auth.staff_detail.email'])
+        .where(eb => {
+            const cond = []
+            cond.push(eb('auth.staff_detail.companyId', '=', companyId))
+            cond.push(eb('auth.staff_detail.status', '=', AuthUserStatus.enum.active))
+            return eb.and(cond)
+        })
+        .orderBy(sql`random()`)
+        .executeTakeFirstOrThrow()
 }

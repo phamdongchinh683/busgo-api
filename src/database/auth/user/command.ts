@@ -4,7 +4,7 @@ import { HttpErr } from '../../../app/index.js'
 import { DatabaseError } from 'pg'
 import { generateToken } from '../../../app/jwt/handler.js'
 import { db } from '../../../datasource/db.js'
-import { Transaction } from 'kysely'
+import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import { AuthStaffProfileRole } from '../staff_profile/type.js'
 import { AuthCompanyAdminSignUpBody } from '../../../model/body/auth/index.js'
@@ -12,6 +12,7 @@ import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { service } from '../../../service/index.js'
+import { eq } from 'lodash'
 
 export async function signUp(params: AuthUserTableInsert) {
     try {
@@ -51,28 +52,42 @@ export async function insertOne(params: AuthUserTableInsert, trx?: Transaction<D
         .returningAll()
         .executeTakeFirstOrThrow()
 }
-
 export async function signUpCompanyAdmin(
     params: AuthCompanyAdminSignUpBody,
     staffRole: AuthStaffProfileRole
 ) {
     const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
 
-    return await db.transaction().execute(async (trx: Transaction<Database>) => {
-        let user
+    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
-            user = await dal.auth.user.cmd.insertOne(
+            const newUser = await dal.auth.user.cmd.insertOne(
                 {
                     username: params.username,
                     fullName: params.fullName,
                     password: params.password,
-                    phone: phone,
-                    email: email,
+                    phone,
+                    email,
                     status: AuthUserStatus.enum.inactive,
                     role: AuthUserRole.enum.admin,
                 },
                 trx
             )
+
+            await Promise.all([
+                dal.auth.staffProfile.cmd.upsertOne({ userId: newUser.id, role: staffRole }, trx),
+                dal.auth.staffDetail.cmd.upsertOne(
+                    {
+                        userId: newUser.id,
+                        phone,
+                        email,
+                        status: AuthUserStatus.enum.inactive,
+                        companyId: params.companyId ?? null,
+                    },
+                    trx
+                ),
+            ])
+
+            return newUser
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_username_key') {
@@ -99,35 +114,20 @@ export async function signUpCompanyAdmin(
 
             throw error
         }
-
-        await dal.auth.staffProfile.cmd.upsertOne({ userId: user.id, role: staffRole }, trx)
-
-        await dal.auth.staffDetail.cmd.upsertOne(
-            {
-                userId: user.id,
-                phone: phone,
-                email: email,
-                status: AuthUserStatus.enum.inactive,
-                companyId: params.companyId ?? null,
-            },
-            trx
-        )
-
-        const fcmTokens = await dal.auth.userDevice.cmd.findBySuperAdmin(trx)
-
-        await service.firebase.sendFcm.sendFcm({
-            fcmTokens: fcmTokens.map(fcmToken => fcmToken.fcmToken),
-            title: 'Verify account admin company',
-            body: 'Please verify your account to access the app',
-            data: {
-                id: user.id.toString(),
-            },
-        })
-
-        return {
-            message: 'Please contact the business to activate your account',
-        }
     })
+
+    service.email.sender.sendMail({
+        subject: 'Verify Account',
+        text: 'Please verify account to access the app',
+        html: service.email.template.emailRequestAccess({
+            id: user.id,
+            fullName: user.fullName,
+        }),
+    })
+
+    return {
+        message: 'Sent email to business to activate your account',
+    }
 }
 
 export async function signUpCompanyAdminWithCompany(
@@ -137,10 +137,9 @@ export async function signUpCompanyAdminWithCompany(
 ) {
     const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
 
-    return await db.transaction().execute(async (trx: Transaction<Database>) => {
-        let user
+    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
-            user = await dal.auth.user.cmd.insertOne(
+            const newUser = await dal.auth.user.cmd.insertOne(
                 {
                     username: params.username,
                     fullName: params.fullName,
@@ -152,6 +151,22 @@ export async function signUpCompanyAdminWithCompany(
                 },
                 trx
             )
+
+            await Promise.all([
+                dal.auth.staffProfile.cmd.upsertOne({ userId: newUser.id, role: staffRole }, trx),
+                dal.auth.staffDetail.cmd.upsertOne(
+                    {
+                        userId: newUser.id,
+                        companyId,
+                        phone,
+                        email,
+                        status: AuthUserStatus.enum.active,
+                    },
+                    trx
+                ),
+            ])
+
+            return newUser
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_username_key') {
@@ -175,27 +190,31 @@ export async function signUpCompanyAdminWithCompany(
             }
             throw error
         }
-
-        await dal.auth.staffProfile.cmd.upsertOne({ userId: user.id, role: staffRole }, trx)
-        await dal.auth.staffDetail.cmd.upsertOne(
-            {
-                userId: user.id,
-                companyId,
-                phone,
-                email,
-                status: AuthUserStatus.enum.active,
-            },
-            trx
-        )
-
-        return {
-            message: 'Please contact admin company to activate your account',
-        }
     })
+
+    const companyAdmin = await dal.auth.staffDetail.cmd.getOneByCompanyId(params.companyId)
+
+    console.log(companyAdmin)
+    service.email.sender.sendMail({
+        to: companyAdmin.email,
+        subject: 'Verify Account',
+        text: 'Verify account to access the app',
+        html: service.email.template.emailRequestAccess({
+            id: user.id,
+            fullName: user.fullName,
+        }),
+    })
+    return {
+        message: 'Sent email to company admin to activate your account',
+    }
 }
 
-export async function updateOne(userId: AuthUserId, params: AuthUserTableUpdate) {
-    return db
+export async function updateOne(
+    userId: AuthUserId,
+    params: AuthUserTableUpdate,
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
         .updateTable('auth.user')
         .set(params)
         .where('id', '=', userId)
@@ -265,5 +284,36 @@ export async function insertDriver(
             }
             throw error
         }
+    })
+}
+
+export async function verify(params: {
+    id: AuthUserId
+    status: AuthUserStatus
+    companyId?: OrganizationBusCompanyId | null
+}) {
+    return db.transaction().execute(async trx => {
+        const result = await trx
+            .updateTable('auth.staff_detail as sd')
+            .set({ status: params.status })
+            .where(eb => {
+                const cond = []
+                cond.push(eb('sd.userId', '=', params.id))
+                if (params.companyId) {
+                    cond.push(eb('sd.companyId', '=', params.companyId))
+                }
+                return eb.and(cond)
+            })
+            .executeTakeFirstOrThrow()
+
+        if (result.numUpdatedRows === 0n) {
+            throw new HttpErr.Forbidden('You cannot update this account from another company.')
+        }
+
+        await trx
+            .updateTable('auth.user as u')
+            .set({ status: params.status })
+            .where('u.id', '=', params.id)
+            .executeTakeFirstOrThrow()
     })
 }

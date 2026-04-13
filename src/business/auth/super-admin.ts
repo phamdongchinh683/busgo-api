@@ -3,11 +3,12 @@ import { CompanyAdminQuery } from '../../model/query/company-admin/index.js'
 import { CompanyAdminCreateBody } from '../../model/body/company-admin/index.js'
 import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
 import { utils } from '../../utils/index.js'
-import { AuthUserId } from '../../database/auth/user/type.js'
+import { AuthUserId, AuthUserStatus } from '../../database/auth/user/type.js'
 import { UserBody, UserUpdateBody } from '../../model/body/user/index.js'
 import { AuthPassword } from '../../model/body/auth/index.js'
 import { UserListQuery } from '../../model/body/user/index.js'
 import { PeriodUserQuery } from '../../model/query/user/index.js'
+import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 
 export async function getDashboard() {
     const [totalUsers, totalBookings, totalRevenue, totalCompanies] = await Promise.all([
@@ -89,4 +90,16 @@ export async function deleteOne(id: AuthUserId) {
 export async function getPeriodUsers(params: PeriodUserQuery) {
     const data = await dal.auth.user.query.getPeriod(params)
     return { data: data }
+}
+
+export async function verifyAccount(params: {
+    id: AuthUserId
+    status: AuthUserStatus
+    companyId?: OrganizationBusCompanyId | null
+}) {
+    await dal.auth.user.cmd.verify(params)
+
+    return {
+        message: 'OK',
+    }
 }
