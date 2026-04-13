@@ -1,21 +1,16 @@
 import { api, endpoint, bearer, tags } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { UserBody, UserResponseMessage } from '../../../../model/body/user/index.js'
+import { UserResponseMessage } from '../../../../model/body/user/index.js'
 import { UserIdParam } from '../../../../model/params/user/index.js'
-import { requireStaffProfileRole } from '../../../../app/jwt/handler.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
+import { requireRoles } from '../../../../app/jwt/handler.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.admin],
-            [AuthStaffProfileRole.enum.super_admin]
-        )
+        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const { userId } = request.params
         return await bus.auth.superAdmin.deleteOne(userId)
     },

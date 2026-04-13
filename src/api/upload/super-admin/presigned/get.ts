@@ -1,7 +1,6 @@
 import { api, endpoint, bearer, tags } from '../../../../app/api.js'
-import { requireRoles, requireStaffProfileRole } from '../../../../app/jwt/handler.js'
+import { requireRoles } from '../../../../app/jwt/handler.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { PresignedImageUploadResponse } from '../../../../model/body/cloudinary/index.js'
 import { service } from '../../../../service/index.js'
 import { PresignedImageUploadQuery } from '../../../../model/query/presign/index.js'
@@ -17,11 +16,7 @@ api.route({
         },
     },
     handler: async request => {
-        const userInfo = requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.admin],
-            [AuthStaffProfileRole.enum.super_admin]
-        )
+        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.super_admin])
 
         const { folder, id } = request.query
         return service.cloudinary.presigned.presignedUpload(folder, id)

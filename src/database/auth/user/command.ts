@@ -11,6 +11,7 @@ import { AuthCompanyAdminSignUpBody } from '../../../model/body/auth/index.js'
 import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
+import { service } from '../../../service/index.js'
 
 export async function signUp(params: AuthUserTableInsert) {
     try {
@@ -112,12 +113,20 @@ export async function signUpCompanyAdmin(
             trx
         )
 
+
+        const fcmTokens = await dal.auth.userDevice.cmd.findBySuperAdmin(trx)
+
+        await service.firebase.sendFcm.sendFcm({
+            fcmTokens: fcmTokens.map(fcmToken => fcmToken.fcmToken),
+            title: 'Verify account admin company',
+            body: 'Please verify your account to access the app',
+            data: {
+                id: user.id.toString(),
+            },
+        })
+
         return {
-            message:
-                staffRole === AuthStaffProfileRole.enum.super_admin
-                    ? 'Please contact the business to activate your account'
-                    : 'Please contact the administrator to activate your account',
-            user: user,
+            message: 'Please contact the business to activate your account',
         }
     })
 }
@@ -181,8 +190,7 @@ export async function signUpCompanyAdminWithCompany(
         )
 
         return {
-            message: 'OK',
-            user,
+            message: 'Please contact admin company to activate your account',
         }
     })
 }

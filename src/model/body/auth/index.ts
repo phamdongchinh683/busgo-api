@@ -46,7 +46,7 @@ export const AuthCompanyAdminSignUpBody = z.object({
     fullName: z.string().min(7),
     contactInfo: ContactInfo,
     password: AuthPassword,
-    companyId: OrganizationBusCompanyId.nullable(),
+    companyId: OrganizationBusCompanyId,
 })
 
 export type AuthCompanyAdminSignUpBody = z.infer<typeof AuthCompanyAdminSignUpBody>

@@ -1,6 +1,7 @@
 import { AuthStaffDetailTable } from '../database/auth/staff_detail/table.js'
 import { AuthStaffProfileTable } from '../database/auth/staff_profile/table.js'
 import { AuthUserTable } from '../database/auth/user/table.js'
+import { AuthUserDeviceTable } from '../database/auth/user_device/table.js'
 import { PaymentTable } from '../database/payment/payment/table.js'
 import { BookingTable } from '../database/booking/booking/table.js'
 import { BookingTicketTable } from '../database/booking/ticket/table.js'
@@ -19,6 +20,7 @@ import { OrganizationCompanyDriverTable } from '../database/organization/company
 
 export interface Database {
     'auth.user': AuthUserTable
+    'auth.user_device': AuthUserDeviceTable
     'auth.staff_profile': AuthStaffProfileTable
     'auth.staff_detail': AuthStaffDetailTable
     'payment.payment': PaymentTable

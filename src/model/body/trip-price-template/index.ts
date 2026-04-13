@@ -28,14 +28,16 @@ export const TripPriceTemplateResponse = z.object({
 export type TripPriceTemplateResponse = z.infer<typeof TripPriceTemplateResponse>
 
 export const TripPriceTemplateListResponse = z.object({
-    prices: z.array(TripPriceTemplateItem.extend({
-        fromStationAddress: z.string(),
-        fromStationCity: z.string(),
-        toStationAddress: z.string(),
-        toStationCity: z.string(),
-        routeFromLocation: z.string(),
-        routeToLocation: z.string(),
-    })),
+    prices: z.array(
+        TripPriceTemplateItem.extend({
+            fromStationAddress: z.string(),
+            fromStationCity: z.string(),
+            toStationAddress: z.string(),
+            toStationCity: z.string(),
+            routeFromLocation: z.string(),
+            routeToLocation: z.string(),
+        })
+    ),
     next: OperationTripPriceTemplateId.nullable(),
 })
 

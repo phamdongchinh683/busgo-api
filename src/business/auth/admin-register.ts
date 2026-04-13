@@ -11,5 +11,5 @@ export async function register(params: AuthCompanyAdminSignUpBody, role: AuthSta
         status: AuthUserStatus.enum.inactive,
         role: AuthUserRole.enum.admin,
     }
-    return dal.auth.user.cmd.signUpCompanyAdmin(data, role)
+    return dal.auth.user.cmd.signUpCompanyAdminWithCompany(data, role, params.companyId)
 }
