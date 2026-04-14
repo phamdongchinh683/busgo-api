@@ -1,1 +1,1 @@
-export * as sendFcm from './send-fcm/index.js'
+export * as fcm from './send-fcm/index.js'

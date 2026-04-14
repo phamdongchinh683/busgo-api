@@ -28,7 +28,7 @@ export async function getDashboard() {
 }
 
 export async function listCompanyAdmins(query: CompanyAdminQuery) {
-    const result = await dal.auth.staffDetail.query.findAllCompanyAdmins(query)
+    const result = await dal.auth.staffProfile.query.findAllCompanyAdmins(query)
     const { data, next } = utils.common.paginateByCursor(result, query.limit)
     return {
         admins: data,

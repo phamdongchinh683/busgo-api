@@ -74,14 +74,17 @@ export async function signUpCompanyAdmin(
             )
 
             await Promise.all([
-                dal.auth.staffProfile.cmd.upsertOne({ userId: newUser.id, role: staffRole }, trx),
-                dal.auth.staffDetail.cmd.upsertOne(
+                dal.auth.staffProfile.cmd.upsertOne(
                     {
                         userId: newUser.id,
-                        phone,
-                        email,
+                        role: staffRole,
                         status: AuthUserStatus.enum.inactive,
-                        companyId: params.companyId ?? null,
+                        staffCode: utils.random.generateRandomNumber(6).toString(),
+                        position: '',
+                        department: '',
+                        identityNumber: '',
+                        hireDate: utils.time.getNow().toDate(),
+                        companyId: params.companyId,
                     },
                     trx
                 ),
@@ -116,21 +119,24 @@ export async function signUpCompanyAdmin(
         }
     })
 
-    void service.email.sender
-        .sendMail({
-        subject: 'Verify Account',
-        text: 'Please verify account to access the app',
-        html: service.email.template.emailRequestAccess({
-            id: user.id,
-            fullName: user.fullName,
+    const userDevice = await dal.auth.userDevice.cmd.findDeviceSuperAdmin()
+
+    await Promise.allSettled([
+        dal.auth.notification.cmd.insertOne({
+            userId: userDevice[0].userId,
+            title: 'New Account Request',
+            body: 'A new account request has been made...',
+            isRead: false,
         }),
-    })
-        .catch(error => {
-            console.error(error)
-        })
+        service.firebase.fcm.sendFcm({
+            fcmTokens: userDevice.map(device => device.fcmToken),
+            title: 'New Account Request',
+            body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        }),
+    ])
 
     return {
-        message: 'Sent email to business to activate your account',
+        message: 'Sent request to super admin to verify your account',
     }
 }
 
@@ -150,25 +156,34 @@ export async function signUpCompanyAdminWithCompany(
                     password: utils.password.hashPassword(params.password),
                     phone: phone,
                     email: email,
-                    status: AuthUserStatus.enum.active,
+                    status: AuthUserStatus.enum.inactive,
                     role: AuthUserRole.enum.admin,
                 },
                 trx
             )
+            await dal.auth.staffProfile.cmd.upsertOne(
+                {
+                    userId: newUser.id,
+                    role: staffRole,
+                    companyId,
+                    status: AuthUserStatus.enum.inactive,
+                    staffCode: utils.random.generateRandomNumber(6).toString(),
+                    position: '',
+                    department: '',
+                    identityNumber: '',
+                    hireDate: utils.time.getNow().toDate(),
+                },
+                trx
+            )
 
-            await Promise.all([
-                dal.auth.staffProfile.cmd.upsertOne({ userId: newUser.id, role: staffRole }, trx),
-                dal.auth.staffDetail.cmd.upsertOne(
-                    {
-                        userId: newUser.id,
-                        companyId,
-                        phone,
-                        email,
-                        status: AuthUserStatus.enum.active,
-                    },
-                    trx
-                ),
-            ])
+            const companyAdmin = await dal.auth.staffProfile.cmd.getOneByCompanyId(companyId)
+            
+            await dal.auth.notification.cmd.insertOne({
+                userId: companyAdmin.userId,
+                title: 'New Account Request',
+                body: 'A new account request has been made for your company. Please verify the account to access the app.',
+                isRead: false,
+            })
 
             return newUser
         } catch (error) {
@@ -196,23 +211,8 @@ export async function signUpCompanyAdminWithCompany(
         }
     })
 
-    const companyAdmin = await dal.auth.staffDetail.cmd.getOneByCompanyId(params.companyId)
-
-    void service.email.sender
-        .sendMail({
-            to: companyAdmin.email,
-            subject: 'Verify Account',
-            text: 'Verify account to access the app',
-            html: service.email.template.emailRequestAccess({
-                id: user.id,
-                fullName: user.fullName,
-            }),
-        })
-        .catch(error => {
-            console.error(error)
-        })
     return {
-        message: 'Sent email to company admin to activate your account',
+        message: 'Sent request to company admin to verify your account',
     }
 }
 
@@ -301,13 +301,13 @@ export async function verify(params: {
 }) {
     return db.transaction().execute(async trx => {
         const result = await trx
-            .updateTable('auth.staff_detail as sd')
+            .updateTable('auth.staff_profile as sp')
             .set({ status: params.status })
             .where(eb => {
                 const cond = []
-                cond.push(eb('sd.userId', '=', params.id))
+                cond.push(eb('sp.userId', '=', params.id))
                 if (params.companyId) {
-                    cond.push(eb('sd.companyId', '=', params.companyId))
+                    cond.push(eb('sp.companyId', '=', params.companyId))
                 }
                 return eb.and(cond)
             })
