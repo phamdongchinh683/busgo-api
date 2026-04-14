@@ -24,6 +24,13 @@ function getTransporter() {
 }
 
 export function sendMail(params: { to?: string; subject: string; text?: string; html?: string }) {
+    console.log({
+        from: process.env.MAIL_FROM,
+        to: params.to ?? to,
+        user: user,
+        pass: pass,
+        port: port,
+    })
     return getTransporter().sendMail({
         from: `"MyCompany" <${user}>`,
         to: params.to ?? to,
