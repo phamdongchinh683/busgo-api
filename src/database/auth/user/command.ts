@@ -121,22 +121,20 @@ export async function signUpCompanyAdmin(
 
     const userDevice = await dal.auth.userDevice.cmd.findDeviceSuperAdmin()
 
-    await Promise.allSettled([
-        dal.auth.notification.cmd.insertOne({
-            userId: userDevice[0].userId,
-            title: 'New Account Request For Company Admin',
-            body: 'A new account request has been made for your company. Please verify the account to access the app.',
-            isRead: false,
-        }),
-        service.firebase.fcm.sendFcm({
-            fcmTokens: userDevice.map(device => device.fcmToken),
-            title: 'New Account Request',
-            body: 'A new account request has been made for your company. Please verify the account to access the app.',
-            data: {
-                userId: user.id.toString(),
-            },
-        }),
-    ])
+    await dal.auth.notification.cmd.insertOne({
+        userId: userDevice[0].userId,
+        title: 'New Account Request For Company Admin',
+        body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        isRead: false,
+    })
+    await service.firebase.fcm.sendFcm({
+        fcmTokens: userDevice.map(device => device.fcmToken),
+        title: 'New Account Request',
+        body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        data: {
+            userId: user.id.toString(),
+        },
+    })
 
     return {
         message: 'Sent request to super admin to verify your account',
