@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer'
 
 let transporter: nodemailer.Transporter | undefined
 
-const port = Number(process.env.MAIL_PORT ?? '')
+const port = Number(process.env.MAIL_PORT ?? 587)
 const user = process.env.MAIL_USER ?? ''
 const pass = process.env.MAIL_PASS ?? ''
 const to = process.env.MAIL_TO ?? ''
@@ -19,6 +19,9 @@ function getTransporter() {
             auth: {
                 user: user,
                 pass: pass,
+            },
+            tls: {
+                rejectUnauthorized: false,
             },
         })
     }
