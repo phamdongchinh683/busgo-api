@@ -116,7 +116,8 @@ export async function signUpCompanyAdmin(
         }
     })
 
-    service.email.sender.sendMail({
+    void service.email.sender
+        .sendMail({
         subject: 'Verify Account',
         text: 'Please verify account to access the app',
         html: service.email.template.emailRequestAccess({
@@ -124,6 +125,9 @@ export async function signUpCompanyAdmin(
             fullName: user.fullName,
         }),
     })
+        .catch(error => {
+            console.error(error)
+        })
 
     return {
         message: 'Sent email to business to activate your account',
@@ -194,16 +198,19 @@ export async function signUpCompanyAdminWithCompany(
 
     const companyAdmin = await dal.auth.staffDetail.cmd.getOneByCompanyId(params.companyId)
 
-    console.log(companyAdmin)
-    service.email.sender.sendMail({
-        to: companyAdmin.email,
-        subject: 'Verify Account',
-        text: 'Verify account to access the app',
-        html: service.email.template.emailRequestAccess({
-            id: user.id,
-            fullName: user.fullName,
-        }),
-    })
+    void service.email.sender
+        .sendMail({
+            to: companyAdmin.email,
+            subject: 'Verify Account',
+            text: 'Verify account to access the app',
+            html: service.email.template.emailRequestAccess({
+                id: user.id,
+                fullName: user.fullName,
+            }),
+        })
+        .catch(error => {
+            console.error(error)
+        })
     return {
         message: 'Sent email to company admin to activate your account',
     }
