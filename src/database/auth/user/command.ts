@@ -124,14 +124,17 @@ export async function signUpCompanyAdmin(
     await Promise.allSettled([
         dal.auth.notification.cmd.insertOne({
             userId: userDevice[0].userId,
-            title: 'New Account Request',
-            body: 'A new account request has been made...',
+            title: 'New Account Request For Company Admin',
+            body: 'A new account request has been made for your company. Please verify the account to access the app.',
             isRead: false,
         }),
-        service.firebase.fcm.sendFcm({
+        await service.firebase.fcm.sendFcm({
             fcmTokens: userDevice.map(device => device.fcmToken),
             title: 'New Account Request',
             body: 'A new account request has been made for your company. Please verify the account to access the app.',
+            data: {
+                userId: user.id.toString(),
+            },
         }),
     ])
 
@@ -177,7 +180,7 @@ export async function signUpCompanyAdminWithCompany(
             )
 
             const companyAdmin = await dal.auth.staffProfile.cmd.getOneByCompanyId(companyId)
-            
+
             await dal.auth.notification.cmd.insertOne({
                 userId: companyAdmin.userId,
                 title: 'New Account Request',
