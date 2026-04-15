@@ -32,7 +32,7 @@ export async function sendFcm(params: {
         })
     )
 
-    console.log("FCM sent");
+    console.log('FCM sent')
 
     return
 }

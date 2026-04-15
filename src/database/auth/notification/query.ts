@@ -11,12 +11,12 @@ export async function findAllByUserId(query: {
     return db
         .selectFrom('auth.notification')
         .selectAll()
-        .where('userId', '=', userId)
         .where(eb => {
             const cond = []
             if (next) {
                 cond.push(eb('id', '>', next))
             }
+            cond.push(eb('userId', '=', userId))
             return eb.and(cond)
         })
         .orderBy('createdAt', 'desc')
