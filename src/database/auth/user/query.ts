@@ -165,8 +165,11 @@ export function findAll(query: UserListQuery) {
         .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
         .where(eb => {
             const cond = []
+            cond.push(eb('u.role', '!=', AuthUserRole.enum.super_admin))
+            if (role && role !== AuthUserRole.enum.super_admin) {
+                cond.push(eb('u.role', '=', role))
+            }
             if (status) cond.push(eb('u.status', '=', status))
-            if (role) cond.push(eb('u.role', '=', role))
             if (companyId) cond.push(eb('sp.companyId', '=', companyId))
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
