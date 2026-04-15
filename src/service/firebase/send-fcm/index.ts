@@ -10,7 +10,7 @@ export async function sendFcm(params: {
     const projectId = process.env.FIREBASE_PROJECT_ID ?? ''
     const endpoint = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
 
-    await Promise.all(
+    await Promise.allSettled(
         params.fcmTokens.map(async token => {
             await fetch(endpoint, {
                 method: 'POST',
@@ -31,8 +31,5 @@ export async function sendFcm(params: {
             })
         })
     )
-
-    console.log('FCM sent')
-
-    return
+    return;
 }

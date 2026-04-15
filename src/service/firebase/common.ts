@@ -19,7 +19,7 @@ function normalizePrivateKey(key: string) {
 }
 
 function createJwtAssertion(params: { clientEmail: string; privateKey: string }) {
-    const now = Math.floor(Date.now() / 1000)
+    const now = utils.time.getNow().unix()
 
     const header = { alg: 'RS256', typ: 'JWT' }
     const payload = {
@@ -46,7 +46,7 @@ let cachedAccessToken: { value: string; expiresAtMs: number } | undefined
 
 export async function getFirebaseAccessToken() {
     const now = utils.time.getNow().unix()
-    if (cachedAccessToken && cachedAccessToken.expiresAtMs - 30_000 > now) {
+    if (cachedAccessToken && cachedAccessToken.expiresAtMs - 30 > now) {
         return cachedAccessToken.value
     }
 
@@ -69,9 +69,10 @@ export async function getFirebaseAccessToken() {
     }
 
     const json = await res.json()
+
     cachedAccessToken = {
         value: json.access_token,
-        expiresAtMs: now + json.expires_in * 1000,
+        expiresAtMs: now + 5 * 60,
     }
     return cachedAccessToken.value
 }
