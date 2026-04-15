@@ -123,7 +123,7 @@ export async function signUpCompanyAdmin(
 
    const notification = await dal.auth.notification.cmd.insertOne({
         userId: userDevice[0].userId,
-        title: 'New Account Request For Company Admin',
+        title: `New Account Request from ${params.fullName}`,
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
         isRead: false,
     })
