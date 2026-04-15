@@ -16,14 +16,14 @@ const UP = sql`
 	CREATE UNIQUE INDEX company_drivers_user_id_company_id_uidx ON organization.company_driver (user_id, company_id);
 
 	CREATE TRIGGER company_drivers_set_timestamps
-	BEFORE INSERT OR UPDATE ON organization.company_drivers
+	BEFORE INSERT OR UPDATE ON organization.company_driver
 	FOR EACH ROW
 	EXECUTE FUNCTION set_timestamps();
 `
 
 const DOWN = sql`
-	DROP TRIGGER IF EXISTS company_drivers_set_timestamps ON organization.company_drivers;
-	DROP TABLE IF EXISTS organization.company_drivers;
+	DROP TRIGGER IF EXISTS company_drivers_set_timestamps ON organization.company_driver;
+	DROP TABLE IF EXISTS organization.company_driver;
 `
 
 export async function up(db: Kysely<any>): Promise<void> {
