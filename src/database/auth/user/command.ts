@@ -129,10 +129,11 @@ export async function signUpCompanyAdmin(
     })
     await service.firebase.fcm.sendFcm({
         fcmTokens: userDevice.map(device => device.fcmToken),
-        title: 'New Account Request',
+        title: `New Account Request from ${params.fullName}`,
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
         data: {
             userId: user.id.toString(),
+            id: user.id.toString(),
         },
     })
 
