@@ -36,3 +36,11 @@ export async function deleteOne(id: OrganizationBusCompanyId, trx?: Transaction<
         .returningAll()
         .executeTakeFirstOrThrow()
 }
+
+export async function getOne(id: OrganizationBusCompanyId, trx?: Transaction<Database>) {
+    return (trx ?? db)
+        .selectFrom('organization.bus_company')
+        .selectAll()
+        .where('id', '=', id)
+        .executeTakeFirstOrThrow()
+}

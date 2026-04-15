@@ -1,1 +1,4 @@
 export * as vnpay from './vnpay/index.js'
+export * as cloudinary from './cloudinary/index.js'
+export * as email from './email/index.js'
+export * as firebase from './firebase/index.js'

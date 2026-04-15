@@ -1,16 +1,10 @@
+import z from 'zod'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
-import { z } from 'zod'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { Email, Phone } from '../../common.js'
-import {
-    AuthStaffProfileId,
-    AuthStaffProfileRole,
-} from '../../../database/auth/staff_profile/type.js'
+import { AuthStaffProfileId } from '../../../database/auth/staff_profile/type.js'
 
 export const ProfileUpdateBody = z.object({
     fullName: z.string().optional(),
-    email: Email.optional(),
-    phone: Phone.optional(),
     status: AuthUserStatus.optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
     staffCode: z.string().nullable().optional(),
@@ -22,20 +16,28 @@ export const ProfileUpdateBody = z.object({
 
 export type ProfileUpdateBody = z.infer<typeof ProfileUpdateBody>
 
-export const ProfileResponse = z.object({
-    user: ProfileUpdateBody,
-})
+export const ProfileResponse = z
+    .object({
+        user: ProfileUpdateBody.nullable(),
+    })
+    .optional()
+
 export type ProfileResponse = z.infer<typeof ProfileResponse>
 
-export const StaffRoleUpdateBody = z.object({
-    role: AuthStaffProfileRole,
-})
-export type StaffRoleUpdateBody = z.infer<typeof StaffRoleUpdateBody>
-
 export const StaffRoleResponse = z.object({
-    user: z.object({
-        id: AuthStaffProfileId,
-        role: AuthStaffProfileRole,
-    }),
+    user: ProfileUpdateBody,
 })
+
 export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
+
+export const StaffListResponse = z.object({
+    staff: z.array(
+        ProfileUpdateBody.extend({
+            id: AuthStaffProfileId,
+            userId: AuthUserId,
+        })
+    ),
+    next: AuthStaffProfileId.nullable(),
+})
+
+export type StaffListResponse = z.infer<typeof StaffListResponse>

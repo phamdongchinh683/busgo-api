@@ -1,6 +1,7 @@
-import { AuthStaffDetailTable } from '../database/auth/staff_detail/table.js'
+import { AuthNotificationTable } from '../database/auth/notification/table.js'
 import { AuthStaffProfileTable } from '../database/auth/staff_profile/table.js'
 import { AuthUserTable } from '../database/auth/user/table.js'
+import { AuthUserDeviceTable } from '../database/auth/user_device/table.js'
 import { PaymentTable } from '../database/payment/payment/table.js'
 import { BookingTable } from '../database/booking/booking/table.js'
 import { BookingTicketTable } from '../database/booking/ticket/table.js'
@@ -15,11 +16,13 @@ import { OperationRouteTable } from '../database/operation/route/table.js'
 import { OperationTripScheduleTable } from '../database/operation/trip-schedule/table.js'
 import { OperationTripStopTemplateTable } from '../database/operation/trip-stop-template/table.js'
 import { OperationTripPriceTemplateTable } from '../database/operation/trip_price_template/table.js'
+import { OrganizationCompanyDriverTable } from '../database/organization/company_driver/table.js'
 
 export interface Database {
     'auth.user': AuthUserTable
+    'auth.user_device': AuthUserDeviceTable
+    'auth.notification': AuthNotificationTable
     'auth.staff_profile': AuthStaffProfileTable
-    'auth.staff_detail': AuthStaffDetailTable
     'payment.payment': PaymentTable
     'booking.booking': BookingTable
     'booking.coupon': BookingCouponTable
@@ -34,4 +37,5 @@ export interface Database {
     'operation.trip_schedule': OperationTripScheduleTable
     'operation.trip_stop_template': OperationTripStopTemplateTable
     'operation.trip_price_template': OperationTripPriceTemplateTable
+    'organization.company_driver': OrganizationCompanyDriverTable
 }

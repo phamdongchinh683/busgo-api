@@ -7,12 +7,10 @@ import {
     validatorCompiler,
     type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
-import { readdirSync, statSync } from 'fs'
+import { readdir, stat } from 'fs/promises'
 import path, { dirname, parse, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
 import { errorHandlerPlugin } from './plugins/error-handler.js'
-import QueryString from 'qs'
-import _ from 'lodash'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
@@ -27,12 +25,6 @@ const isProduction = process.env.NODE_ENV === 'production'
 
 const api = Fastify({
     trustProxy: true,
-    routerOptions: {
-        querystringParser: (query: string) => {
-            const parsed = QueryString.parse(query)
-            return parsed
-        },
-    },
     logger: {
         level: isProduction ? 'info' : 'debug',
     },
@@ -42,21 +34,29 @@ api.setValidatorCompiler(validatorCompiler)
 api.setSerializerCompiler(serializerCompiler)
 
 api.addHook('preHandler', async (request, reply) => {
-    const keys = ['body', 'headers', 'method', 'params', 'query', 'url']
-    const preHandler = _.pick(request, keys)
-    if (!request.url.includes('swagger') && !request.url.startsWith('/docs'))
+    if (!request.url.includes('swagger') && !request.url.startsWith('/docs')) {
+        const preHandler = {
+            method: request.method,
+            url: request.url,
+            params: request.params,
+            query: request.query,
+            body: request.body,
+            headers: request.headers,
+        }
         request.log.info({ preHandler })
+    }
 })
 
 api.addHook('preSerialization', async (request, reply, response) => {
-    if (!request.url.includes('swagger') && !request.url.startsWith('/docs'))
+    if (!request.url.includes('swagger') && !request.url.startsWith('/docs')) {
         request.log.info({
             preSerialization: {
-                response,
+                method: request.method,
+                url: request.url,
                 statusCode: reply.statusCode,
-                ..._.pick(request, ['method', 'url']),
             },
         })
+    }
     return response
 })
 
@@ -87,28 +87,35 @@ async function apiRouter(app: FastifyInstance) {
     const files: string[] = []
     const allowedExtensions = ['.ts', '.js']
 
-    const walk = (dir: string) => {
-        const entries = readdirSync(dir)
-        for (const entry of entries) {
-            const fullPath = path.join(dir, entry)
-            const stat = statSync(fullPath)
-            if (stat.isDirectory()) {
-                walk(fullPath)
-            } else if (stat.isFile() && allowedExtensions.includes(path.extname(fullPath))) {
-                files.push(fullPath)
-            }
-        }
+    const walk = async (dir: string): Promise<void> => {
+        const entries = await readdir(dir)
+        await Promise.all(
+            entries.map(async entry => {
+                const fullPath = path.join(dir, entry)
+                const statInfo = await stat(fullPath)
+                if (statInfo.isDirectory()) {
+                    await walk(fullPath)
+                } else if (
+                    statInfo.isFile() &&
+                    allowedExtensions.includes(path.extname(fullPath))
+                ) {
+                    files.push(fullPath)
+                }
+            })
+        )
     }
 
-    walk(apiDir)
+    await walk(apiDir)
 
     const registeredRoutes: Array<{ method: string; url: string; file: string }> = []
 
-    for (const file of files) {
-        const { method, url } = endpoint(file)
-        await import(pathToFileURL(file).href)
-        registeredRoutes.push({ method, url, file: relative(apiDir, file) })
-    }
+    await Promise.all(
+        files.map(async file => {
+            const { method, url } = endpoint(file)
+            await import(pathToFileURL(file).href)
+            registeredRoutes.push({ method, url, file: relative(apiDir, file) })
+        })
+    )
 }
 
 const start = async () => {
@@ -160,13 +167,11 @@ const start = async () => {
             swagger: `http://${host}:${port}/swagger/docs`,
         })
     } catch (err) {
-        api.log.error(err)
         process.exit(1)
     }
 }
 
 start().catch(err => {
-    console.error(err)
     process.exit(1)
 })
 

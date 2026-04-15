@@ -30,12 +30,23 @@ export const errorHandlerPlugin = fastifyPlugin((app: FastifyInstance) => {
             err instanceof HttpErr.Unauthorized ||
             err instanceof HttpErr.NotFound ||
             err instanceof HttpErr.TooManyRequests
-        )
+        ) {
+            console.log({
+                businessError: {
+                    method: request.method,
+                    url: request.url,
+                    status: err.status,
+                    errorCode: err.errorCode,
+                    message: err.message,
+                    extra: err.extra,
+                },
+            })
             return reply.code(err.status).send({
                 errorCode: err.errorCode,
                 extra: err.extra,
                 message: err.message,
             })
+        }
 
         if (err instanceof errorCodes.FST_ERR_CTP_INVALID_JSON_BODY) {
             return reply.status(400).send({

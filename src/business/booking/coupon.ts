@@ -9,12 +9,10 @@ import { utils } from '../../utils/index.js'
 import { HttpErr } from '../../app/index.js'
 import { CouponResponse } from '../../model/body/coupon/index.js'
 import { BookingCouponId, BookingDiscountType } from '../../database/booking/coupon/type.js'
-import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { OperationRouteId } from '../../database/operation/route/type.js'
 import { OperationTripScheduleId } from '../../database/operation/trip-schedule/type.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
-import { BookingCouponTableInsert } from '../../database/booking/coupon/table.js'
 
 export async function getCouponByCode(params: CouponCheckCodeQuery) {
     const coupon = await dal.booking.coupon.cmd.getCouponByCode(params)

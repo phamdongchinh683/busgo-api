@@ -30,9 +30,9 @@ services:
     restart: always
     mem_limit: 768m
     environment:
-      POSTGRES_DB: app
-      POSTGRES_USER: app
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: bus-ticketing-system
+      POSTGRES_USER: bus-ticketing-system
+      POSTGRES_PASSWORD: Chinh123021312412
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:

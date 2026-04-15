@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
-import { requireStaffProfileRole } from '../../../../app/jwt/handler.js'
+import { requireRoles } from '../../../../app/jwt/handler.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { BusCompanyBody, BusCompanyResponse } from '../../../../model/body/bus-company/index.js'
 import { BusCompanyIdParam } from '../../../../model/params/bus-company/index.js'
 
@@ -17,11 +16,7 @@ api.route({
         },
     },
     handler: async request => {
-        requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.admin],
-            [AuthStaffProfileRole.enum.super_admin]
-        )
+        requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         return await bus.organization.busCompany.updateOne(request.params.id, request.body)
     },
 

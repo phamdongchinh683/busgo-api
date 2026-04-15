@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
-import { requireStaffProfileRole } from '../../../../app/jwt/handler.js'
+import { requireRoles } from '../../../../app/jwt/handler.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { UserIdParam } from '../../../../model/params/user/index.js'
 import { UserResponse, UserUpdateBody } from '../../../../model/body/user/index.js'
 
@@ -17,11 +16,7 @@ api.route({
         },
     },
     handler: async request => {
-        requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.admin],
-            [AuthStaffProfileRole.enum.super_admin]
-        )
+        requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         return await bus.auth.superAdmin.updateOne(request.params.userId, request.body)
     },
 
