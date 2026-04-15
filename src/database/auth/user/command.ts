@@ -121,7 +121,7 @@ export async function signUpCompanyAdmin(
 
     const userDevice = await dal.auth.userDevice.cmd.findDeviceSuperAdmin()
 
-    await dal.auth.notification.cmd.insertOne({
+   const notification = await dal.auth.notification.cmd.insertOne({
         userId: userDevice[0].userId,
         title: 'New Account Request For Company Admin',
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
@@ -133,7 +133,7 @@ export async function signUpCompanyAdmin(
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
         data: {
             userId: user.id.toString(),
-            id: user.id.toString(),
+            id: notification.id.toString(),
         },
     })
 
