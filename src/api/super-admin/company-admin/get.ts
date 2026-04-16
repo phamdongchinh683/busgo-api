@@ -9,12 +9,7 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
-    config: {
-        rateLimit: {
-            max: 10,
-            timeWindow: '1m',
-        },
-    },
+
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         return await bus.auth.superAdmin.listCompanyAdmins(request.query)
