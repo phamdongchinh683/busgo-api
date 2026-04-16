@@ -6,19 +6,7 @@ export const NotificationBody = z.object({
     userId: AuthUserId,
     title: z.string().min(1).max(255),
     body: z.string().min(1).max(2000),
-    data: z
-        .string()
-        .refine(
-            value => {
-                try {
-                    JSON.parse(value)
-                    return true
-                } catch {
-                    return false
-                }
-            },
-            { message: 'data must be a valid JSON string' }
-        )
+    data: z.string()
         .nullable()
         .optional(),
 })
