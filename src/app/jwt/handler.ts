@@ -2,10 +2,11 @@ import { createSigner, createVerifier } from 'fast-jwt'
 
 import { Unauthorized } from '../error-type.js'
 import { HttpErr } from '../index.js'
+import { db } from '../../datasource/db.js'
 
 const sign = createSigner({
     algorithm: 'HS256',
-    expiresIn: `36525 days`,
+    expiresIn: `7 days`,
     key: process.env.JWT_SECRET,
 })
 const verify = createVerifier({ key: process.env.JWT_SECRET })
@@ -18,7 +19,7 @@ interface Headers {
     authorization?: string
     Authorization?: string
 }
-const verifyToken = (headers: Headers): null => {
+const verifyToken = async (headers: Headers): Promise<any | null> => {
     const { authorization, Authorization } = headers
     const authHeader = authorization ?? Authorization
     if (!authHeader) return null
@@ -42,15 +43,20 @@ const verifyToken = (headers: Headers): null => {
         throw new Unauthorized('Invalid token payload')
     }
 
-    return userInfo
-}
+    const user = await db
+        .selectFrom('auth.user as u')
+        .select(['u.id', 'u.tokenVersion'])
+        .where('u.id', '=', userInfo.id)
+        .executeTakeFirst()
 
-export const optionalAuthenticate = (headers: Headers): null => {
-    const userInfo = verifyToken(headers)
+    if (!user || user.tokenVersion !== userInfo.tokenVersion) {
+        throw new Unauthorized('Token expired')
+    }
+
     return userInfo
 }
-export const requiredAuthenticate = (headers: Headers): any => {
-    const userInfo = verifyToken(headers)
+export const requiredAuthenticate = async (headers: Headers): Promise<any> => {
+    const userInfo = await verifyToken(headers)
     if (!userInfo) throw new Unauthorized()
     return userInfo
 }
@@ -65,20 +71,20 @@ export const generateTempToken = (payload: Record<string, unknown>): string => {
     return signTemp(payload)
 }
 
-export const requireRoles = (headers: Headers, roleNames: string[]): any => {
-    const userInfo = requiredAuthenticate(headers)
+export const requireRoles = async (headers: Headers, roleNames: string[]): Promise<any> => {
+    const userInfo = await requiredAuthenticate(headers)
     const { role } = userInfo
     if (!role) throw new HttpErr.Forbidden()
     if (!roleNames.includes(role)) throw new HttpErr.Forbidden()
     return userInfo
 }
 
-export const requireStaffProfileRole = (
+export const requireStaffProfileRole = async (
     headers: Headers,
     roleNames: string[],
     companyRoleNames: string[]
-): any => {
-    const userInfo = requiredAuthenticate(headers)
+): Promise<any> => {
+    const userInfo = await requiredAuthenticate(headers)
     const { staffProfileRole, role } = userInfo
     if (!roleNames.includes(role)) throw new HttpErr.Forbidden()
     if (!companyRoleNames.includes(staffProfileRole)) throw new HttpErr.Forbidden()

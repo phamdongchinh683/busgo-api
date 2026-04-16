@@ -14,7 +14,7 @@
 //         },
 //     },
 //     handler: async request => {
-//         const userInfo = requiredAuthenticate(request.headers)
+//         const userInfo = await requiredAuthenticate(request.headers)
 //         const { title, body, userId } = request.body
 //         return await bus.auth.notification.createNotification({ title, body, userId })
 //     },

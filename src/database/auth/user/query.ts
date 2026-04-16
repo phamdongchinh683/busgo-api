@@ -144,6 +144,7 @@ export function getOne(params: {
             'u.phone',
             'u.role',
             'u.status',
+            'u.tokenVersion',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
         ])

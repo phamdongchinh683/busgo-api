@@ -9,7 +9,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.customer])
+        const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.customer])
         return await bus.booking.booking.initBooking(request.body, userInfo.id)
     },
 

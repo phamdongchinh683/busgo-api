@@ -96,7 +96,7 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
 }
 
 export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
-    const { limit, next ,companyId} = query
+    const { limit, next, companyId } = query
     return db
         .selectFrom('auth.user as u')
         .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')

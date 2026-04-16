@@ -16,7 +16,7 @@ api.route({
         },
     },
     handler: async request => {
-        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.customer])
+        const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.customer])
         const ip = request.headers['x-forwarded-for']?.toString().split(',')[0] ?? request.ip
         return await bus.payment.payment.createPayment(request.query, userInfo.id, ip)
     },

@@ -15,7 +15,7 @@ api.route({
         },
     },
     handler: async request => {
-        const userInfo = requiredAuthenticate(request.headers)
+        const userInfo = await requiredAuthenticate(request.headers)
         return await bus.auth.notification.markNotificationAsRead(request.params.id, userInfo.id)
     },
     schema: {

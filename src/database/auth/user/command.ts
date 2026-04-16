@@ -319,6 +319,17 @@ export async function updatePassword(userId: AuthUserId, password: string) {
         .executeTakeFirstOrThrow()
 }
 
+export async function incrementTokenVersion(userId: AuthUserId, trx?: Transaction<Database>) {
+    return (trx ?? db)
+        .updateTable('auth.user')
+        .set({
+            tokenVersion: sql<number>`token_version + 1`,
+        })
+        .where('id', '=', userId)
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
+
 export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>) {
     return (trx ?? db)
         .deleteFrom('auth.user')

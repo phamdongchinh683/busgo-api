@@ -16,7 +16,7 @@ api.route({
         },
     },
     handler: async request => {
-        requireRoles(request.headers, [AuthUserRole.enum.customer])
+        await requireRoles(request.headers, [AuthUserRole.enum.customer])
         return await bus.booking.coupon.getCouponByCode(request.query)
     },
 
