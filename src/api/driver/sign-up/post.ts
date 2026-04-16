@@ -1,4 +1,5 @@
-import { AuthResponse, DriverSignUpBody } from '../../../model/body/auth/index.js'
+import { DriverSignUpBody } from '../../../model/body/auth/index.js'
+import { MessageResponse } from '../../../model/common.js'
 import { api, endpoint, tags } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
@@ -14,7 +15,7 @@ api.route({
 
     schema: {
         body: DriverSignUpBody,
-        response: { 200: AuthResponse },
+        response: { 200: MessageResponse },
         tags: tags(__filename),
     },
 })

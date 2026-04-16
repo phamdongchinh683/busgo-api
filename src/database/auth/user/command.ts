@@ -345,14 +345,22 @@ export async function insertDriver(
     return db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
             const user = await dal.auth.user.cmd.insertOne(params, trx)
-            await dal.organization.companyDriver.cmd.insertOne(
-                { userId: user.id, companyId, status: AuthUserStatus.enum.active },
+            await dal.organization.companyDriver.cmd.insertOne({ userId: user.id, companyId }, trx)
+
+            const companyAdmin = await dal.auth.staffProfile.cmd.getOneByCompanyId(companyId, trx)
+
+            await dal.auth.notification.cmd.insertOne(
+                {
+                    userId: companyAdmin.userId,
+                    title: 'New Driver Request',
+                    body: 'A new driver request has been made for your company. Please verify the driver to access the app.',
+                    isRead: false,
+                },
                 trx
             )
+
             return {
-                message: 'OK',
-                token: generateToken(user),
-                user,
+                message: 'Sent request to company admin to verify your account',
             }
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
