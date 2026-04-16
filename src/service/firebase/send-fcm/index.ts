@@ -31,5 +31,5 @@ export async function sendFcm(params: {
             })
         })
     )
-    return;
+    return
 }

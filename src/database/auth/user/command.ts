@@ -12,7 +12,6 @@ import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { service } from '../../../service/index.js'
-import { eq } from 'lodash'
 
 export async function signUp(params: AuthUserTableInsert) {
     try {
@@ -142,6 +141,83 @@ export async function signUpCompanyAdmin(
 
     return {
         message: 'Sent request to super admin to verify your account',
+    }
+}
+
+export async function createCompanyAccount(
+    params: AuthCompanyAdminSignUpBody,
+    staffRole: AuthStaffProfileRole,
+    companyId: OrganizationBusCompanyId
+) {
+    const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
+
+    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
+        try {
+            const newUser = await dal.auth.user.cmd.insertOne(
+                {
+                    username: params.username,
+                    fullName: params.fullName,
+                    password: utils.password.hashPassword(params.password),
+                    phone: phone,
+                    email: email,
+                    status: AuthUserStatus.enum.active,
+                    role: AuthUserRole.enum.admin,
+                },
+                trx
+            )
+            await dal.auth.staffProfile.cmd.upsertOne(
+                {
+                    userId: newUser.id,
+                    role: staffRole,
+                    companyId,
+                    status: AuthUserStatus.enum.active,
+                    staffCode: utils.random.generateRandomNumber(6).toString(),
+                    position: '',
+                    department: '',
+                    identityNumber: '',
+                    hireDate: utils.time.getNow().toDate(),
+                },
+                trx
+            )
+
+            await dal.auth.notification.cmd.insertOne(
+                {
+                    userId: newUser.id,
+                    title: 'Welcome to the app',
+                    body: 'Your account has been created by super admin and is ready to use',
+                    isRead: false,
+                },
+                trx
+            )
+
+            return newUser
+        } catch (error) {
+            if (error instanceof DatabaseError && error.code === '23505') {
+                if (error.constraint === 'user_username_key') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${params.username} has been registered before`,
+                        'USERNAME_ALREADY_EXISTS'
+                    )
+                }
+                if (error.constraint === 'user_email_key') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${email} has been registered before`,
+                        'EMAIL_ALREADY_EXISTS'
+                    )
+                }
+                if (error.constraint === 'user_phone_key') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${phone} has been registered before`,
+                        'PHONE_ALREADY_EXISTS'
+                    )
+                }
+            }
+            throw error
+        }
+    })
+
+    return {
+        message: 'OK',
     }
 }
 

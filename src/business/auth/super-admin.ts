@@ -37,7 +37,7 @@ export async function listCompanyAdmins(query: CompanyAdminQuery) {
 }
 
 export async function createCompanyAdmin(body: CompanyAdminCreateBody) {
-    return dal.auth.user.cmd.signUpCompanyAdminWithCompany(
+    return dal.auth.user.cmd.createCompanyAccount(
         body,
         AuthStaffProfileRole.enum.company_admin,
         body.companyId
