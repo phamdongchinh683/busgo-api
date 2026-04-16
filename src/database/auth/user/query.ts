@@ -43,15 +43,15 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
     return db
 
         .selectFrom('auth.user as u')
-        .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
-        .leftJoin('organization.bus_company as bc', 'bc.id', 'sp.companyId')
+        .leftJoin('organization.company_driver as cd', 'cd.userId', 'u.id')
+        .leftJoin('organization.bus_company as bc', 'bc.id', 'cd.companyId')
         .where(eb => {
             const cond = []
             cond.push(eb('u.role', '=', AuthUserRole.enum.driver))
             if (next) cond.push(eb('u.id', '>', next))
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (status) cond.push(eb('u.status', '=', status))
-            if (companyId) cond.push(eb('sp.companyId', '=', companyId))
+            if (companyId) cond.push(eb('cd.companyId', '=', companyId))
             return eb.and(cond)
         })
         .select(['u.id', 'u.fullName', 'u.email', 'u.phone', 'u.role', 'u.status'])
