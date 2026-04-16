@@ -22,17 +22,19 @@ export async function createNotification(params: {
     if (process.env.APP_ENV === 'production') {
         const userDevice = await dal.auth.userDevice.query.findAllByUserId(params.userId)
 
-        await service.firebase.fcm.sendFcm({
-            fcmTokens: userDevice.map(device => device.fcmToken),
-            title: params.title,
-            body: params.body,
-            data: params.data ? JSON.parse(params.data) : null,
-        })
-    }
+        if (userDevice.length > 0) {
+            await service.firebase.fcm.sendFcm({
+                fcmTokens: userDevice.map(device => device.fcmToken),
+                title: params.title,
+                body: params.body,
+                data: params.data ? JSON.parse(params.data) : null,
+            })
+        }
 
-    return {
-        message: 'OK',
-    }
+        return { message: 'OK' }
+    } 
+
+    return { message: 'OK' }
 }
 
 export async function getMyNotifications(query: NotificationQuery, userId: AuthUserId) {
