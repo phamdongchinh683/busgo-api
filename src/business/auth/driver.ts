@@ -16,7 +16,7 @@ export async function register(
         ...utils.common.parseContactInfo(body.contactInfo),
         password: utils.password.hashPassword(body.password),
         role,
-        status: AuthUserStatus.enum.active,
+        status: AuthUserStatus.enum.inactive,
     }
 
     return dal.auth.user.cmd.insertDriver(data, companyId)

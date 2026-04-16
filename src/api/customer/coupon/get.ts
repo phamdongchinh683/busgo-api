@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        requireRoles(request.headers, [AuthUserRole.enum.customer])
+        await requireRoles(request.headers, [AuthUserRole.enum.customer])
         return await bus.booking.coupon.getCoupons(request.query)
     },
 

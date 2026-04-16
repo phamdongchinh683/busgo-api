@@ -12,7 +12,6 @@ import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { service } from '../../../service/index.js'
-import { eq } from 'lodash'
 
 export async function signUp(params: AuthUserTableInsert) {
     try {
@@ -125,6 +124,9 @@ export async function signUpCompanyAdmin(
         userId: userDevice[0].userId,
         title: `New Account Request from ${params.fullName}`,
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        data: JSON.stringify({
+            userNewAccountId: user.id.toString(),
+        }),
         isRead: false,
     })
     await service.firebase.fcm.sendFcm({
@@ -132,13 +134,90 @@ export async function signUpCompanyAdmin(
         title: `New Account Request from ${params.fullName}`,
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
         data: {
-            userId: user.id.toString(),
+            userNewAccountId: user.id.toString(),
             id: notification.id.toString(),
         },
     })
 
     return {
         message: 'Sent request to super admin to verify your account',
+    }
+}
+
+export async function createCompanyAccount(
+    params: AuthCompanyAdminSignUpBody,
+    staffRole: AuthStaffProfileRole,
+    companyId: OrganizationBusCompanyId
+) {
+    const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
+
+    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
+        try {
+            const newUser = await dal.auth.user.cmd.insertOne(
+                {
+                    username: params.username,
+                    fullName: params.fullName,
+                    password: utils.password.hashPassword(params.password),
+                    phone: phone,
+                    email: email,
+                    status: AuthUserStatus.enum.active,
+                    role: AuthUserRole.enum.admin,
+                },
+                trx
+            )
+            await dal.auth.staffProfile.cmd.upsertOne(
+                {
+                    userId: newUser.id,
+                    role: staffRole,
+                    companyId,
+                    status: AuthUserStatus.enum.active,
+                    staffCode: utils.random.generateRandomNumber(6).toString(),
+                    position: '',
+                    department: '',
+                    identityNumber: '',
+                    hireDate: utils.time.getNow().toDate(),
+                },
+                trx
+            )
+
+            await dal.auth.notification.cmd.insertOne(
+                {
+                    userId: newUser.id,
+                    title: 'Welcome to the app',
+                    body: 'Your account has been created by super admin and is ready to use',
+                    isRead: false,
+                },
+                trx
+            )
+
+            return newUser
+        } catch (error) {
+            if (error instanceof DatabaseError && error.code === '23505') {
+                if (error.constraint === 'user_username_key') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${params.username} has been registered before`,
+                        'USERNAME_ALREADY_EXISTS'
+                    )
+                }
+                if (error.constraint === 'user_email_key') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${email} has been registered before`,
+                        'EMAIL_ALREADY_EXISTS'
+                    )
+                }
+                if (error.constraint === 'user_phone_key') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${phone} has been registered before`,
+                        'PHONE_ALREADY_EXISTS'
+                    )
+                }
+            }
+            throw error
+        }
+    })
+
+    return {
+        message: 'OK',
     }
 }
 
@@ -240,6 +319,17 @@ export async function updatePassword(userId: AuthUserId, password: string) {
         .executeTakeFirstOrThrow()
 }
 
+export async function incrementTokenVersion(userId: AuthUserId, trx?: Transaction<Database>) {
+    return (trx ?? db)
+        .updateTable('auth.user')
+        .set({
+            tokenVersion: sql<number>`token_version + 1`,
+        })
+        .where('id', '=', userId)
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
+
 export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>) {
     return (trx ?? db)
         .deleteFrom('auth.user')
@@ -255,14 +345,22 @@ export async function insertDriver(
     return db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
             const user = await dal.auth.user.cmd.insertOne(params, trx)
-            await dal.organization.companyDriver.cmd.insertOne(
-                { userId: user.id, companyId, status: AuthUserStatus.enum.active },
+            await dal.organization.companyDriver.cmd.insertOne({ userId: user.id, companyId }, trx)
+
+            const companyAdmin = await dal.auth.staffProfile.cmd.getOneByCompanyId(companyId, trx)
+
+            await dal.auth.notification.cmd.insertOne(
+                {
+                    userId: companyAdmin.userId,
+                    title: 'New Driver Request',
+                    body: 'A new driver request has been made for your company. Please verify the driver to access the app.',
+                    isRead: false,
+                },
                 trx
             )
+
             return {
-                message: 'OK',
-                token: generateToken(user),
-                user,
+                message: 'Sent request to company admin to verify your account',
             }
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {

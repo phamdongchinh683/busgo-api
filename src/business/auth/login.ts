@@ -31,7 +31,10 @@ export async function byUsernameEmailOrPhone(params: AuthSignInBody) {
     }
     return {
         message: 'OK',
-        token: generateToken(user),
+        token: generateToken({
+            ...user,
+            tokenVersion: user.tokenVersion,
+        }),
         user,
     }
 }

@@ -11,7 +11,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        requireRoles(request.headers, [AuthUserRole.enum.customer])
+        await requireRoles(request.headers, [AuthUserRole.enum.customer])
         const { id } = request.params
         const { stopOrderPickup, stopOrderDropoff } = request.query
         return await bus.organization.seat.getSeats({ id, stopOrderPickup, stopOrderDropoff })

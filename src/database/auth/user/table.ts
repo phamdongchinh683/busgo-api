@@ -1,4 +1,4 @@
-import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
+import { ColumnType, GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 
@@ -11,6 +11,7 @@ export interface AuthUserTable extends Timestamps {
     phone: string
     role: AuthUserRole
     status: AuthUserStatus
+    tokenVersion: ColumnType<number, number | undefined, number>
 }
 
 export type AuthUserTableInsert = Insertable<AuthUserTable>

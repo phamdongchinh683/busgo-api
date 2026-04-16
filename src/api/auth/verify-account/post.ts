@@ -9,14 +9,9 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
-    config: {
-        rateLimit: {
-            max: 10,
-            timeWindow: '1m',
-        },
-    },
+
     handler: async request => {
-        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const { id, status } = request.body
         return await bus.auth.superAdmin.verifyAccount({
             id,

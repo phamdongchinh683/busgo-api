@@ -10,7 +10,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const { userId } = request.params
         return await bus.auth.superAdmin.deleteOne(userId)
     },

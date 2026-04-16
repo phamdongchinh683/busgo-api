@@ -2,19 +2,39 @@ import { AuthNotificationId } from '../../database/auth/notification/type.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { NotificationQuery } from '../../model/query/notification/index.js'
+import { service } from '../../service/index.js'
 import { utils } from '../../utils/index.js'
 
 export async function createNotification(params: {
     userId: AuthUserId
     title: string
     body: string
+    data?: string | null
 }) {
-    return await dal.auth.notification.cmd.insertOne({
+    await dal.auth.notification.cmd.insertOne({
         userId: params.userId,
         title: params.title,
         body: params.body,
         isRead: false,
+        data: params.data ?? null,
     })
+
+    if (process.env.APP_ENV === 'production') {
+        const userDevice = await dal.auth.userDevice.query.findAllByUserId(params.userId)
+
+        if (userDevice.length > 0) {
+            await service.firebase.fcm.sendFcm({
+                fcmTokens: userDevice.map(device => device.fcmToken),
+                title: params.title,
+                body: params.body,
+                data: params.data ? JSON.parse(params.data) : null,
+            })
+        }
+
+        return { message: 'OK' }
+    } 
+
+    return { message: 'OK' }
 }
 
 export async function getMyNotifications(query: NotificationQuery, userId: AuthUserId) {

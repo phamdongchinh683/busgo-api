@@ -7,14 +7,9 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
-    config: {
-        rateLimit: {
-            max: 10,
-            timeWindow: '1m',
-        },
-    },
+
     handler: async request => {
-        const userInfo = requiredAuthenticate(request.headers)
+        const userInfo = await requiredAuthenticate(request.headers)
         return await bus.auth.device.addDevice({
             userId: userInfo.id,
             fcmToken: request.body.fcmToken,

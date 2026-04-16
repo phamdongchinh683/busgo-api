@@ -21,6 +21,7 @@ export const UserInfo = z.object({
     email: Email,
     phone: Phone,
     role: AuthUserRole,
+    tokenVersion: z.number().int().nonnegative(),
     staffProfileRole: AuthStaffProfileRole.nullable().optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
     status: AuthUserStatus,

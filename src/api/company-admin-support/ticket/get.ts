@@ -12,7 +12,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = requireStaffProfileRole(
+        const userInfo = await requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]

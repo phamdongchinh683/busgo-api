@@ -2,6 +2,7 @@ import z from 'zod'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { AuthStaffProfileId } from '../../../database/auth/staff_profile/type.js'
+import { Email, Phone } from '../../common.js'
 
 export const ProfileUpdateBody = z.object({
     fullName: z.string().optional(),
@@ -10,7 +11,7 @@ export const ProfileUpdateBody = z.object({
     staffCode: z.string().nullable().optional(),
     position: z.string().nullable().optional(),
     department: z.string().nullable().optional(),
-    identityNumber: z.string().min(12).nullable().optional(),
+    identityNumber: z.string().nullable().optional(),
     hireDate: z.coerce.date().nullable().optional(),
 })
 
@@ -34,6 +35,9 @@ export const StaffListResponse = z.object({
     staff: z.array(
         ProfileUpdateBody.extend({
             id: AuthStaffProfileId,
+            fullName: z.string(),
+            email: Email,
+            phone: Phone,
             userId: AuthUserId,
         })
     ),

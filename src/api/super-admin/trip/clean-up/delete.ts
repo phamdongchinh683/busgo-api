@@ -9,7 +9,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         return await bus.operation.trip.cleanupTrips()
     },
     schema: {

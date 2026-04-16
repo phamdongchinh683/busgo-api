@@ -11,7 +11,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        requireRoles(request.headers, [AuthUserRole.enum.customer])
+        await requireRoles(request.headers, [AuthUserRole.enum.customer])
         const { fromStationId, stopOrder } = request.query
         const { id } = request.params
         return await bus.operation.tripSchedule.getDropoffStops(id, fromStationId, stopOrder)

@@ -13,7 +13,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        requireRoles(request.headers, [AuthUserRole.enum.driver])
+        await requireRoles(request.headers, [AuthUserRole.enum.driver])
         const { passengerId, id } = request.params
         return await bus.booking.ticket.checkInTicket({
             id: passengerId,
