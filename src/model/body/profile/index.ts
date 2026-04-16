@@ -10,7 +10,7 @@ export const ProfileUpdateBody = z.object({
     staffCode: z.string().nullable().optional(),
     position: z.string().nullable().optional(),
     department: z.string().nullable().optional(),
-    identityNumber: z.string().min(12).nullable().optional(),
+    identityNumber: z.string().nullable().optional(),
     hireDate: z.coerce.date().nullable().optional(),
 })
 
