@@ -96,7 +96,7 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
 }
 
 export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
-    const { limit, next } = query
+    const { limit, next ,companyId} = query
     return db
         .selectFrom('auth.user as u')
         .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
@@ -104,6 +104,7 @@ export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
         .where(eb => {
             const cond = []
             cond.push(eb('sp.role', '=', AuthStaffProfileRole.enum.company_admin))
+            if (companyId) cond.push(eb('sp.companyId', '=', companyId))
             if (next) cond.push(eb('u.id', '>', next))
             return eb.and(cond)
         })
