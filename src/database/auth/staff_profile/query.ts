@@ -48,7 +48,7 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
 
     return await db
         .selectFrom('auth.staff_profile as a')
-        .leftJoin('auth.user as u', 'a.userId', 'u.id')
+        .innerJoin('auth.user as u', 'a.userId', 'u.id')
         .select([
             'a.id',
             'a.userId',
@@ -56,6 +56,7 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
             'a.position',
             'a.department',
             'u.phone',
+            'u.fullName',
             'u.email',
             'a.identityNumber',
             'a.hireDate',
