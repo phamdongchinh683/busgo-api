@@ -125,6 +125,9 @@ export async function signUpCompanyAdmin(
         userId: userDevice[0].userId,
         title: `New Account Request from ${params.fullName}`,
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        data: JSON.stringify({
+            userNewAccountId: user.id.toString(),
+        }),
         isRead: false,
     })
     await service.firebase.fcm.sendFcm({
@@ -132,7 +135,7 @@ export async function signUpCompanyAdmin(
         title: `New Account Request from ${params.fullName}`,
         body: 'A new account request has been made for your company. Please verify the account to access the app.',
         data: {
-            userId: user.id.toString(),
+            userNewAccountId: user.id.toString(),
             id: notification.id.toString(),
         },
     })

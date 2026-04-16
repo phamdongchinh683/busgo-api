@@ -8,12 +8,14 @@ export async function createNotification(params: {
     userId: AuthUserId
     title: string
     body: string
+    data?: string | null
 }) {
     return await dal.auth.notification.cmd.insertOne({
         userId: params.userId,
         title: params.title,
         body: params.body,
         isRead: false,
+        data: params.data ?? null,
     })
 }
 

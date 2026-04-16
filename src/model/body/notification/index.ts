@@ -6,6 +6,21 @@ export const NotificationBody = z.object({
     userId: AuthUserId,
     title: z.string().min(1).max(255),
     body: z.string().min(1).max(2000),
+    data: z
+        .string()
+        .refine(
+            value => {
+                try {
+                    JSON.parse(value)
+                    return true
+                } catch {
+                    return false
+                }
+            },
+            { message: 'data must be a valid JSON string' }
+        )
+        .nullable()
+        .optional(),
 })
 
 export type NotificationBody = z.infer<typeof NotificationBody>
@@ -16,6 +31,7 @@ export const NotificationResponse = z.object({
     title: z.string(),
     body: z.string(),
     isRead: z.boolean(),
+    data: z.string().nullable(),
 })
 
 export type NotificationResponse = z.infer<typeof NotificationResponse>
