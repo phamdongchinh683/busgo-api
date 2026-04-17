@@ -26,3 +26,11 @@ export const PaymentDeleteResponse = z.object({
 })
 
 export type PaymentDeleteResponse = z.infer<typeof PaymentDeleteResponse>
+
+
+export const StripeBankAccountResponse = z.object({
+    message: z.string(),
+    accountId: z.string(),
+})
+
+export type StripeBankAccountResponse = z.infer<typeof StripeBankAccountResponse>

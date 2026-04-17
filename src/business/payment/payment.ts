@@ -157,3 +157,20 @@ export async function getPeriodRevenue(params: PeriodPaymentQuery) {
     const data = await dal.payment.payment.query.getPeriodRevenue(params)
     return { data: data }
 }
+
+export async function createStripePayment(userId: AuthUserId) {
+    const accountId = await service.stripe.connect.createConnectAccount(userId)
+    return {
+        message: 'OK',
+        accountId: accountId,
+    }
+}
+
+export async function linkStripeBankAccount(accountId: string) {
+    const account = await service.stripe.connect.linkBankAccount(accountId)
+
+    console.log(account)
+    return {
+        message: 'OK',
+    }
+}
