@@ -1,7 +1,7 @@
 import z from 'zod'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { AuthStaffProfileId } from '../../../database/auth/staff_profile/type.js'
+import { AuthStaffProfileId, AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 import { Email, Phone } from '../../common.js'
 
 export const ProfileUpdateBody = z.object({
@@ -39,6 +39,8 @@ export const StaffListResponse = z.object({
             email: Email,
             phone: Phone,
             userId: AuthUserId,
+            role: AuthStaffProfileRole,
+            status: AuthUserStatus,
         })
     ),
     next: AuthStaffProfileId.nullable(),

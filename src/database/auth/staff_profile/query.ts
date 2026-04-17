@@ -60,6 +60,8 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
             'u.email',
             'a.identityNumber',
             'a.hireDate',
+            'a.role',
+            'a.status',
         ])
         .where(eb => {
             const cond = []
