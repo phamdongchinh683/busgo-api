@@ -1,9 +1,9 @@
-import { api, endpoint, bearer, tags } from '../../../../app/api.js'
-import { requireRoles, requireStaffProfileRole } from '../../../../app/jwt/handler.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
-import { PresignedImageUploadResponse } from '../../../../model/body/cloudinary/index.js'
-import { service } from '../../../../service/index.js'
+import { api, endpoint, bearer, tags } from '../../../../../app/api.js'
+import { requireStaffProfileRole } from '../../../../../app/jwt/handler.js'
+import { AuthUserRole } from '../../../../../database/auth/user/type.js'
+import { AuthStaffProfileRole } from '../../../../../database/auth/staff_profile/type.js'
+import { PresignedImageUploadResponse } from '../../../../../model/body/cloudinary/index.js'
+import { service } from '../../../../../service/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 

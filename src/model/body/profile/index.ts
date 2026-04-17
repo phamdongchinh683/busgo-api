@@ -1,7 +1,10 @@
 import z from 'zod'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { AuthStaffProfileId, AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
+import {
+    AuthStaffProfileId,
+    AuthStaffProfileRole,
+} from '../../../database/auth/staff_profile/type.js'
 import { Email, Phone } from '../../common.js'
 
 export const ProfileUpdateBody = z.object({
@@ -47,3 +50,15 @@ export const StaffListResponse = z.object({
 })
 
 export type StaffListResponse = z.infer<typeof StaffListResponse>
+
+export const ProfileAccountResponse = z.object({
+    user: z.object({
+        fullName: z.string(),
+        email: Email,
+        phone: Phone,
+        status: AuthUserStatus,
+        accountStripeId: z.string().nullable(),
+    }),
+})
+
+export type ProfileAccountResponse = z.infer<typeof ProfileAccountResponse>

@@ -8,6 +8,8 @@ import { OrganizationBusCompanyId } from '../../database/organization/bus_compan
 import { utils } from '../../utils/index.js'
 import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
 import { ProfileUpdateBody } from '../../model/body/profile/index.js'
+import { service } from '../../service/index.js'
+import { HttpErr } from '../../app/index.js'
 
 export async function getProfile(userInfo: UserInfo) {
     return {
@@ -47,5 +49,31 @@ export async function getStaffRole(query: AuthProfileQuery, companyId: Organizat
 export async function updateStaffRole(id: AuthUserId, role: AuthStaffProfileRole) {
     return {
         user: await dal.auth.staffProfile.query.updateRole(id, role),
+    }
+}
+
+export async function getProfileAccount(userInfo: UserInfo) {
+    const user = await dal.auth.user.query.getOne({ id: userInfo.id })
+    if (!user) {
+        throw new HttpErr.NotFound('USER_NOT_FOUND')
+    }
+
+    let accountStripeId = user?.accountStripeId
+    if (!accountStripeId) {
+        const account = await service.stripe.connect.createConnectAccount({
+            email: user.email,
+            metadata: {},
+        })
+        await dal.auth.user.cmd.updateOne(userInfo.id, {
+            accountStripeId: account.id,
+        })
+        accountStripeId = account.id
+    }
+
+    return {
+        user: {
+            ...user,
+            accountStripeId: accountStripeId,
+        },
     }
 }

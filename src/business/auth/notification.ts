@@ -32,7 +32,7 @@ export async function createNotification(params: {
         }
 
         return { message: 'OK' }
-    } 
+    }
 
     return { message: 'OK' }
 }

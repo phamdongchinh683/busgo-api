@@ -27,10 +27,22 @@ export const PaymentDeleteResponse = z.object({
 
 export type PaymentDeleteResponse = z.infer<typeof PaymentDeleteResponse>
 
-
-export const StripeBankAccountResponse = z.object({
+export const StripeConnectResponse = z.object({
     message: z.string(),
-    accountId: z.string(),
+    url: z.string(),
 })
 
-export type StripeBankAccountResponse = z.infer<typeof StripeBankAccountResponse>
+export type StripeConnectResponse = z.infer<typeof StripeConnectResponse>
+
+export const StripeConnectStatusResponse = z.object({
+    message: z.string(),
+    accountId: z.string(),
+    detailsSubmitted: z.boolean(),
+    chargesEnabled: z.boolean(),
+    payoutsEnabled: z.boolean(),
+    currentlyDue: z.array(z.string()),
+    eventuallyDue: z.array(z.string()),
+    pastDue: z.array(z.string()),
+})
+
+export type StripeConnectStatusResponse = z.infer<typeof StripeConnectStatusResponse>

@@ -1,19 +1,39 @@
-import { stripe } from "../client/index.js";
-import { AuthUserId } from "../../../database/auth/user/type.js";
+import { stripe } from '../client/index.js'
 
-export async function createConnectAccount(userId: AuthUserId) {
-    const account = await stripe.accounts.create({
+export async function createConnectAccount(params: {
+    email?: string
+    metadata?: Record<string, string>
+}) {
+    const { email, metadata } = params
+
+    return await stripe.accounts.create({
         type: 'express',
         country: 'US',
-    });
-    return account.id;
+        email,
+        business_type: 'individual',
+        individual: {
+            email,
+        },
+        capabilities: {
+            card_payments: { requested: true },
+            transfers: { requested: true },
+        },
+        metadata,
+    })
 }
 
-export async function linkBankAccount( accountId: string) {
+export async function linkBankAccount(accountId: string) {
     return await stripe.accountLinks.create({
         account: accountId,
+        type: 'account_onboarding',
         refresh_url: process.env.STRIPE_REFRESH_URL ?? '',
         return_url: process.env.STRIPE_REDIRECT_URL ?? '',
-        type: 'account_onboarding',
-    });
+        collection_options: {
+            fields: 'currently_due',
+        },
+    })
+}
+
+export async function callbackRetrieveAccount(accountId: string) {
+    return await stripe.accounts.retrieve(accountId)
 }

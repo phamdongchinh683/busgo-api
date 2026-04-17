@@ -10,6 +10,7 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
+import { UserInfo } from '../../model/common.js'
 
 async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
@@ -158,18 +159,44 @@ export async function getPeriodRevenue(params: PeriodPaymentQuery) {
     return { data: data }
 }
 
-export async function createStripePayment(userId: AuthUserId) {
-    const accountId = await service.stripe.connect.createConnectAccount(userId)
+export async function linkStripeAccount(userInfo: UserInfo) {
+    const user = await dal.auth.user.query.getOne({ id: userInfo.id })
+    if (!user) {
+        throw new HttpErr.NotFound('USER_NOT_FOUND')
+    }
+
+    let accountStripeId = user.accountStripeId
+    if (!accountStripeId) {
+        const account = await service.stripe.connect.createConnectAccount({
+            email: user.email,
+            metadata: {
+                'account_id': userInfo.id.toString(),
+            },
+        })
+        await dal.auth.user.cmd.updateOne(userInfo.id, {
+            accountStripeId: account.id,
+        })
+        accountStripeId = account.id
+    }
+
+    const result = await service.stripe.connect.linkBankAccount(accountStripeId)
+
     return {
         message: 'OK',
-        accountId: accountId,
+        url: result.url,
     }
 }
 
-export async function linkStripeBankAccount(accountId: string) {
-    const account = await service.stripe.connect.linkBankAccount(accountId)
+export async function callback(p: UserInfo) {
+    const user = await dal.auth.user.query.getOne({ id: p.id })
 
-    console.log(account)
+    if (!user) {
+        throw new HttpErr.NotFound('USER_NOT_FOUND')
+    }
+
+    const result = await service.stripe.connect.callbackRetrieveAccount(user.accountStripeId ?? '')
+
+    console.log(result)
     return {
         message: 'OK',
     }
