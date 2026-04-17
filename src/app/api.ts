@@ -15,7 +15,6 @@ import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
 import 'dotenv/config'
-import { readFileSync } from 'fs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -24,7 +23,11 @@ const rootDir = path.join(__dirname, '..')
 const apiDir = path.join(rootDir, 'api')
 const isProduction = process.env.NODE_ENV === 'production'
 
-const swaggerFaviconSvg = readFileSync(path.join(__dirname, '..', 'assets', 'swagger-logo.html'))
+const swaggerFaviconSvg = `
+<svg width="100" height="100" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.172 17.51a5.163 5.163 0 01-3.64 1.507c-2.85 0-5.161-2.312-5.161-5.162s2.312-5.162 5.162-5.162a5.163 5.163 0 013.64 1.507l-1.442 1.442a3.123 3.123 0 00-2.198-.91c-1.722 0-3.118 1.396-3.118 3.123 0 1.726 1.396 3.123 3.118 3.123.843 0 1.606-.335 2.164-.877l1.473 1.359z" fill="#85EA2D"/>
+</svg>
+`.trim()
 
 const api = Fastify({
     trustProxy: true,
