@@ -25,8 +25,6 @@ export async function getOne(params: { otp: Otp; email?: string; phone?: string 
             if (otp) cond.push(eb('otp', '=', otp))
             return eb.and(cond)
         })
-        .select(
-            ["otp", "expiresAt"]
-        )
+        .select(['otp', 'expiresAt'])
         .executeTakeFirstOrThrow()
 }

@@ -32,7 +32,12 @@ export async function updatePassword(
     }
 }
 
-export async function resetPassword(params: { otp: Otp; email?: Email; phone?: Phone; password: AuthPassword }) {
+export async function resetPassword(params: {
+    otp: Otp
+    email?: Email
+    phone?: Phone
+    password: AuthPassword
+}) {
     const { otp, email, phone, password } = params
 
     const user = await dal.auth.userOtp.cmd.getOne({ otp, email, phone })
@@ -48,7 +53,7 @@ export async function resetPassword(params: { otp: Otp; email?: Email; phone?: P
         })
 
         await dal.auth.userOtp.cmd.upsertOne({
-            otp: "",
+            otp: '',
             email: email,
             field: 'email',
         })
@@ -60,7 +65,7 @@ export async function resetPassword(params: { otp: Otp; email?: Email; phone?: P
         })
 
         await dal.auth.userOtp.cmd.upsertOne({
-            otp: "",
+            otp: '',
             phone: phone,
             field: 'phone',
         })
@@ -69,5 +74,4 @@ export async function resetPassword(params: { otp: Otp; email?: Email; phone?: P
     return {
         message: 'OK',
     }
-
 }

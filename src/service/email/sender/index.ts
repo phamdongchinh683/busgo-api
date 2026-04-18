@@ -1,13 +1,8 @@
 import type { Email } from '../../../model/common.js'
 
-export async function send(params: {
-    from: Email
-    to: Email
-    subject: string
-    text: string
-    html: string
-}) {
+export async function send(params: { to: Email; subject: string; text?: string; html: string }) {
     const apiKey = process.env.RESEND_API_KEY ?? ''
+    const from = process.env.MAIL_FROM ?? ''
 
     return fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -16,7 +11,7 @@ export async function send(params: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            from: `"Bus System" <${params.from}>`,
+            from: `"Bus System" <${from}>`,
             to: [params.to],
             subject: params.subject,
             text: params.text,

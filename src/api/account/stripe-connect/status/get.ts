@@ -1,7 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { requiredAuthenticate } from '../../../../app/jwt/handler.js'
 import { bus } from '../../../../business/index.js'
-import { MessageResponse } from '../../../../model/common.js'
+import { StripeStatusReponse } from '../../../../service/stripe/type.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -13,7 +13,7 @@ api.route({
         return bus.payment.payment.callback(userInfo)
     },
     schema: {
-        response: { 200: MessageResponse },
+        response: { 200: StripeStatusReponse },
         tags: tags(__filename),
         security: bearer,
     },

@@ -196,8 +196,8 @@ export async function callback(p: UserInfo) {
 
     const result = await service.stripe.connect.callbackRetrieveAccount(user.accountStripeId ?? '')
 
-    console.log(result)
     return {
-        message: 'OK',
+        chargesEnabled: result.charges_enabled,
+        payoutsEnabled: result.payouts_enabled,
     }
 }

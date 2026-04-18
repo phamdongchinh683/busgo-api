@@ -28,15 +28,11 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
 
-    if (process.env.APP_ENV === 'production') {
-        await service.email.sender.send({
-            from: 'noreply@bus-system.com',
-            to: to,
-            subject: 'OTP for reset password',
-            text: `Your OTP is ${otp.toString()}`,
-            html: `Your OTP is <b>${otp.toString()}</b>. This OTP will expire in 10 minutes.`,
-        })
-    }
+    await service.email.sender.send({
+        to: to,
+        subject: 'Bus System OTP Code',
+        html: service.email.template.otpTemplate({ otp: otp.toString() }),
+    })
 
     return {
         message: 'OK',
