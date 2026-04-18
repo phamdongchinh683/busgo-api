@@ -2,29 +2,19 @@ import nodemailer from 'nodemailer'
 
 let transporter: nodemailer.Transporter | undefined
 
-const port = Number(process.env.MAIL_PORT ?? 587)
-const secure = port === 465
 const user = process.env.MAIL_USER ?? ''
 const pass = process.env.MAIL_PASS ?? ''
 const to = process.env.MAIL_TO ?? ''
 
+
 function getTransporter() {
     if (!transporter) {
         transporter = nodemailer.createTransport({
-            host: process.env.MAIL_HOST ?? 'smtp.gmail.com',
-            port,
-            secure,
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 20000,
+            service: 'gmail',
             auth: {
                 user: user,
                 pass: pass,
-            },
-            ...(secure ? {} : { requireTLS: true }),
-            tls: {
-                rejectUnauthorized: false,
-            },
+            }
         })
     }
 
