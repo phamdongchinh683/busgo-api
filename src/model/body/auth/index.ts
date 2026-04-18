@@ -64,3 +64,9 @@ export const AuthVerifyAccountBody = z.object({
 })
 
 export type AuthVerifyAccountBody = z.infer<typeof AuthVerifyAccountBody>
+
+export const AuthForgotPasswordBody = z.object({
+    email: Email,
+})
+
+export type AuthForgotPasswordBody = z.infer<typeof AuthForgotPasswordBody>
