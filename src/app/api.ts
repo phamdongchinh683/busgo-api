@@ -1,4 +1,4 @@
-import Fastify, { type FastifyInstance } from 'fastify'
+import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify'
 import swagger from '@fastify/swagger'
 import swaggerUI from '@fastify/swagger-ui'
 import {
@@ -39,6 +39,28 @@ const api = Fastify({
 
 api.setValidatorCompiler(validatorCompiler)
 api.setSerializerCompiler(serializerCompiler)
+
+/** Stripe webhook signature verification requires the exact raw bytes Stripe sent (not re-stringified JSON). */
+const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
+type RawWithStripeBody = import('http').IncomingMessage & { rawBody?: Buffer }
+
+api.addContentTypeParser(
+    'application/json',
+    { parseAs: 'buffer' },
+    (request: FastifyRequest, body: Buffer, done) => {
+        try {
+            const pathname = request.url.split('?')[0] ?? ''
+            if (pathname === STRIPE_WEBHOOK_PATH) {
+                ;(request.raw as RawWithStripeBody).rawBody = body
+            }
+            const json = JSON.parse(body.toString('utf8')) as unknown
+            done(null, json)
+        } catch (err) {
+            ;(err as { statusCode?: number }).statusCode = 400
+            done(err as Error, undefined)
+        }
+    }
+)
 
 api.addHook('preHandler', async (request, reply) => {
     if (!request.url.includes('swagger') && !request.url.startsWith('/docs')) {

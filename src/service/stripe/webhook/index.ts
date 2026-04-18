@@ -4,7 +4,7 @@ import { dal } from '../../../database/index.js'
 import { db } from '../../../datasource/db.js'
 import { utils } from '../../../utils/index.js'
 
-export async function handleWebhook(rawBody: string, signature: string) {
+export async function handleWebhook(rawBody: string | Buffer, signature: string) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? ''
 
     const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
