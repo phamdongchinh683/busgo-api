@@ -14,7 +14,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.driver])
-        return await bus.operation.trip.updateTripStatus({
+        return bus.operation.trip.updateTripStatus({
             id: request.params.id,
             status: request.body.status,
             userId: userInfo.id,

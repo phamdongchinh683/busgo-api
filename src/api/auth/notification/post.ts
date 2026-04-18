@@ -11,7 +11,7 @@ api.route({
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
         const { title, body, userId } = request.body
-        return await bus.auth.notification.createNotification({ title, body, userId })
+        return bus.auth.notification.createNotification({ title, body, userId })
     },
     schema: {
         body: NotificationBody,

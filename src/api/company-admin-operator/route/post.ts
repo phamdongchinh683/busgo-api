@@ -19,7 +19,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.route.createRoute({
+        return bus.operation.route.createRoute({
             body: request.body,
         })
     },

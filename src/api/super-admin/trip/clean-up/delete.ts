@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.operation.trip.cleanupTrips()
+        return bus.operation.trip.cleanupTrips()
     },
     schema: {
         response: { 200: MessageResponse },

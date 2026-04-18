@@ -18,7 +18,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripPriceTemplate.createTripPriceTemplate({
+        return bus.operation.tripPriceTemplate.createTripPriceTemplate({
             body: {
                 ...request.body,
                 companyId: userInfo.companyId,

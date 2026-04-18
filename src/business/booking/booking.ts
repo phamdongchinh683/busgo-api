@@ -8,9 +8,9 @@ import { PeriodBookingQuery } from '../../model/query/booking/index.js'
 export async function initBooking(params: BookingRequest, userId: AuthUserId) {
     const { type, returnBound } = params
     if (type === BookingType.enum.one_way) {
-        return await dal.booking.booking.cmd.createOneWayBooking(params, userId)
+        return dal.booking.booking.cmd.createOneWayBooking(params, userId)
     } else if (type === BookingType.enum.round_trip && returnBound) {
-        return await dal.booking.booking.cmd.createRoundTripBooking(params, userId)
+        return dal.booking.booking.cmd.createRoundTripBooking(params, userId)
     }
 }
 

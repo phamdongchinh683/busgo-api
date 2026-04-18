@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.auth.superAdmin.getPeriodUsers(request.query)
+        return bus.auth.superAdmin.getPeriodUsers(request.query)
     },
     schema: {
         querystring: PeriodUserQuery,

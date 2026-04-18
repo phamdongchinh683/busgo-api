@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return await bus.operation.trip.prepareTrip(request.body)
+        return bus.operation.trip.prepareTrip(request.body)
     },
 
     schema: {

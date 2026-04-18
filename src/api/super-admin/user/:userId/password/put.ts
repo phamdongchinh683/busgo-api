@@ -15,10 +15,7 @@ api.route({
 
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.auth.superAdmin.updateNewPassword(
-            request.params.userId,
-            request.body.password
-        )
+        return bus.auth.superAdmin.updateNewPassword(request.params.userId, request.body.password)
     },
 
     schema: {

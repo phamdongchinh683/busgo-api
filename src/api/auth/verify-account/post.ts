@@ -13,7 +13,7 @@ api.route({
     handler: async request => {
         const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const { id, status } = request.body
-        return await bus.auth.superAdmin.verifyAccount({
+        return bus.auth.superAdmin.verifyAccount({
             id,
             status,
             companyId: userInfo.companyId,

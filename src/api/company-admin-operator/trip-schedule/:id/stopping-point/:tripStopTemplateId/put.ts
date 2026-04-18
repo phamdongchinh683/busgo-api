@@ -21,7 +21,7 @@ api.route({
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
         const { id, tripStopTemplateId } = request.params
-        return await bus.operation.tripStopTemplate.updateStoppingPointById(tripStopTemplateId, {
+        return bus.operation.tripStopTemplate.updateStoppingPointById(tripStopTemplateId, {
             ...request.body,
             scheduleId: id,
         })

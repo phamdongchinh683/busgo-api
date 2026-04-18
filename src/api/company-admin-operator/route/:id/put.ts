@@ -20,7 +20,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.route.updateRoute({
+        return bus.operation.route.updateRoute({
             id: request.params.id,
             body: request.body,
         })

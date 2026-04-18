@@ -10,7 +10,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return await bus.auth.device.addDevice({
+        return bus.auth.device.addDevice({
             userId: userInfo.id,
             fcmToken: request.body.fcmToken,
         })

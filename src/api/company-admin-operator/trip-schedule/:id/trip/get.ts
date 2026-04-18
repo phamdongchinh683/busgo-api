@@ -18,7 +18,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.trip.getTripByScheduleId(request.query, request.params.id)
+        return bus.operation.trip.getTripByScheduleId(request.query, request.params.id)
     },
 
     schema: {

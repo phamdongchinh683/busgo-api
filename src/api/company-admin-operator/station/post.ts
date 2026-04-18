@@ -16,7 +16,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.station.createStation({
+        return bus.operation.station.createStation({
             body: request.body,
             companyId: userInfo.companyId,
         })

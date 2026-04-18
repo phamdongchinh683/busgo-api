@@ -6,7 +6,7 @@ export async function createConnectAccount(params: {
 }) {
     const { email, metadata } = params
 
-    return await stripe.accounts.create({
+    return stripe.accounts.create({
         type: 'express',
         country: 'US',
         email,
@@ -23,7 +23,7 @@ export async function createConnectAccount(params: {
 }
 
 export async function linkBankAccount(accountId: string) {
-    return await stripe.accountLinks.create({
+    return stripe.accountLinks.create({
         account: accountId,
         type: 'account_onboarding',
         refresh_url: process.env.STRIPE_REFRESH_URL ?? '',
@@ -35,5 +35,5 @@ export async function linkBankAccount(accountId: string) {
 }
 
 export async function callbackRetrieveAccount(accountId: string) {
-    return await stripe.accounts.retrieve(accountId)
+    return stripe.accounts.retrieve(accountId)
 }

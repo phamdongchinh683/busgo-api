@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const { companyId, ...body } = request.body
-        return await bus.auth.driver.register(body, AuthUserRole.enum.driver, companyId)
+        return bus.auth.driver.register(body, AuthUserRole.enum.driver, companyId)
     },
 
     schema: {

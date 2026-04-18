@@ -15,7 +15,7 @@ api.route({
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.driver])
         const { passengerId, id } = request.params
-        return await bus.booking.ticket.checkInTicket({
+        return bus.booking.ticket.checkInTicket({
             id: passengerId,
             status: request.body.status,
             tripId: id,

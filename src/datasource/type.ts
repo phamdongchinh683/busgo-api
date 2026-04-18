@@ -1,3 +1,4 @@
+import { AuthUserOtpTable } from '../database/auth/user_otp/table.js'
 import { AuthNotificationTable } from '../database/auth/notification/table.js'
 import { AuthStaffProfileTable } from '../database/auth/staff_profile/table.js'
 import { AuthUserTable } from '../database/auth/user/table.js'
@@ -22,6 +23,7 @@ export interface Database {
     'auth.user': AuthUserTable
     'auth.user_device': AuthUserDeviceTable
     'auth.notification': AuthNotificationTable
+    'auth.user_otp': AuthUserOtpTable
     'auth.staff_profile': AuthStaffProfileTable
     'payment.payment': PaymentTable
     'booking.booking': BookingTable

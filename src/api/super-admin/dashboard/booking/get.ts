@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.booking.booking.getPeriodBookings(request.query)
+        return bus.booking.booking.getPeriodBookings(request.query)
     },
     schema: {
         querystring: PeriodBookingQuery,

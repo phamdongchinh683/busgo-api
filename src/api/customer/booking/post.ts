@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return await bus.booking.booking.initBooking(request.body, userInfo.id)
+        return bus.booking.booking.initBooking(request.body, userInfo.id)
     },
 
     schema: {

@@ -16,7 +16,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripStopTemplate.getStoppingPoints(request.params.id)
+        return bus.operation.tripStopTemplate.getStoppingPoints(request.params.id)
     },
 
     schema: {

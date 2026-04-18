@@ -10,7 +10,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return await bus.auth.device.getAllDevices(userInfo.id)
+        return bus.auth.device.getAllDevices(userInfo.id)
     },
 
     schema: {

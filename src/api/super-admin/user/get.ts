@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.auth.superAdmin.listUsers(request.query)
+        return bus.auth.superAdmin.listUsers(request.query)
     },
     schema: {
         querystring: UserListQuery,

@@ -17,7 +17,7 @@ api.route({
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
         const { id } = request.params
-        return await bus.booking.ticket.detailTicketSupport(id, userInfo.companyId)
+        return bus.booking.ticket.detailTicketSupport(id, userInfo.companyId)
     },
 
     schema: {

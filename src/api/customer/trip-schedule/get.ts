@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return await bus.operation.tripSchedule.getTripSchedules(request.query)
+        return bus.operation.tripSchedule.getTripSchedules(request.query)
     },
     schema: {
         querystring: TripScheduleFilter,

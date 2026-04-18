@@ -20,7 +20,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripStopTemplate.createStoppingPoint({
+        return bus.operation.tripStopTemplate.createStoppingPoint({
             body: {
                 ...request.body,
                 companyId: userInfo.companyId,

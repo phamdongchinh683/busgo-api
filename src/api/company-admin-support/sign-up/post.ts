@@ -12,10 +12,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        return await bus.auth.adminRegister.register(
-            request.body,
-            AuthStaffProfileRole.enum.support
-        )
+        return bus.auth.adminRegister.register(request.body, AuthStaffProfileRole.enum.support)
     },
 
     schema: {

@@ -12,7 +12,7 @@ api.route({
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
 
-        return await bus.auth.password.updatePassword(userInfo.id, request.body)
+        return bus.auth.password.updatePassword(userInfo.id, request.body)
     },
 
     schema: {

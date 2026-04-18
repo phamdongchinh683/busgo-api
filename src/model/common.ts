@@ -47,3 +47,7 @@ export const PeriodResponse = z.object({
     data: z.array(z.array(z.number())),
 })
 export type PeriodResponse = z.infer<typeof PeriodResponse>
+
+export const Otp = z.string().min(6).max(6)
+
+export type Otp = z.infer<typeof Otp>

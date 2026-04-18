@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
-        return await bus.booking.ticket.getTicketsSupport(request.query, userInfo.companyId)
+        return bus.booking.ticket.getTicketsSupport(request.query, userInfo.companyId)
     },
 
     schema: {

@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return await bus.booking.coupon.getCoupons(request.query)
+        return bus.booking.coupon.getCoupons(request.query)
     },
 
     schema: {

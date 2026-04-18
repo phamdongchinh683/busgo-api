@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.organization.busCompany.deleteOne(request.params.id)
+        return bus.organization.busCompany.deleteOne(request.params.id)
     },
 
     schema: {

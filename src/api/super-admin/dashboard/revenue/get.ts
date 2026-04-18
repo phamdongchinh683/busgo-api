@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.payment.payment.getPeriodRevenue(request.query)
+        return bus.payment.payment.getPeriodRevenue(request.query)
     },
     schema: {
         querystring: PeriodPaymentQuery,

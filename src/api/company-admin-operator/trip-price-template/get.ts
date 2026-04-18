@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripPriceTemplate.getTripPriceTemplates({
+        return bus.operation.tripPriceTemplate.getTripPriceTemplates({
             q: request.query,
             user: userInfo,
         })

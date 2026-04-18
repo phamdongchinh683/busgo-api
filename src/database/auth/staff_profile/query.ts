@@ -46,7 +46,7 @@ export async function updateRole(userId: AuthUserId, role: AuthStaffProfileRole)
 export async function findAll(query: AuthProfileQuery, companyId: OrganizationBusCompanyId) {
     const { position, department, status, code, email, phone, identityNumber, limit, next } = query
 
-    return await db
+    return db
         .selectFrom('auth.staff_profile as a')
         .innerJoin('auth.user as u', 'a.userId', 'u.id')
         .select([

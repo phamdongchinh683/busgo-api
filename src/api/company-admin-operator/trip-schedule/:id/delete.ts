@@ -20,7 +20,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripSchedule.deleteTripSchedule({
+        return bus.operation.tripSchedule.deleteTripSchedule({
             id: request.params.id,
         })
     },

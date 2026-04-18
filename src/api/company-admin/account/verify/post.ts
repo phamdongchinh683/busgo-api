@@ -18,7 +18,7 @@ api.route({
             [AuthStaffProfileRole.enum.company_admin]
         )
         const { id, status } = request.body
-        return await bus.auth.superAdmin.verifyAccount({
+        return bus.auth.superAdmin.verifyAccount({
             id,
             status,
             companyId: userInfo.companyId,

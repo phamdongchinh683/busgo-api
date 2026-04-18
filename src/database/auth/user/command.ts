@@ -310,11 +310,24 @@ export async function updateOne(
         .executeTakeFirstOrThrow()
 }
 
-export async function updatePassword(userId: AuthUserId, password: string) {
+export async function updatePassword(params: {
+    password: string
+    userId?: AuthUserId
+    email?: string
+    phone?: string
+}) {
+    const { password, userId, email, phone } = params
+    const hashPassword = utils.password.hashPassword(password)
     return db
         .updateTable('auth.user')
-        .set({ password: utils.password.hashPassword(password) })
-        .where('id', '=', userId)
+        .set({ password: hashPassword })
+        .where(eb => {
+            const cond = []
+            if (userId) cond.push(eb('id', '=', userId))
+            if (email) cond.push(eb('email', '=', email))
+            if (phone) cond.push(eb('phone', '=', phone))
+            return eb.and(cond)
+        })
         .returningAll()
         .executeTakeFirstOrThrow()
 }

@@ -9,7 +9,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return await bus.auth.profile.getProfileAccount(userInfo)
+        return bus.auth.profile.getProfileAccount(userInfo)
     },
 
     schema: {

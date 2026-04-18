@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return await bus.organization.seat.deleteSeat(request.params.id)
+        return bus.organization.seat.deleteSeat(request.params.id)
     },
 
     schema: {

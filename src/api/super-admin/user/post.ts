@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.auth.superAdmin.createUser(request.body)
+        return bus.auth.superAdmin.createUser(request.body)
     },
     schema: {
         body: UserBody,

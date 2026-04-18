@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return await bus.organization.seat.createSeat(request.body)
+        return bus.organization.seat.createSeat(request.body)
     },
 
     schema: {

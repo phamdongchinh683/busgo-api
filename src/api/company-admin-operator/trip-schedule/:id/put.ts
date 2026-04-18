@@ -20,7 +20,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripSchedule.updateTripSchedule({
+        return bus.operation.tripSchedule.updateTripSchedule({
             id: request.params.id,
             body: request.body,
             companyId: userInfo.companyId,

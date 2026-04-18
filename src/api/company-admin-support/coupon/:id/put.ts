@@ -18,7 +18,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
-        return await bus.booking.coupon.updateCoupon(request.params.id, request.body)
+        return bus.booking.coupon.updateCoupon(request.params.id, request.body)
     },
 
     schema: {

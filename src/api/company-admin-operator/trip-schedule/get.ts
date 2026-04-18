@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripSchedule.getTripSchedulesByCompanyId(
+        return bus.operation.tripSchedule.getTripSchedulesByCompanyId(
             request.query,
             userInfo.companyId
         )

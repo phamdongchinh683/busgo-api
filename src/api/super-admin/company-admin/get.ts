@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.auth.superAdmin.listCompanyAdmins(request.query)
+        return bus.auth.superAdmin.listCompanyAdmins(request.query)
     },
 
     schema: {

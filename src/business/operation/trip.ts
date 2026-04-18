@@ -20,7 +20,7 @@ export async function getTrips(query: TripFilter) {
 }
 
 export async function prepareTrip(body: TripBody) {
-    return await dal.operation.trip.cmd.createTripTransaction(body)
+    return dal.operation.trip.cmd.createTripTransaction(body)
 }
 
 export async function getPassengerList(
@@ -57,7 +57,7 @@ export async function updateTripStatus(params: {
     status: OperationTripStatus
     userId: AuthUserId
 }) {
-    return await dal.operation.trip.cmd.updateStatus(params)
+    return dal.operation.trip.cmd.updateStatus(params)
 }
 
 export async function getTripByScheduleId(q: TripFilter, scheduleId: OperationTripScheduleId) {

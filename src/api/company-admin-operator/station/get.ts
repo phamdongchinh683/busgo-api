@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.station.getStations({
+        return bus.operation.station.getStations({
             q: request.query,
             companyId: userInfo.companyId,
         })

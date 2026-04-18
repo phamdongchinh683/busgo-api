@@ -1,10 +1,9 @@
 import { db } from '../../../datasource/db.js'
 import { Database } from '../../../datasource/type.js'
-import { sql, Transaction } from 'kysely'
+import { Transaction } from 'kysely'
 import { AuthUserDeviceTableInsert } from './table.js'
 import { AuthUserDeviceId } from './type.js'
 import { AuthUserId, AuthUserRole, AuthUserStatus } from '../user/type.js'
-import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export async function insertOne(params: AuthUserDeviceTableInsert, trx?: Transaction<Database>) {
     return (trx ?? db)

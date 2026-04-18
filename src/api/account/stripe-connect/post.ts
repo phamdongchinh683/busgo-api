@@ -13,10 +13,8 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await requiredAuthenticate(
-            request.headers,
-        )
-        return await bus.payment.payment.linkStripeAccount(userInfo)
+        const userInfo = await requiredAuthenticate(request.headers)
+        return bus.payment.payment.linkStripeAccount(userInfo)
     },
     schema: {
         response: { 200: StripeConnectResponse },

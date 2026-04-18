@@ -10,7 +10,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return await bus.auth.logout.updateTokenVersion(userInfo)
+        return bus.auth.logout.updateTokenVersion(userInfo)
     },
 
     schema: {

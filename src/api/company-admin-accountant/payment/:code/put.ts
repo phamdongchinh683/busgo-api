@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.accountant]
         )
-        return await bus.payment.payment.updateByTransactionCode(request.params.code)
+        return bus.payment.payment.updateByTransactionCode(request.params.code)
     },
 
     schema: {

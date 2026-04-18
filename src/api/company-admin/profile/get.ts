@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.admin])
-        return await bus.auth.profile.getProfile(userInfo)
+        return bus.auth.profile.getProfile(userInfo)
     },
 
     schema: {

@@ -16,7 +16,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
-        return await bus.operation.tripPriceTemplate.deleteTripPriceTemplate({
+        return bus.operation.tripPriceTemplate.deleteTripPriceTemplate({
             id: request.params.id,
         })
     },

@@ -16,7 +16,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return await bus.organization.vehicle.createVehicle({
+        return bus.organization.vehicle.createVehicle({
             ...request.body,
             companyId: userInfo.companyId,
         })

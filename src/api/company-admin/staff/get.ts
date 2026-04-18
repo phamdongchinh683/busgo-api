@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return await bus.auth.profile.getStaffRole(request.query, userInfo.companyId)
+        return bus.auth.profile.getStaffRole(request.query, userInfo.companyId)
     },
 
     schema: {

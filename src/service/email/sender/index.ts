@@ -1,32 +1,26 @@
-import nodemailer from 'nodemailer'
+import type { Email } from '../../../model/common.js'
 
-let transporter: nodemailer.Transporter | undefined
+export async function send(params: {
+    from: Email
+    to: Email
+    subject: string
+    text: string
+    html: string
+}) {
+    const apiKey = process.env.RESEND_API_KEY ?? ''
 
-const user = process.env.MAIL_USER ?? ''
-const pass = process.env.MAIL_PASS ?? ''
-const to = process.env.MAIL_TO ?? ''
-
-
-function getTransporter() {
-    if (!transporter) {
-        transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: user,
-                pass: pass,
-            }
-        })
-    }
-
-    return transporter
-}
-
-export function sendMail(params: { to?: string; subject: string; text?: string; html?: string }) {
-    return getTransporter().sendMail({
-        from: `"MyCompany" <${user}>`,
-        to: params.to ?? to,
-        subject: params.subject,
-        text: params.text,
-        html: params.html,
+    return fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            from: `"Bus System" <${params.from}>`,
+            to: [params.to],
+            subject: params.subject,
+            text: params.text,
+            html: params.html,
+        }),
     })
 }

@@ -38,7 +38,7 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
 
     const amount = (await dal.booking.booking.query.getAmountByBookingId(bookingId)).totalAmount
 
-    return await dal.payment.payment.cmd.upsertPayment({
+    return dal.payment.payment.cmd.upsertPayment({
         bookingId,
         transactionCode: utils.random.generateRandomNumber(12).toString(),
         method,
@@ -147,11 +147,11 @@ export async function getPayments(q: PaymentFilter, companyId: OrganizationBusCo
 }
 
 export async function getRevenueByCompanyId(companyId: OrganizationBusCompanyId) {
-    return await dal.payment.payment.query.getTotalRevenueByCompanyId(companyId)
+    return dal.payment.payment.query.getTotalRevenueByCompanyId(companyId)
 }
 
 export async function updateByTransactionCode(transactionCode: string) {
-    return await dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
+    return dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
 }
 
 export async function getPeriodRevenue(params: PeriodPaymentQuery) {
@@ -170,7 +170,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         const account = await service.stripe.connect.createConnectAccount({
             email: user.email,
             metadata: {
-                'account_id': userInfo.id.toString(),
+                account_id: userInfo.id.toString(),
             },
         })
         await dal.auth.user.cmd.updateOne(userInfo.id, {

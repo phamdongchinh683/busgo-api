@@ -11,7 +11,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return await bus.auth.device.removeDevice(request.params.id)
+        return bus.auth.device.removeDevice(request.params.id)
     },
 
     schema: {

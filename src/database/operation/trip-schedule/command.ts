@@ -41,7 +41,7 @@ export async function findById(id: OperationTripScheduleId, trx?: Transaction<Da
 }
 
 export async function getTripSchedules(query: TripScheduleFilter) {
-    return await dal.operation.tripSchedule.query.findAllByFilter(query)
+    return dal.operation.tripSchedule.query.findAllByFilter(query)
 }
 
 export async function upsertOne(params: OperationTripScheduleTableInsert) {
@@ -83,7 +83,7 @@ export async function updateOneById(params: {
 }
 
 export async function findAllPickupStop(id: OperationTripScheduleId) {
-    return await dal.operation.tripSchedule.query.getPickupStopsByScheduleId(id)
+    return dal.operation.tripSchedule.query.getPickupStopsByScheduleId(id)
 }
 
 export async function findAllDropoffStop(
@@ -91,11 +91,7 @@ export async function findAllDropoffStop(
     fromStationId: OperationStationId,
     stopOrder: number
 ) {
-    return await dal.operation.tripSchedule.query.getDropoffStopsWithPrice(
-        id,
-        fromStationId,
-        stopOrder
-    )
+    return dal.operation.tripSchedule.query.getDropoffStopsWithPrice(id, fromStationId, stopOrder)
 }
 
 export async function deleteOneById(id: OperationTripScheduleId, trx?: Transaction<Database>) {

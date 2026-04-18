@@ -17,7 +17,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.accountant]
         )
-        return await bus.payment.payment.getRevenueByCompanyId(userInfo.companyId)
+        return bus.payment.payment.getRevenueByCompanyId(userInfo.companyId)
     },
 
     schema: {

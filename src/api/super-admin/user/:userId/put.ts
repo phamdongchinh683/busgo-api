@@ -12,7 +12,7 @@ api.route({
     handler: async request => {
         const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const { userId } = request.params
-        return await bus.auth.superAdmin.updateOne(userId, request.body)
+        return bus.auth.superAdmin.updateOne(userId, request.body)
     },
 
     schema: {

@@ -16,7 +16,7 @@ api.route({
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return await bus.organization.busCompany.updateOne(userInfo.companyId, request.body)
+        return bus.organization.busCompany.updateOne(userInfo.companyId, request.body)
     },
 
     schema: {
