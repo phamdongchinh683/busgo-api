@@ -25,6 +25,7 @@ export const UserInfo = z.object({
     staffProfileRole: AuthStaffProfileRole.nullable().optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
     status: AuthUserStatus,
+    accountStripeId: z.string().nullable(),
 })
 
 export type UserInfo = z.infer<typeof UserInfo>

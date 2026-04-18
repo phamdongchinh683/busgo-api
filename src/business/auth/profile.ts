@@ -52,7 +52,7 @@ export async function updateStaffRole(id: AuthUserId, role: AuthStaffProfileRole
     }
 }
 
-export async function getProfileAccount(userInfo: UserInfo) {
+export async function getProfileCustomer(userInfo: UserInfo) {
     const user = await dal.auth.user.query.getOne({ id: userInfo.id })
     if (!user) {
         throw new HttpErr.NotFound('USER_NOT_FOUND')
@@ -60,9 +60,13 @@ export async function getProfileAccount(userInfo: UserInfo) {
 
     let accountStripeId = user?.accountStripeId
     if (!accountStripeId) {
-        const account = await service.stripe.connect.createConnectAccount({
+        const account = await service.stripe.client.createCustomer({
             email: user.email,
-            metadata: {},
+            phone: user.phone,
+            name: user.fullName,
+            metadata: {
+                userId: userInfo.id.toString(),
+            },
         })
         await dal.auth.user.cmd.updateOne(userInfo.id, {
             accountStripeId: account.id,

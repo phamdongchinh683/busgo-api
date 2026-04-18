@@ -1,7 +1,8 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { requiredAuthenticate } from '../../../app/jwt/handler.js'
 import { bus } from '../../../business/index.js'
-import { ProfileAccountResponse } from '../../../model/body/profile/index.js'
+import { MessageResponse } from '../../../model/common.js'
+import { StripeAttachPaymentMethodRequest } from '../../../service/stripe/type.js'
 const __filename = new URL('', import.meta.url).pathname
 
 api.route({
@@ -9,11 +10,15 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return bus.auth.profile.getProfileAccount(userInfo)
+        return bus.payment.stripe.removePaymentMethod({
+            user: userInfo,
+            paymentMethodId: request.body.paymentMethodId,
+        })
     },
 
     schema: {
-        response: { 200: ProfileAccountResponse },
+        body: StripeAttachPaymentMethodRequest,
+        response: { 200: MessageResponse },
         tags: tags(__filename),
         security: bearer,
     },

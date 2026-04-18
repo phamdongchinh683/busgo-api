@@ -46,3 +46,9 @@ export const StripeConnectStatusResponse = z.object({
 })
 
 export type StripeConnectStatusResponse = z.infer<typeof StripeConnectStatusResponse>
+
+export const StripeSetupIntentResponse = z.object({
+    clientSecret: z.string(),
+})
+
+export type StripeSetupIntentResponse = z.infer<typeof StripeSetupIntentResponse>
