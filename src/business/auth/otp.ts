@@ -3,7 +3,7 @@ import { Email, Otp, Phone } from '../../model/common.js'
 import { service } from '../../service/index.js'
 import { utils } from '../../utils/index.js'
 
-export async function sendOtp(params: { field: 'email' | 'phone'; value: string }) {
+export async function send(params: { field: 'email' | 'phone'; value: string }) {
     const { field, value } = params
     const otp = utils.random.generateRandomNumber(6)
 
@@ -47,6 +47,11 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
         otp: otp,
         field: 'phone',
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
+    })
+
+    await service.infobip.sender.send({
+        to: to,
+        message: `Your OTP code is ${otp.toString()}. This OTP will expire in 2 minutes.`,
     })
 
     return {

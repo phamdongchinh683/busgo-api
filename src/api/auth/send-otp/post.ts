@@ -14,7 +14,7 @@ api.route({
         },
     },
     handler: async request => {
-        return bus.auth.email.sendOtp(request.body)
+        return bus.auth.otp.send(request.body)
     },
     schema: {
         body: AuthOtpBody,
