@@ -3,7 +3,8 @@ import z from 'zod'
 export const PaymentMethodResponse = z.object({
     message: z.string(),
     paymentUrl: z.string().optional(),
-    orderUrl: z.string().optional(),
+    paymentIntentId: z.string().optional(),
+    clientSecret: z.string().optional(),
 })
 
 export type PaymentMethodResponse = z.infer<typeof PaymentMethodResponse>

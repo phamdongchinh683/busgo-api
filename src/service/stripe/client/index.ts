@@ -60,3 +60,34 @@ export async function getPaymentMethods(params: { customerId: string }) {
 export async function detachPaymentMethod(params: { paymentMethodId: string }) {
     return stripe.paymentMethods.detach(params.paymentMethodId)
 }
+
+export async function createPaymentIntentWithCommission(params: {
+    amount: number
+    stripeCustomerId: string
+    companyAdminStripeId: string
+    transactionCode: string
+}) {
+    const {
+        amount,
+        stripeCustomerId,
+        companyAdminStripeId,
+        transactionCode,
+    } = params
+
+    const usdAmount = Math.round((amount / 26000) * 100)
+
+    const applicationFee = Math.round((usdAmount * 7) / 100)
+
+    return stripe.paymentIntents.create({
+        amount: usdAmount,
+        currency: 'usd',
+        customer: stripeCustomerId,
+        application_fee_amount: applicationFee,
+        transfer_data: {
+            destination: companyAdminStripeId,
+        },
+        metadata: {
+            transactionCode,
+        },
+    })
+}

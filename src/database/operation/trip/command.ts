@@ -52,6 +52,7 @@ export async function createTripTransaction(params: TripBody) {
 
         const vehicle = await dal.organization.vehicle.cmd.randomVehicle(companyId, trx)
 
+        console.log(vehicle)
         const trip = await createTrip(
             {
                 scheduleId: schedule.id,

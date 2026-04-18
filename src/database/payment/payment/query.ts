@@ -72,6 +72,16 @@ export async function getPaymentByBookingId(bookingId: BookingId, trx?: Transact
         .executeTakeFirst()
 }
 
+export async function getCompanyIdByBookingId(bookingId: BookingId) {
+    return db
+        .selectFrom('booking.ticket as t')
+        .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .innerJoin('organization.vehicle as v', 'v.id', 'trip.vehicleId')
+        .select('v.companyId')
+        .where('t.bookingId', '=', bookingId)
+        .executeTakeFirst()
+}
+
 export async function getPayments(
     params: PaymentFilter,
     companyId: OrganizationBusCompanyId,

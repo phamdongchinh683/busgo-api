@@ -197,3 +197,13 @@ export function findAll(query: UserListQuery) {
         .orderBy('u.id', 'asc')
         .execute()
 }
+
+export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {
+    return db
+        .selectFrom('auth.user as u')
+        .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
+        .select(['u.accountStripeId'])
+        .where('sp.companyId', '=', companyId)
+        .where('sp.role', '=', AuthStaffProfileRole.enum.company_admin)
+        .executeTakeFirst()
+}

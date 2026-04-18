@@ -64,6 +64,8 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
             return createVnpayPayment(params, ip)
         case PaymentMethod.enum.cash:
             return createCashPayment(params)
+        case PaymentMethod.enum.stripe:
+            return createStripePayment(params, userId)
         default:
             throw new HttpErr.UnprocessableEntity(
                 'Invalid payment method',
@@ -169,9 +171,6 @@ export async function linkStripeAccount(userInfo: UserInfo) {
     if (!accountStripeId) {
         const account = await service.stripe.connect.createConnectAccount({
             email: user.email,
-            metadata: {
-                account_id: userInfo.id.toString(),
-            },
         })
         await dal.auth.user.cmd.updateOne(userInfo.id, {
             accountStripeId: account.id,
@@ -199,5 +198,49 @@ export async function callback(p: UserInfo) {
     return {
         chargesEnabled: result.charges_enabled,
         payoutsEnabled: result.payouts_enabled,
+    }
+}
+
+async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {
+    const payment = await preparePayment(params.id, PaymentMethod.enum.stripe)
+
+    const user = await dal.auth.user.query.getOne({ id: userId })
+    if (!user?.accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Customer Stripe account not found',
+            'CUSTOMER_STRIPE_NOT_FOUND'
+        )
+    }
+
+    const companyRow = await dal.payment.payment.query.getCompanyIdByBookingId(params.id)
+    if (!companyRow?.companyId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Company not found for this booking',
+            'COMPANY_NOT_FOUND'
+        )
+    }
+
+    const companyAdmin = await dal.auth.user.query.getCompanyStripeAccountId(companyRow.companyId)
+    if (!companyAdmin?.accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Company has not linked Stripe account',
+            'COMPANY_STRIPE_NOT_LINKED'
+        )
+    }
+
+    const paymentIntent = await service.stripe.client.createPaymentIntentWithCommission({
+        amount: payment.amount,
+        stripeCustomerId: user.accountStripeId,
+        companyAdminStripeId: companyAdmin.accountStripeId,
+        transactionCode: payment.transactionCode,
+    })
+
+    await dal.booking.booking.cmd.updateExpiredBooking(params.id)
+
+    return {
+        message: 'OK',
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        payment,
     }
 }
