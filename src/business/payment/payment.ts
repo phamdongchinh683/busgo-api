@@ -8,7 +8,11 @@ import { BookingId } from '../../database/booking/booking/type.js'
 import { db } from '../../datasource/db.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
+import {
+    PaymentFilter,
+    PeriodPaymentQuery,
+    RevenueExportQuery,
+} from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
 import { UserInfo } from '../../model/common.js'
 
@@ -161,6 +165,17 @@ export async function getPeriodRevenue(params: PeriodPaymentQuery) {
     return { data: data }
 }
 
+export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
+    const year = params.year ?? utils.time.getNow().year()
+    const meta = { year, method: params.method }
+    if (params.type === 'monthly') {
+        const rows = await dal.payment.payment.query.getRevenueByCompanyMonthlyForPeriod(params)
+        return service.excel.buildCompanyRevenueMonthlySheet(rows, meta)
+    }
+    const rows = await dal.payment.payment.query.getRevenueByCompanyYearlyForPeriod(params)
+    return service.excel.buildCompanyRevenueYearlySheet(rows, meta)
+}
+
 export async function linkStripeAccount(userInfo: UserInfo) {
     const user = await dal.auth.user.query.getOne({ id: userInfo.id })
     if (!user) {
@@ -244,3 +259,4 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
         payment,
     }
 }
+

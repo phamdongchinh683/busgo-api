@@ -7,6 +7,7 @@ export async function createConnectAccount(params: { email?: string }) {
         type: 'express',
         country: 'US',
         email: email,
+        business_type: "individual",
         capabilities: {
             transfers: { requested: true },
         },

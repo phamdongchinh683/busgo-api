@@ -19,10 +19,13 @@ export const buildAppTransId = (transactionCode: string) => {
     return `${getNow().format('YYMMDD')}_${transactionCode}`
 }
 
+const REPORT_TZ = 'Asia/Ho_Chi_Minh'
+
+/** Inclusive calendar year in Vietnam time, as UTC instants for DB comparison. */
 export const getPeriodStartAndEnd = (year: number) => {
     return {
-        start: dayjs().year(year).startOf('year').toDate(),
-        end: dayjs().year(year).endOf('year').toDate(),
+        start: dayjs.tz(`${year}-01-01`, REPORT_TZ).startOf('day').toDate(),
+        end: dayjs.tz(`${year}-12-31`, REPORT_TZ).endOf('day').toDate(),
     }
 }
 
