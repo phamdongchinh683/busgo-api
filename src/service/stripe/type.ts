@@ -29,3 +29,16 @@ export const StripeGetPaymentMethodsResponse = z.object({
 })
 
 export type StripeGetPaymentMethodsResponse = z.infer<typeof StripeGetPaymentMethodsResponse>
+
+export const BalanceResponse = z.object({
+    available: z.array(z.object({
+        amount: z.number(),
+        currency: z.string(),
+    })),
+    pending: z.array(z.object({
+        amount: z.number(),
+        currency: z.string(),
+    })),
+})
+
+export type BalanceResponse = z.infer<typeof BalanceResponse>

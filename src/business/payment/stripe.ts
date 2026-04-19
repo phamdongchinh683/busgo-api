@@ -75,3 +75,11 @@ export async function removePaymentMethod(params: { user: UserInfo; paymentMetho
         message: 'OK',
     }
 }
+
+export async function getBalance(accountStripeId: string) {
+    const balance = await service.stripe.connect.getConnectedAccountBalance(accountStripeId)
+    return {
+        available: balance.available,
+        pending: balance.pending,
+    }
+}

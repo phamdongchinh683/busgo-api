@@ -10,6 +10,14 @@ export async function createConnectAccount(params: { email?: string }) {
         capabilities: {
             transfers: { requested: true },
         },
+        settings: {
+            payouts: {
+                schedule: {
+                    interval: "weekly",
+                    weekly_anchor: "friday"
+                }
+            }
+        }
     })
 }
 
@@ -24,4 +32,11 @@ export async function linkBankAccount(accountId: string) {
 
 export async function callbackRetrieveAccount(accountId: string) {
     return stripe.accounts.retrieve(accountId)
+}
+
+export async function getConnectedAccountBalance(accountId: string) {
+    return await stripe.balance.retrieve({}, {
+        stripeAccount: accountId,
+    });
+   
 }
