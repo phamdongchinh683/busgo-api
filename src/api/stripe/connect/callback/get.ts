@@ -1,19 +1,19 @@
-import { api, endpoint, tags, bearer } from '../../../../app/api.js'
-import { MessageResponse } from '../../../../model/common.js'
+import { api, endpoint, tags } from '../../../../app/api.js'
+import { readFile } from 'fs/promises'
+import path from 'path'
 
 const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
 
-    handler: async request => {
-        return {
-            message: 'OK',
-        }
+    handler: async (_request, reply) => {
+        const filePath = path.join(process.cwd(), 'public', 'success.html')
+        const html = await readFile(filePath, 'utf8')
+        return reply.type('text/html; charset=utf-8').send(html)
     },
 
     schema: {
-        response: { 200: MessageResponse },
         tags: tags(__filename),
     },
 })
