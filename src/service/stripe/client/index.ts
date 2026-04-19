@@ -67,12 +67,7 @@ export async function createPaymentIntentWithCommission(params: {
     companyAdminStripeId: string
     transactionCode: string
 }) {
-    const {
-        amount,
-        stripeCustomerId,
-        companyAdminStripeId,
-        transactionCode,
-    } = params
+    const { amount, stripeCustomerId, companyAdminStripeId, transactionCode } = params
 
     const usdAmount = Math.round((amount / 26000) * 100)
 

@@ -12,9 +12,7 @@ api.route({
 
     handler: async (request: FastifyRequest) => {
         const signatureHeader = request.headers['stripe-signature']
-        const signature = Array.isArray(signatureHeader)
-            ? signatureHeader[0]
-            : signatureHeader
+        const signature = Array.isArray(signatureHeader) ? signatureHeader[0] : signatureHeader
         if (!signature) {
             throw new Error('Missing stripe-signature header')
         }

@@ -11,7 +11,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
 
-    handler: async (request) => {
+    handler: async request => {
         const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         return bus.payment.stripe.getBalance(userInfo.accountStripeId)
     },

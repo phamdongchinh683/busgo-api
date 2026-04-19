@@ -7,18 +7,18 @@ export async function createConnectAccount(params: { email?: string }) {
         type: 'express',
         country: 'US',
         email: email,
-        business_type: "individual",
+        business_type: 'individual',
         capabilities: {
             transfers: { requested: true },
         },
         settings: {
             payouts: {
                 schedule: {
-                    interval: "weekly",
-                    weekly_anchor: "friday"
-                }
-            }
-        }
+                    interval: 'weekly',
+                    weekly_anchor: 'friday',
+                },
+            },
+        },
     })
 }
 
@@ -36,8 +36,10 @@ export async function callbackRetrieveAccount(accountId: string) {
 }
 
 export async function getConnectedAccountBalance(accountId: string) {
-    return await stripe.balance.retrieve({}, {
-        stripeAccount: accountId,
-    });
-   
+    return await stripe.balance.retrieve(
+        {},
+        {
+            stripeAccount: accountId,
+        }
+    )
 }

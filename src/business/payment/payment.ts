@@ -259,4 +259,3 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
         payment,
     }
 }
-
