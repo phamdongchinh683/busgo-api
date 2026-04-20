@@ -7,7 +7,7 @@ import { Kysely } from 'kysely'
 import { Database } from '../../datasource/type.js'
 import { OperationTripStatus } from '../../database/operation/trip/type.js'
 import { service } from '../../service/index.js'
-import type { Email } from '../../model/common.js'
+import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
 
 export function notificationDepatureDate(db: Kysely<Database>) {
     cron.schedule(
@@ -38,26 +38,45 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                         'trip.id as tripId',
                         'trip.departureDate as departureDate',
                     ])
-                    .where('b.status', '=', BookingStatus.enum.paid)
-                    .where('t.status', '=', BookingTicketStatus.enum.paid)
+                    .where((eb) => {
+                        const isPaidBooking = eb.and([
+                            eb('b.status', '=', BookingStatus.enum.paid),
+                            eb('t.status', '=', BookingTicketStatus.enum.paid),
+                        ])
+
+                        const isCashPendingBooking = eb.and([
+                            eb('b.status', '=', BookingStatus.enum.pending),
+                            eb('t.status', '=', BookingTicketStatus.enum.reserved),
+                            eb.exists(
+                                eb
+                                    .selectFrom('payment.payment as pp')
+                                    .select('pp.id')
+                                    .whereRef('pp.bookingId', '=', 'b.id')
+                                    .where('pp.method', '=', PaymentMethod.enum.cash)
+                                    .where('pp.status', '=', PaymentStatus.enum.pending)
+                            ),
+                        ])
+
+                        return eb.or([isPaidBooking, isCashPendingBooking])
+                    })
                     .where('trip.status', '=', OperationTripStatus.enum.scheduled)
                     .where('trip.departureDate', '>=', windowStart)
                     .where('trip.departureDate', '<', windowEnd)
-                    .where(eb =>
-                        eb.not(
-                            eb.exists(
-                                eb
-                                    .selectFrom('auth.notification as n')
-                                    .select('n.id')
-                                    .whereRef('n.userId', '=', 'u.id')
-                                    .where(
-                                        'n.data',
-                                        '=',
-                                        sql<string>`'departure-reminder:' || b.id::text || ':' || trip.id::text`
-                                    )
-                            )
+                    .where((eb) => {
+                        const alreadyNotified = eb.exists(
+                            eb
+                                .selectFrom('auth.notification as n')
+                                .select('n.id')
+                                .whereRef('n.userId', '=', 'u.id')
+                                .where(
+                                    'n.data',
+                                    '=',
+                                    sql<string>`'departure-reminder:' || b.id::text || ':' || trip.id::text`
+                                )
                         )
-                    )
+
+                        return eb.not(alreadyNotified)
+                    })
                     .groupBy([
                         'u.id',
                         'u.email',
@@ -88,18 +107,16 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                     )
                     .execute()
 
-                const uniqueEmails = [
-                    ...new Set(candidates.map(item => item.email).filter(Boolean)),
-                ] as Email[]
-                if (uniqueEmails.length > 0) {
+                if (candidates.length > 0) {
                     await service.email.sender.sendMany({
-                        to: uniqueEmails,
+                        to: candidates.map(item => item.email),
                         subject: 'Reminder: Trip departs today',
                         html: service.email.template.departureReminderTemplate(),
                     })
                 }
+                console.log("OK")
             } catch (err) {
-                console.error('[cron-error]', err)
+                console.error(err)
             }
         },
         {
