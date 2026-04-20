@@ -86,6 +86,7 @@ export const requireStaffProfileRole = async (
 ): Promise<any> => {
     const userInfo = await requiredAuthenticate(headers)
     const { staffProfileRole, role } = userInfo
+    console.log(userInfo)
     if (!roleNames.includes(role)) throw new HttpErr.Forbidden()
     if (!companyRoleNames.includes(staffProfileRole)) throw new HttpErr.Forbidden()
     return userInfo

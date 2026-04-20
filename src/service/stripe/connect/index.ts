@@ -15,7 +15,8 @@ export async function createConnectAccount(params: { email?: string }) {
             payouts: {
                 schedule: {
                     interval: 'weekly',
-                    weekly_anchor: 'friday',
+                    weekly_anchor: 'monday',
+                    delay_days: 2,
                 },
             },
         },
@@ -42,4 +43,17 @@ export async function getConnectedAccountBalance(accountId: string) {
             stripeAccount: accountId,
         }
     )
+}
+export async function updatePayoutSchedule(accountId: string) {
+    return stripe.accounts.update(accountId, {
+        settings: {
+            payouts: {
+                schedule: {
+                    interval: 'weekly',
+                    weekly_anchor: 'monday',
+                    delay_days: 2,
+                },
+            },
+        },
+    })
 }

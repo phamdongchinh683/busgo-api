@@ -176,31 +176,6 @@ export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
     return service.excel.buildCompanyRevenueYearlySheet(rows, meta)
 }
 
-export async function linkStripeAccount(userInfo: UserInfo) {
-    const user = await dal.auth.user.query.getOne({ id: userInfo.id })
-    if (!user) {
-        throw new HttpErr.NotFound('USER_NOT_FOUND')
-    }
-
-    let accountStripeId = user.accountStripeId
-    if (!accountStripeId) {
-        const account = await service.stripe.connect.createConnectAccount({
-            email: user.email,
-        })
-        await dal.auth.user.cmd.updateOne(userInfo.id, {
-            accountStripeId: account.id,
-        })
-        accountStripeId = account.id
-    }
-
-    const result = await service.stripe.connect.linkBankAccount(accountStripeId)
-
-    return {
-        message: 'OK',
-        url: result.url,
-    }
-}
-
 export async function callback(p: UserInfo) {
     const user = await dal.auth.user.query.getOne({ id: p.id })
 

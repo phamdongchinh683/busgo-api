@@ -83,3 +83,30 @@ export async function getBalance(accountStripeId: string) {
         pending: balance.pending,
     }
 }
+
+export async function updatePayoutSchedule(accountStripeId: string) {
+     await service.stripe.connect.updatePayoutSchedule(accountStripeId)
+    return {
+        message: 'OK',
+    }
+}
+
+export async function linkStripeAccount(userInfo: UserInfo) {
+    let accountStripeId = userInfo.accountStripeId
+    if (!accountStripeId) {
+        const account = await service.stripe.connect.createConnectAccount({
+            email: userInfo.email,
+        })
+        await dal.auth.user.cmd.updateOne(userInfo.id, {
+            accountStripeId: account.id,
+        })
+        accountStripeId = account.id
+    }
+
+    const result = await service.stripe.connect.linkBankAccount(accountStripeId)
+
+    return {
+        message: 'OK',
+        url: result.url,
+    }
+}

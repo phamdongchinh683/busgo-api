@@ -1,10 +1,9 @@
-import { api, endpoint, bearer, tags } from '../../../app/api.js'
-import { requireStaffProfileRole } from '../../../app/jwt/handler.js'
+import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
+import { requireStaffProfileRole } from '../../../app/jwt/handler.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
-import { TicketSupportFilter } from '../../../model/query/ticket/index.js'
-import { TicketsResponse } from '../../../model/body/ticket/index.js'
+import { VehicleBody, VehicleResponse } from '../../../model/body/vehicle/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -15,14 +14,17 @@ api.route({
         const userInfo = await requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.admin],
-            [AuthStaffProfileRole.enum.support]
+            [AuthStaffProfileRole.enum.company_admin]
         )
-        return bus.booking.ticket.getTicketsSupport(request.query, userInfo.companyId)
+        return bus.organization.vehicle.createVehicle({
+            ...request.body,
+            companyId: userInfo.companyId,
+        })
     },
 
     schema: {
-        querystring: TicketSupportFilter,
-        response: { 200: TicketsResponse },
+        body: VehicleBody,
+        response: { 200: VehicleResponse },
         tags: tags(__filename),
         security: bearer,
     },
