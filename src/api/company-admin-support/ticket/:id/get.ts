@@ -3,7 +3,7 @@ import { requireStaffProfileRole } from '../../../../app/jwt/handler.js'
 import { bus } from '../../../../business/index.js'
 import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { TicketResponse, TicketSupportResponse } from '../../../../model/body/ticket/index.js'
+import { TicketSupportResponse } from '../../../../model/body/ticket/index.js'
 import { TicketIdParam } from '../../../../model/params/ticket/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
