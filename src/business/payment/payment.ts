@@ -176,18 +176,14 @@ export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
     return service.excel.buildCompanyRevenueYearlySheet(rows, meta)
 }
 
-export async function callback(p: UserInfo) {
-    const user = await dal.auth.user.query.getOne({ id: p.id })
+export async function stripeStatus(p: UserInfo) {
+    const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId ?? '')
 
-    if (!user) {
-        throw new HttpErr.NotFound('USER_NOT_FOUND')
-    }
-
-    const result = await service.stripe.connect.callbackRetrieveAccount(user.accountStripeId ?? '')
-
+    console.log(result)
     return {
         chargesEnabled: result.charges_enabled,
         payoutsEnabled: result.payouts_enabled,
+        currentlyDue: result.requirements?.currently_due ?? [],
     }
 }
 

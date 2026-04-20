@@ -10,7 +10,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await requiredAuthenticate(request.headers)
-        return bus.payment.payment.callback(userInfo)
+        return bus.payment.payment.stripeStatus(userInfo)
     },
     schema: {
         response: { 200: StripeStatusReponse },

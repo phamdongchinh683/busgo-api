@@ -1,7 +1,48 @@
 import { UserInfo } from '../../model/common.js'
 import { service } from '../../service/index.js'
 import { dal } from '../../database/index.js'
-import { AuthUserId } from '../../database/auth/user/type.js'
+import { HttpErr } from '../../app/index.js'
+
+const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
+const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
+
+type ExchangeRate = {
+    usdToVnd: number
+    vndToUsd: number
+}
+
+let exchangeRateCache: { expiresAt: number; value: ExchangeRate } | null = null
+
+async function getUsdVndRate() {
+    if (exchangeRateCache && exchangeRateCache.expiresAt > Date.now()) {
+        return exchangeRateCache.value
+    }
+
+    const response = await fetch(EXCHANGE_RATE_API_URL)
+
+    if (!response.ok) {
+        throw new HttpErr.BadRequest('Failed to get exchange rate', 'EXCHANGE_RATE_UNAVAILABLE')
+    }
+
+    const data = await response.json()
+    const usdToVnd = data.rates?.VND
+
+    if (!usdToVnd || usdToVnd <= 0) {
+        throw new HttpErr.BadRequest('Failed to get exchange rate', 'EXCHANGE_RATE_UNAVAILABLE')
+    }
+
+    const rate = {
+        usdToVnd: usdToVnd,
+        vndToUsd: 1 / usdToVnd,
+    }
+
+    exchangeRateCache = {
+        value: rate,
+        expiresAt: Date.now() + EXCHANGE_RATE_CACHE_TTL_MS,
+    }
+
+    return rate
+}
 
 export async function setUpIntent(userInfo: UserInfo) {
     const intent = await service.stripe.client.createSetupIntent({
@@ -85,7 +126,7 @@ export async function getBalance(accountStripeId: string) {
 }
 
 export async function updatePayoutSchedule(accountStripeId: string) {
-     await service.stripe.connect.updatePayoutSchedule(accountStripeId)
+    await service.stripe.connect.updatePayoutSchedule(accountStripeId)
     return {
         message: 'OK',
     }
@@ -108,5 +149,43 @@ export async function linkStripeAccount(userInfo: UserInfo) {
     return {
         message: 'OK',
         url: result.url,
+    }
+}
+
+export async function withdrawBalance(params: { amount: number; accountStripeId: string }) {
+    const [rate, balance] = await Promise.all([
+        getUsdVndRate(),
+        service.stripe.connect.getConnectedAccountBalance(params.accountStripeId),
+    ])
+
+    const payoutAmountUsdCents = Math.floor(params.amount * rate.vndToUsd * 100)
+
+    if (payoutAmountUsdCents <= 0) {
+        throw new HttpErr.BadRequest('Payout amount is too small', 'INVALID_PAYOUT_AMOUNT')
+    }
+
+    const available = balance.available.find(item => item.currency === 'usd') ?? null
+    const availableAmount = available?.amount ?? 0
+
+    if (payoutAmountUsdCents > availableAmount) {
+        throw new HttpErr.UnprocessableEntity(
+            'Not enough money available',
+            'INSUFFICIENT_AVAILABLE_BALANCE',
+            {
+                requestedAmountVnd: params.amount,
+                requestedAmountUsdCents: payoutAmountUsdCents / 100,
+                availableAmount: availableAmount / 100,
+            }
+        )
+    }
+    await service.stripe.connect.payout({
+        amount: payoutAmountUsdCents,
+        accountStripeId: params.accountStripeId,
+    })
+
+    return {
+        message: 'OK',
+        amountVnd: params.amount,
+        amountUsdCents: payoutAmountUsdCents,
     }
 }

@@ -3,6 +3,7 @@ import { PaymentCustomerPaymentMethodId } from '../../database/payment/customer_
 export const StripeStatusReponse = z.object({
     chargesEnabled: z.boolean(),
     payoutsEnabled: z.boolean(),
+    currentlyDue: z.array(z.string()),
 })
 
 export type StripeStatusReponse = z.infer<typeof StripeStatusReponse>
@@ -46,3 +47,17 @@ export const BalanceResponse = z.object({
 })
 
 export type BalanceResponse = z.infer<typeof BalanceResponse>
+
+export const StripePayoutRequest = z.object({
+    amount: z.number().min(500000),
+})
+
+export type StripePayoutRequest = z.infer<typeof StripePayoutRequest>
+
+export const StripePayoutResponse = z.object({
+    message: z.string(),
+    amountVnd: z.number(),
+    amountUsdCents: z.number(),
+})
+
+export type StripePayoutResponse = z.infer<typeof StripePayoutResponse>

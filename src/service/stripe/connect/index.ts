@@ -11,6 +11,9 @@ export async function createConnectAccount(params: { email?: string }) {
         capabilities: {
             transfers: { requested: true },
         },
+        business_profile: {
+            url: process.env.SYSTEM_DOMAIN ?? '',
+        },
         settings: {
             payouts: {
                 schedule: {
@@ -56,4 +59,16 @@ export async function updatePayoutSchedule(accountId: string) {
             },
         },
     })
+}
+
+export async function payout(params: { amount: number; accountStripeId: string }) {
+    return stripe.payouts.create(
+        {
+            amount: params.amount,
+            currency: 'usd',
+        },
+        {
+            stripeAccount: params.accountStripeId,
+        }
+    )
 }

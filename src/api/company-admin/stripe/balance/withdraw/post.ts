@@ -1,0 +1,32 @@
+import { api, bearer, endpoint, tags } from '../../../../../app/api.js'
+import { requireStaffProfileRole } from '../../../../../app/jwt/handler.js'
+import { bus } from '../../../../../business/index.js'
+import { AuthUserRole } from '../../../../../database/auth/user/type.js'
+import { AuthStaffProfileRole } from '../../../../../database/auth/staff_profile/type.js'
+import { StripePayoutRequest, StripePayoutResponse } from '../../../../../service/stripe/type.js'
+
+const __filename = new URL('', import.meta.url).pathname
+
+api.route({
+    ...endpoint(__filename),
+
+    handler: async request => {
+        const userInfo = await requireStaffProfileRole(
+            request.headers,
+            [AuthUserRole.enum.admin],
+            [AuthStaffProfileRole.enum.company_admin]
+        )
+
+        return bus.payment.stripe.withdrawBalance({
+            amount: request.body.amount,
+            accountStripeId: userInfo.accountStripeId,
+        })
+    },
+
+    schema: {
+        body: StripePayoutRequest,
+        response: { 200: StripePayoutResponse },
+        tags: tags(__filename),
+        security: bearer,
+    },
+})
