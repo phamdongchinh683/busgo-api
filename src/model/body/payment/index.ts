@@ -31,6 +31,7 @@ export type PaymentDeleteResponse = z.infer<typeof PaymentDeleteResponse>
 export const StripeConnectResponse = z.object({
     message: z.string(),
     url: z.string(),
+    token: z.string(),
 })
 
 export type StripeConnectResponse = z.infer<typeof StripeConnectResponse>

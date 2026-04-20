@@ -2,6 +2,7 @@ import { UserInfo } from '../../model/common.js'
 import { service } from '../../service/index.js'
 import { dal } from '../../database/index.js'
 import { HttpErr } from '../../app/index.js'
+import { auth } from '../../app/jwt/index.js'
 
 const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
 const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
@@ -134,14 +135,21 @@ export async function updatePayoutSchedule(accountStripeId: string) {
 
 export async function linkStripeAccount(userInfo: UserInfo) {
     let accountStripeId = userInfo.accountStripeId
+
     if (!accountStripeId) {
         const account = await service.stripe.connect.createConnectAccount({
             email: userInfo.email,
         })
+
+        const newTokenVersion = userInfo.tokenVersion + 1
+
         await dal.auth.user.cmd.updateOne(userInfo.id, {
             accountStripeId: account.id,
+            tokenVersion: newTokenVersion,
         })
+
         accountStripeId = account.id
+        userInfo.tokenVersion = newTokenVersion
     }
 
     const result = await service.stripe.connect.linkBankAccount(accountStripeId)
@@ -149,6 +157,11 @@ export async function linkStripeAccount(userInfo: UserInfo) {
     return {
         message: 'OK',
         url: result.url,
+        token: auth.generateToken({
+            ...userInfo,
+            tokenVersion: userInfo.tokenVersion,
+            accountStripeId,
+        }),
     }
 }
 
