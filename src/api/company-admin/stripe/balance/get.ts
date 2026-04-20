@@ -1,5 +1,5 @@
 import { api, bearer, endpoint, tags } from '../../../../app/api.js'
-import { requireStaffProfileRole } from '../../../../app/jwt/handler.js'
+import { auth } from '../../../../app/jwt/index.js'
 import { BalanceResponse } from '../../../../service/stripe/type.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
 import { bus } from '../../../../business/index.js'
@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await requireStaffProfileRole(
+        const userInfo = await auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]

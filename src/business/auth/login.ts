@@ -1,5 +1,5 @@
 import { HttpErr } from '../../app/index.js'
-import { generateToken } from '../../app/jwt/handler.js'
+import { generateToken } from '../../app/jwt/auth/handler.js'
 import { AuthUserStatus } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { AuthSignInBody } from '../../model/body/auth/index.js'

@@ -1,5 +1,5 @@
 import { api, endpoint, tags, bearer } from '../../../../../app/api.js'
-import { requireRoles } from '../../../../../app/jwt/handler.js'
+import { auth } from '../../../../../app/jwt/index.js'
 import { bus } from '../../../../../business/index.js'
 import { AuthUserRole } from '../../../../../database/auth/user/type.js'
 import { OperationRouteResponse } from '../../../../../model/body/route/index.js'
@@ -10,7 +10,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.driver])
+        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.driver])
         return bus.operation.route.getRouterByTripId({
             driverId: userInfo.id,
             tripId: request.params.id,

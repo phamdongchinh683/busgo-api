@@ -1,6 +1,6 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
-import { requireRoles } from '../../../app/jwt/handler.js'
+import { auth } from '../../../app/jwt/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 
 import { DriverListResponse } from '../../../model/body/driver/index.js'
@@ -12,7 +12,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await requireRoles(request.headers, [AuthUserRole.enum.admin])
+        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.admin])
         return bus.auth.driver.getDrivers(request.query, userInfo.companyId)
     },
 

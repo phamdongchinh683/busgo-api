@@ -179,7 +179,6 @@ export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
 export async function stripeStatus(p: UserInfo) {
     const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId ?? '')
 
-    console.log(result)
     return {
         chargesEnabled: result.charges_enabled,
         payoutsEnabled: result.payouts_enabled,

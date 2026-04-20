@@ -14,6 +14,7 @@ import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
+import { helmetPlugin } from './plugins/helmet.js'
 import 'dotenv/config'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -40,7 +41,6 @@ const api = Fastify({
 api.setValidatorCompiler(validatorCompiler)
 api.setSerializerCompiler(serializerCompiler)
 
-/** Stripe webhook signature verification requires the exact raw bytes Stripe sent (not re-stringified JSON). */
 const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
 type RawWithStripeBody = import('http').IncomingMessage & { rawBody?: Buffer }
 
@@ -151,6 +151,7 @@ const start = async () => {
     try {
         await api.register(rateLimitPlugin)
         await api.register(compressPlugin)
+        await api.register(helmetPlugin)
         await api.register(corsPlugin)
         await api.register(errorHandlerPlugin)
         await api.register(swagger, {
