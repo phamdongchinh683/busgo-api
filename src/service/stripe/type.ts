@@ -73,12 +73,15 @@ export const StripePayoutItem = z.object({
 
 export const StripePayoutListResponse = z.object({
     payouts: z.array(StripePayoutItem),
+    next: z.string().nullable(),
 })
 
 export type StripePayoutListResponse = z.infer<typeof StripePayoutListResponse>
 
-export const StripePayoutDetailResponse = z.object({
-    payout: StripePayoutItem,
+export const StripePayoutListRequest = z.object({
+    limit: z.coerce.number().min(10).max(100).optional(),
+    next: z.string().optional(),
+    status: z.enum(['paid', 'pending', 'in_transit', 'canceled', 'failed']).optional(),
 })
 
-export type StripePayoutDetailResponse = z.infer<typeof StripePayoutDetailResponse>
+export type StripePayoutListRequest = z.infer<typeof StripePayoutListRequest>

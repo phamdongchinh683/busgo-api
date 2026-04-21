@@ -3,12 +3,13 @@ import { service } from '../../service/index.js'
 import { dal } from '../../database/index.js'
 import { HttpErr } from '../../app/index.js'
 import { auth } from '../../app/jwt/index.js'
+import { StripePayoutListRequest } from '../../service/stripe/type.js'
 
 const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
 const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
 
 type ExchangeRate = {
-    usdToVnd: number
+    usdToVnd: number    
     vndToUsd: number
 }
 
@@ -210,9 +211,12 @@ export async function withdrawBalance(params: {
     }
 }
 
-export async function getPayouts(accountStripeId: string) {
-    const payouts = await service.stripe.connect.listPayouts(accountStripeId)
+export async function getPayouts(q: StripePayoutListRequest, accountStripeId: string) {
+    const payouts = await service.stripe.connect.listPayouts(q, accountStripeId)
+    const next = payouts.has_more ? payouts.data[payouts.data.length - 1]?.id ?? null : null
+
     return {
         payouts: payouts.data,
+        next: next,
     }
 }
