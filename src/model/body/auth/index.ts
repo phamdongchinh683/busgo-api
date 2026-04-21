@@ -74,9 +74,15 @@ export const AuthForgotPasswordBody = z.object({
 
 export type AuthForgotPasswordBody = z.infer<typeof AuthForgotPasswordBody>
 
-export const AuthOtpBody = z.object({
-    field: z.enum(['email', 'phone']),
-    value: z.string(),
-})
+export const AuthOtpBody = z.discriminatedUnion('field', [
+    z.object({
+        field: z.literal('email'),
+        value: Email,
+    }),
+    z.object({
+        field: z.literal('phone'),
+        value: Phone,
+    }),
+])
 
 export type AuthOtpBody = z.infer<typeof AuthOtpBody>
