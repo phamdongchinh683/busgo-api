@@ -25,6 +25,7 @@ export const CouponsResponse = z.object({
 export type CouponsResponse = z.infer<typeof CouponsResponse>
 
 export const CouponApplyResponse = z.object({
+    id: BookingCouponId,
     discountAmount: z.number(),
     finalTotal: z.number(),
 })
