@@ -61,3 +61,24 @@ export const StripePayoutResponse = z.object({
 })
 
 export type StripePayoutResponse = z.infer<typeof StripePayoutResponse>
+
+export const StripePayoutItem = z.object({
+    id: z.string(),
+    amount: z.number(),
+    currency: z.string(),
+    status: z.string(),
+    arrival_date: z.number(),
+    created: z.number(),
+})
+
+export const StripePayoutListResponse = z.object({
+    payouts: z.array(StripePayoutItem),
+})
+
+export type StripePayoutListResponse = z.infer<typeof StripePayoutListResponse>
+
+export const StripePayoutDetailResponse = z.object({
+    payout: StripePayoutItem,
+})
+
+export type StripePayoutDetailResponse = z.infer<typeof StripePayoutDetailResponse>

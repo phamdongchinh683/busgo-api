@@ -164,20 +164,26 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         }),
     }
 }
-
-export async function withdrawBalance(params: { amount: number; accountStripeId: string }) {
+export async function withdrawBalance(params: {
+    amount: number
+    accountStripeId: string
+}) {
     const [rate, balance] = await Promise.all([
         getUsdVndRate(),
         service.stripe.connect.getConnectedAccountBalance(params.accountStripeId),
     ])
 
-    const payoutAmountUsdCents = Math.floor(params.amount * rate.vndToUsd * 100)
+    const usdAmount = params.amount / rate.usdToVnd
+    const payoutAmountUsdCents = Math.round(usdAmount * 100)
 
     if (payoutAmountUsdCents <= 0) {
-        throw new HttpErr.BadRequest('Payout amount is too small', 'INVALID_PAYOUT_AMOUNT')
+        throw new HttpErr.BadRequest(
+            'Payout amount is too small',
+            'INVALID_PAYOUT_AMOUNT'
+        )
     }
 
-    const available = balance.available.find(item => item.currency === 'usd') ?? null
+    const available = balance.available.find(i => i.currency === 'usd')
     const availableAmount = available?.amount ?? 0
 
     if (payoutAmountUsdCents > availableAmount) {
@@ -186,11 +192,12 @@ export async function withdrawBalance(params: { amount: number; accountStripeId:
             'INSUFFICIENT_AVAILABLE_BALANCE',
             {
                 requestedAmountVnd: params.amount,
-                requestedAmountUsdCents: payoutAmountUsdCents / 100,
+                requestedAmountUsd: payoutAmountUsdCents / 100,
                 availableAmount: availableAmount / 100,
             }
         )
     }
+
     await service.stripe.connect.payout({
         amount: payoutAmountUsdCents,
         accountStripeId: params.accountStripeId,
@@ -200,5 +207,12 @@ export async function withdrawBalance(params: { amount: number; accountStripeId:
         message: 'OK',
         amountVnd: params.amount,
         amountUsdCents: payoutAmountUsdCents,
+    }
+}
+
+export async function getPayouts(accountStripeId: string) {
+    const payouts = await service.stripe.connect.listPayouts(accountStripeId)
+    return {
+        payouts: payouts.data,
     }
 }

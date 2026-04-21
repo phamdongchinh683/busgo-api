@@ -72,3 +72,12 @@ export async function payout(params: { amount: number; accountStripeId: string }
         }
     )
 }
+
+export async function listPayouts(accountStripeId: string) {
+    return stripe.payouts.list(
+        {},
+        {
+            stripeAccount: accountStripeId,
+        }
+    )
+}
