@@ -16,7 +16,6 @@ api.route({
         return bus.auth.superAdmin.verifyAccount({
             id,
             status,
-            companyId: userInfo.companyId,
         })
     },
 
