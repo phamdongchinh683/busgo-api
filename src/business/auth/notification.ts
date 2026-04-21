@@ -32,7 +32,7 @@ export async function createNotification(params: {
         }
 
         return { message: 'OK' }
-    } 
+    }
 
     return { message: 'OK' }
 }
@@ -52,5 +52,5 @@ export async function getMyNotifications(query: NotificationQuery, userId: AuthU
 }
 
 export async function markNotificationAsRead(id: AuthNotificationId, userId: AuthUserId) {
-    return await dal.auth.notification.cmd.markAsRead(id, userId)
+    return dal.auth.notification.cmd.markAsRead(id, userId)
 }

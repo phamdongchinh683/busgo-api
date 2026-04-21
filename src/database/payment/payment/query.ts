@@ -3,7 +3,11 @@ import { Database } from '../../../datasource/type.js'
 import { BookingId } from '../../booking/booking/type.js'
 import { PaymentStatus } from './type.js'
 import { db } from '../../../datasource/db.js'
-import { PaymentFilter, PeriodPaymentQuery } from '../../../model/query/payment/index.js'
+import {
+    PaymentFilter,
+    PeriodPaymentQuery,
+    RevenueExportQuery,
+} from '../../../model/query/payment/index.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 
@@ -69,6 +73,16 @@ export async function getPaymentByBookingId(bookingId: BookingId, trx?: Transact
         .selectFrom('payment.payment as pp')
         .where('pp.bookingId', '=', bookingId)
         .selectAll()
+        .executeTakeFirst()
+}
+
+export async function getCompanyIdByBookingId(bookingId: BookingId) {
+    return db
+        .selectFrom('booking.ticket as t')
+        .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .innerJoin('organization.vehicle as v', 'v.id', 'trip.vehicleId')
+        .select('v.companyId')
+        .where('t.bookingId', '=', bookingId)
         .executeTakeFirst()
 }
 
@@ -182,4 +196,113 @@ export async function getPeriodRevenue(q: PeriodPaymentQuery) {
         .select(sql<number>`coalesce(sum(pp.amount), 0)::int`.as('total'))
         .executeTakeFirstOrThrow()
     return [[year, r.total]]
+}
+
+export type CompanyRevenueYearlyRow = {
+    companyName: string
+    total: number
+}
+
+export type CompanyRevenueMonthlyRow = {
+    companyName: string
+    /** index 0 = January … 11 = December */
+    months: number[]
+    yearTotal: number
+}
+
+function companyRevenueExportJoin(q: RevenueExportQuery) {
+    const year = q.year ?? utils.time.getNow().year()
+    const { start, end } = utils.time.getPeriodStartAndEnd(year)
+
+    return db
+        .selectFrom('payment.payment as pp')
+        .innerJoin('booking.booking as b', 'b.id', 'pp.bookingId')
+        .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
+        .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .innerJoin('organization.vehicle as v', 'v.id', 'trip.vehicleId')
+        .innerJoin('organization.bus_company as bc', 'bc.id', 'v.companyId')
+        .where('pp.paidAt', '>=', start)
+        .where('pp.paidAt', '<=', end)
+        .where('pp.status', '=', PaymentStatus.enum.success)
+        .where('pp.method', '=', q.method)
+}
+
+export async function getRevenueByCompanyYearlyForPeriod(
+    q: RevenueExportQuery
+): Promise<CompanyRevenueYearlyRow[]> {
+    const rows = await companyRevenueExportJoin(q)
+        .select([
+            'pp.id as paymentId',
+            'pp.amount as paymentAmount',
+            'bc.id as companyId',
+            'bc.name as companyName',
+        ])
+        .groupBy(['pp.id', 'pp.amount', 'bc.id', 'bc.name'])
+        .execute()
+
+    const map = new Map<number, CompanyRevenueYearlyRow>()
+    for (const r of rows) {
+        const id = Number(r.companyId)
+        const amt = Number(r.paymentAmount)
+        const existing = map.get(id)
+        if (existing) {
+            existing.total += amt
+        } else {
+            map.set(id, {
+                companyName: r.companyName,
+                total: amt,
+            })
+        }
+    }
+
+    return [...map.values()].sort((a, b) => a.companyName.localeCompare(b.companyName))
+}
+
+export async function getRevenueByCompanyMonthlyForPeriod(
+    q: RevenueExportQuery
+): Promise<CompanyRevenueMonthlyRow[]> {
+    const year = q.year ?? utils.time.getNow().year()
+    const maxMonthInclusive = utils.time.getMaxMonthInclusiveForPeriodYear(year)
+
+    const monthSql = sql<number>`EXTRACT(MONTH FROM pp.paid_at)::int`
+
+    const rows = await companyRevenueExportJoin(q)
+        .select([
+            monthSql.as('month'),
+            'pp.id as paymentId',
+            'pp.amount as paymentAmount',
+            'bc.id as companyId',
+            'bc.name as companyName',
+        ])
+        .groupBy([monthSql, 'pp.id', 'pp.amount', 'bc.id', 'bc.name'])
+        .execute()
+
+    const map = new Map<number, { companyName: string; months: number[] }>()
+
+    for (const r of rows) {
+        const month = Number(r.month)
+        if (month < 1 || month > 12 || month > maxMonthInclusive) {
+            continue
+        }
+
+        const id = Number(r.companyId)
+        const amt = Number(r.paymentAmount)
+        let entry = map.get(id)
+        if (!entry) {
+            entry = { companyName: r.companyName, months: Array(12).fill(0) }
+            map.set(id, entry)
+        }
+        entry.months[month - 1] += amt
+    }
+
+    return [...map.entries()]
+        .sort((a, b) => a[1].companyName.localeCompare(b[1].companyName))
+        .map(([, v]) => {
+            const yearTotal = v.months.reduce((s, x) => s + x, 0)
+            return {
+                companyName: v.companyName,
+                months: v.months,
+                yearTotal,
+            }
+        })
 }

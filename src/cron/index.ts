@@ -4,6 +4,7 @@ import { job } from '../job/index.js'
 async function main() {
     console.log({ message: '--------- Started cron jobs ---------' })
     job.booking.expireBooking(db)
+    job.customer.notificationDepatureDate(db)
 }
 
 main().catch(err => {

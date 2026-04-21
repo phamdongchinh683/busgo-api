@@ -8,7 +8,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        return await bus.auth.login.byUsernameEmailOrPhone(request.body)
+        return bus.auth.login.byUsernameEmailOrPhone(request.body)
     },
 
     schema: {

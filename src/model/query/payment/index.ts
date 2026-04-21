@@ -81,3 +81,10 @@ export const PeriodPaymentQuery = PeriodFilter.extend({
 })
 
 export type PeriodPaymentQuery = z.infer<typeof PeriodPaymentQuery>
+
+/** Super-admin revenue export: month/year breakdown, one payment method, successful payments only. */
+export const RevenueExportQuery = PeriodFilter.extend({
+    method: PaymentMethod,
+})
+
+export type RevenueExportQuery = z.infer<typeof RevenueExportQuery>

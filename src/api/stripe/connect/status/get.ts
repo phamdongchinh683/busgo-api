@@ -1,0 +1,19 @@
+import { api, endpoint, tags, bearer } from '../../../../app/api.js'
+import { bus } from '../../../../business/index.js'
+import { StripeStatusReponse } from '../../../../service/stripe/type.js'
+import { auth } from '../../../../app/jwt/index.js'
+const __filename = new URL('', import.meta.url).pathname
+
+api.route({
+    ...endpoint(__filename),
+
+    handler: async request => {
+        const userInfo = await auth.requiredAuthenticate(request.headers)
+        return bus.payment.payment.stripeStatus(userInfo)
+    },
+    schema: {
+        response: { 200: StripeStatusReponse },
+        tags: tags(__filename),
+        security: bearer,
+    },
+})

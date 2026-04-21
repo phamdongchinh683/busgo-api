@@ -1,5 +1,5 @@
 import { api, endpoint, bearer, tags } from '../../../app/api.js'
-import { requireStaffProfileRole } from '../../../app/jwt/handler.js'
+import { auth } from '../../../app/jwt/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { CouponBody } from '../../../model/query/coupon/index.js'
@@ -12,12 +12,12 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await requireStaffProfileRole(
+        await auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
-        return await bus.booking.coupon.createCoupon(request.body)
+        return bus.booking.coupon.createCoupon(request.body)
     },
 
     schema: {

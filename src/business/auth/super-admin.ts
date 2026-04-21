@@ -51,7 +51,10 @@ export async function updateOne(id: AuthUserId, body: UserUpdateBody) {
 }
 
 export async function updateNewPassword(id: AuthUserId, password: AuthPassword) {
-    await dal.auth.user.cmd.updatePassword(id, password)
+    await dal.auth.user.cmd.updatePassword({
+        userId: id,
+        password: password,
+    })
     return {
         message: 'OK',
         password: password,

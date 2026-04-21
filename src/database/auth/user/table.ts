@@ -12,6 +12,7 @@ export interface AuthUserTable extends Timestamps {
     role: AuthUserRole
     status: AuthUserStatus
     tokenVersion: ColumnType<number, number | undefined, number>
+    accountStripeId: string | null
 }
 
 export type AuthUserTableInsert = Insertable<AuthUserTable>

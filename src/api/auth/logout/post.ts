@@ -1,5 +1,5 @@
 import { api, bearer, endpoint, tags } from '../../../app/api.js'
-import { requiredAuthenticate } from '../../../app/jwt/handler.js'
+import { auth } from '../../../app/jwt/index.js'
 import { bus } from '../../../business/index.js'
 import { MessageResponse } from '../../../model/common.js'
 
@@ -9,8 +9,8 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await requiredAuthenticate(request.headers)
-        return await bus.auth.logout.updateTokenVersion(userInfo)
+        const userInfo = await auth.requiredAuthenticate(request.headers)
+        return bus.auth.logout.updateTokenVersion(userInfo)
     },
 
     schema: {

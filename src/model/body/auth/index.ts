@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ContactInfo, Email, Phone, UserInfo } from '../../common.js'
+import { ContactInfo, Email, Otp, Phone, UserInfo } from '../../common.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 
@@ -37,7 +37,7 @@ export const AuthSignInBody = z.object({
     username: z.string().min(5).optional(),
     phone: Phone.optional(),
     email: Email.optional(),
-    password: z.string().min(8),
+    password: AuthPassword,
 })
 
 export type AuthSignInBody = z.infer<typeof AuthSignInBody>
@@ -64,3 +64,25 @@ export const AuthVerifyAccountBody = z.object({
 })
 
 export type AuthVerifyAccountBody = z.infer<typeof AuthVerifyAccountBody>
+
+export const AuthForgotPasswordBody = z.object({
+    otp: Otp,
+    email: Email.optional(),
+    phone: Phone.optional(),
+    password: AuthPassword,
+})
+
+export type AuthForgotPasswordBody = z.infer<typeof AuthForgotPasswordBody>
+
+export const AuthOtpBody = z.discriminatedUnion('field', [
+    z.object({
+        field: z.literal('email'),
+        value: Email,
+    }),
+    z.object({
+        field: z.literal('phone'),
+        value: Phone,
+    }),
+])
+
+export type AuthOtpBody = z.infer<typeof AuthOtpBody>

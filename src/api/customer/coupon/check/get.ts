@@ -1,5 +1,5 @@
 import { api, endpoint, bearer, tags } from '../../../../app/api.js'
-import { requireRoles } from '../../../../app/jwt/handler.js'
+import { auth } from '../../../../app/jwt/index.js'
 import { bus } from '../../../../business/index.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
 import { CouponApplyResponse, CouponResponse } from '../../../../model/body/coupon/index.js'
@@ -16,8 +16,8 @@ api.route({
         },
     },
     handler: async request => {
-        await requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return await bus.booking.coupon.getCouponByCode(request.query)
+        await auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
+        return bus.booking.coupon.getCouponByCode(request.query)
     },
 
     schema: {

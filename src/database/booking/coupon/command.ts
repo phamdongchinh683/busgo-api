@@ -16,11 +16,11 @@ import { BookingCouponTableInsert, BookingCouponTableUpdate } from './table.js'
 import _ from 'lodash'
 
 export async function findAllCoupons(filter: CouponFilter) {
-    return await dal.booking.coupon.query.findAll(filter)
+    return dal.booking.coupon.query.findAll(filter)
 }
 
 export async function getCouponByCode(params: CouponCheckCodeQuery) {
-    return await dal.booking.coupon.query.findOneByCode(params)
+    return dal.booking.coupon.query.findOneByCode(params)
 }
 
 export async function getCouponByCodeTransaction(

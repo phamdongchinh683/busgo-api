@@ -1,40 +1,43 @@
-import nodemailer from 'nodemailer'
+import type { Email } from '../../../model/common.js'
 
-let transporter: nodemailer.Transporter | undefined
+const apiKey = process.env.RESEND_API_KEY ?? ''
+const from = process.env.MAIL_FROM ?? ''
 
-const port = Number(process.env.MAIL_PORT ?? 587)
-const user = process.env.MAIL_USER ?? ''
-const pass = process.env.MAIL_PASS ?? ''
-const to = process.env.MAIL_TO ?? ''
-
-function getTransporter() {
-    if (!transporter) {
-        transporter = nodemailer.createTransport({
-            host: 'smtp.gmail.com',
-            port,
-            secure: true,
-            connectionTimeout: 10000,
-            greetingTimeout: 10000,
-            socketTimeout: 20000,
-            auth: {
-                user: user,
-                pass: pass,
-            },
-            tls: {
-                rejectUnauthorized: false,
-            },
-        })
-    }
-
-    return transporter
+export async function send(params: { to: Email; subject: string; text?: string; html: string }) {
+    return fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            from: `"Bus System" <${from}>`,
+            to: [params.to],
+            subject: params.subject,
+            text: params.text,
+            html: params.html,
+        }),
+    })
 }
 
-export function sendMail(params: { to?: string; subject: string; text?: string; html?: string }) {
-    return getTransporter().sendMail({
-        from: `"MyCompany" <${user}>`,
-        to: params.to ?? to,
-        subject: params.subject,
-        text: params.text,
-        html: params.html,
+export async function sendMany(params: {
+    to: Email[]
+    subject: string
+    text?: string
+    html: string
+}) {
+    return fetch('https://api.resend.com/emails/batch', {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            from: `"Bus System" <${from}>`,
+            to: params.to,
+            subject: params.subject,
+            text: params.text,
+            html: params.html,
+        }),
     })
 }

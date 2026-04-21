@@ -1,6 +1,6 @@
 import { api, endpoint, tags, bearer } from '../../../../../app/api.js'
 import { bus } from '../../../../../business/index.js'
-import { requireStaffProfileRole } from '../../../../../app/jwt/handler.js'
+import { auth } from '../../../../../app/jwt/index.js'
 import { AuthUserRole } from '../../../../../database/auth/user/type.js'
 import { UserIdParam } from '../../../../../model/params/user/index.js'
 import { AuthStaffProfileRole } from '../../../../../database/auth/staff_profile/type.js'
@@ -12,12 +12,12 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await requireStaffProfileRole(
+        const userInfo = await auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return await bus.auth.profile.updateStaffRole(request.params.userId, request.body)
+        return bus.auth.profile.updateStaffRole(request.params.userId, request.body)
     },
 
     schema: {

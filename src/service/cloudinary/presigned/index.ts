@@ -39,12 +39,6 @@ export function presignedUpload(
     const timestamp = String(utils.time.getNow().unix())
     const folderPath = `${folder}/${String(id)}`
 
-    /**
-     * Must match exactly what the browser sends as form fields (except `file`, `api_key`, `signature`).
-     * We previously signed `folder` as the prefix only (`company`) while returning `company/1` — that
-     * caused Cloudinary to verify `folder=company/1&timestamp=...` against a signature for
-     * `allowed_formats=...&folder=company&timestamp=...` → Invalid Signature.
-     */
     const paramsToSign: Record<string, string> = {
         folder: folderPath,
         timestamp,

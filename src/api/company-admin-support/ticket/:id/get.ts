@@ -1,9 +1,9 @@
 import { api, endpoint, bearer, tags } from '../../../../app/api.js'
-import { requireStaffProfileRole } from '../../../../app/jwt/handler.js'
+import { auth } from '../../../../app/jwt/index.js'
 import { bus } from '../../../../business/index.js'
 import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { TicketResponse, TicketSupportResponse } from '../../../../model/body/ticket/index.js'
+import { TicketSupportResponse } from '../../../../model/body/ticket/index.js'
 import { TicketIdParam } from '../../../../model/params/ticket/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
@@ -11,13 +11,13 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = await requireStaffProfileRole(
+        const userInfo = await auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
         const { id } = request.params
-        return await bus.booking.ticket.detailTicketSupport(id, userInfo.companyId)
+        return bus.booking.ticket.detailTicketSupport(id, userInfo.companyId)
     },
 
     schema: {

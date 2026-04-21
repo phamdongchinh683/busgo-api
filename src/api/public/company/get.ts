@@ -9,7 +9,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        return await bus.organization.busCompany.list(request.query)
+        return bus.organization.busCompany.list(request.query)
     },
 
     schema: {

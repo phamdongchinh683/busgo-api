@@ -1,12 +1,12 @@
 import { createSigner, createVerifier } from 'fast-jwt'
 
-import { Unauthorized } from '../error-type.js'
-import { HttpErr } from '../index.js'
-import { db } from '../../datasource/db.js'
+import { Unauthorized } from '../../error-type.js'
+import { HttpErr } from '../../index.js'
+import { db } from '../../../datasource/db.js'
 
 const sign = createSigner({
     algorithm: 'HS256',
-    expiresIn: `7 days`,
+    expiresIn: `1h`,
     key: process.env.JWT_SECRET,
 })
 const verify = createVerifier({ key: process.env.JWT_SECRET })

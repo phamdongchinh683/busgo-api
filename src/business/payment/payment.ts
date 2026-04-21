@@ -8,8 +8,13 @@ import { BookingId } from '../../database/booking/booking/type.js'
 import { db } from '../../datasource/db.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { PaymentFilter, PeriodPaymentQuery } from '../../model/query/payment/index.js'
+import {
+    PaymentFilter,
+    PeriodPaymentQuery,
+    RevenueExportQuery,
+} from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
+import { UserInfo } from '../../model/common.js'
 
 async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
@@ -37,7 +42,7 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
 
     const amount = (await dal.booking.booking.query.getAmountByBookingId(bookingId)).totalAmount
 
-    return await dal.payment.payment.cmd.upsertPayment({
+    return dal.payment.payment.cmd.upsertPayment({
         bookingId,
         transactionCode: utils.random.generateRandomNumber(12).toString(),
         method,
@@ -63,6 +68,8 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
             return createVnpayPayment(params, ip)
         case PaymentMethod.enum.cash:
             return createCashPayment(params)
+        case PaymentMethod.enum.stripe:
+            return createStripePayment(params, userId)
         default:
             throw new HttpErr.UnprocessableEntity(
                 'Invalid payment method',
@@ -146,14 +153,79 @@ export async function getPayments(q: PaymentFilter, companyId: OrganizationBusCo
 }
 
 export async function getRevenueByCompanyId(companyId: OrganizationBusCompanyId) {
-    return await dal.payment.payment.query.getTotalRevenueByCompanyId(companyId)
+    return dal.payment.payment.query.getTotalRevenueByCompanyId(companyId)
 }
 
 export async function updateByTransactionCode(transactionCode: string) {
-    return await dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
+    return dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
 }
 
 export async function getPeriodRevenue(params: PeriodPaymentQuery) {
     const data = await dal.payment.payment.query.getPeriodRevenue(params)
     return { data: data }
+}
+
+export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
+    const year = params.year ?? utils.time.getNow().year()
+    const meta = { year, method: params.method }
+    if (params.type === 'monthly') {
+        const rows = await dal.payment.payment.query.getRevenueByCompanyMonthlyForPeriod(params)
+        return service.excel.buildCompanyRevenueMonthlySheet(rows, meta)
+    }
+    const rows = await dal.payment.payment.query.getRevenueByCompanyYearlyForPeriod(params)
+    return service.excel.buildCompanyRevenueYearlySheet(rows, meta)
+}
+
+export async function stripeStatus(p: UserInfo) {
+    const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId ?? '')
+
+    return {
+        chargesEnabled: result.charges_enabled,
+        payoutsEnabled: result.payouts_enabled,
+        currentlyDue: result.requirements?.currently_due ?? [],
+    }
+}
+
+async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {
+    const payment = await preparePayment(params.id, PaymentMethod.enum.stripe)
+
+    const user = await dal.auth.user.query.getOne({ id: userId })
+    if (!user?.accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Customer Stripe account not found',
+            'CUSTOMER_STRIPE_NOT_FOUND'
+        )
+    }
+
+    const companyRow = await dal.payment.payment.query.getCompanyIdByBookingId(params.id)
+    if (!companyRow?.companyId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Company not found for this booking',
+            'COMPANY_NOT_FOUND'
+        )
+    }
+
+    const companyAdmin = await dal.auth.user.query.getCompanyStripeAccountId(companyRow.companyId)
+    if (!companyAdmin?.accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Company has not linked Stripe account',
+            'COMPANY_STRIPE_NOT_LINKED'
+        )
+    }
+
+    const paymentIntent = await service.stripe.client.createPaymentIntentWithCommission({
+        amount: payment.amount,
+        stripeCustomerId: user.accountStripeId,
+        companyAdminStripeId: companyAdmin.accountStripeId,
+        transactionCode: payment.transactionCode,
+    })
+
+    await dal.booking.booking.cmd.updateExpiredBooking(params.id)
+
+    return {
+        message: 'OK',
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
+        payment,
+    }
 }

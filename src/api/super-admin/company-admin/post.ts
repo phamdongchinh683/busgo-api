@@ -1,6 +1,6 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
-import { requireRoles } from '../../../app/jwt/handler.js'
+import { auth } from '../../../app/jwt/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { CompanyAdminCreateBody } from '../../../model/body/company-admin/index.js'
 import { AuthCompanyAdminSignUpResponse } from '../../../model/body/auth/index.js'
@@ -11,8 +11,8 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return await bus.auth.superAdmin.createCompanyAdmin(request.body)
+        await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        return bus.auth.superAdmin.createCompanyAdmin(request.body)
     },
 
     schema: {

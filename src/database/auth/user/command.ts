@@ -2,7 +2,7 @@ import { AuthUserTableInsert, AuthUserTableUpdate } from './table.js'
 import { dal } from '../../index.js'
 import { HttpErr } from '../../../app/index.js'
 import { DatabaseError } from 'pg'
-import { generateToken } from '../../../app/jwt/handler.js'
+import { generateToken } from '../../../app/jwt/auth/handler.js'
 import { db } from '../../../datasource/db.js'
 import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
@@ -310,11 +310,24 @@ export async function updateOne(
         .executeTakeFirstOrThrow()
 }
 
-export async function updatePassword(userId: AuthUserId, password: string) {
+export async function updatePassword(params: {
+    password: string
+    userId?: AuthUserId
+    email?: string
+    phone?: string
+}) {
+    const { password, userId, email, phone } = params
+    const hashPassword = utils.password.hashPassword(password)
     return db
         .updateTable('auth.user')
-        .set({ password: utils.password.hashPassword(password) })
-        .where('id', '=', userId)
+        .set({ password: hashPassword})
+        .where(eb => {
+            const cond = []
+            if (userId) cond.push(eb('id', '=', userId))
+            if (email) cond.push(eb('email', '=', email))
+            if (phone) cond.push(eb('phone', '=', phone))
+            return eb.and(cond)
+        })
         .returningAll()
         .executeTakeFirstOrThrow()
 }
@@ -400,7 +413,7 @@ export async function verify(params: {
     companyId?: OrganizationBusCompanyId | null
 }) {
     return db.transaction().execute(async trx => {
-        const result = await trx
+        await trx
             .updateTable('auth.staff_profile as sp')
             .set({ status: params.status })
             .where(eb => {
@@ -412,10 +425,6 @@ export async function verify(params: {
                 return eb.and(cond)
             })
             .executeTakeFirstOrThrow()
-
-        if (result.numUpdatedRows === 0n) {
-            throw new HttpErr.Forbidden('You cannot update this account from another company.')
-        }
 
         await trx
             .updateTable('auth.user as u')

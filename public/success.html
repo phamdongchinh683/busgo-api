@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Success</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg-1: #0b1220;
+            --bg-2: #13243f;
+            --accent: #22c55e;
+            --accent-2: #16a34a;
+            --text: #e6f8ed;
+            --muted: #c6f0d4;
+            --card: rgba(7, 18, 33, 0.56);
+            --card-border: rgba(255, 255, 255, 0.16);
+            --shadow: 0 24px 60px rgba(2, 8, 23, 0.45);
+        }
+
+        body {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background:
+                radial-gradient(1200px 500px at -5% -5%, rgba(34, 197, 94, 0.2), transparent 58%),
+                radial-gradient(900px 420px at 105% 105%, rgba(59, 130, 246, 0.25), transparent 60%),
+                linear-gradient(145deg, var(--bg-1), var(--bg-2));
+            color: var(--text);
+            overflow: hidden;
+            padding: 20px;
+        }
+
+        .wrap {
+            text-align: center;
+            width: min(92vw, 560px);
+            padding: 44px 34px;
+            border-radius: 24px;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            box-shadow: var(--shadow);
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+            animation: enter 500ms ease-out;
+        }
+
+        .icon-ring {
+            width: 124px;
+            height: 124px;
+            margin: 0 auto 24px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, var(--accent), var(--accent-2));
+            box-shadow:
+                0 18px 38px rgba(22, 163, 74, 0.45),
+                0 0 0 8px rgba(34, 197, 94, 0.18),
+                0 0 0 18px rgba(34, 197, 94, 0.08);
+            animation: pop 480ms ease-out;
+        }
+
+        .check {
+            width: 52px;
+            height: 30px;
+            border-left: 7px solid #fff;
+            border-bottom: 7px solid #fff;
+            transform: rotate(-45deg) translateY(-3px);
+            border-radius: 2px;
+        }
+
+        h1 {
+            font-size: clamp(32px, 5vw, 44px);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+            color: #f0fdf4;
+        }
+
+        p {
+            font-size: 16px;
+            line-height: 1.55;
+            color: var(--muted);
+            max-width: 44ch;
+            margin: 0 auto;
+            opacity: 0.95;
+        }
+
+        @keyframes pop {
+            0% { transform: scale(0.75); opacity: 0; }
+            70% { transform: scale(1.06); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes enter {
+            0% { transform: translateY(12px); opacity: 0; }
+            100% { transform: translateY(0); opacity: 1; }
+        }
+
+        @media (max-width: 500px) {
+            .wrap { padding: 34px 24px; border-radius: 20px; }
+            .icon-ring { width: 106px; height: 106px; margin-bottom: 20px; }
+            .check { width: 44px; height: 24px; border-left-width: 6px; border-bottom-width: 6px; }
+            p { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <main class="wrap">
+        <div class="icon-ring" aria-hidden="true">
+            <span class="check"></span>
+        </div>
+        <h1>Success</h1>
+        <p>Your request has been completed successfully. You can close this page and continue in the app.</p>
+    </main>
+</body>
+</html>

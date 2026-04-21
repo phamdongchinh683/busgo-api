@@ -145,6 +145,7 @@ export function getOne(params: {
             'u.role',
             'u.status',
             'u.tokenVersion',
+            'u.accountStripeId',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
         ])
@@ -195,4 +196,14 @@ export function findAll(query: UserListQuery) {
         .limit(limit + 1)
         .orderBy('u.id', 'asc')
         .execute()
+}
+
+export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {
+    return db
+        .selectFrom('auth.user as u')
+        .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
+        .select(['u.accountStripeId'])
+        .where('sp.companyId', '=', companyId)
+        .where('sp.role', '=', AuthStaffProfileRole.enum.company_admin)
+        .executeTakeFirst()
 }
