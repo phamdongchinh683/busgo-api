@@ -413,7 +413,7 @@ export async function verify(params: {
     companyId?: OrganizationBusCompanyId | null
 }) {
     return db.transaction().execute(async trx => {
-        const result = await trx
+        await trx
             .updateTable('auth.staff_profile as sp')
             .set({ status: params.status })
             .where(eb => {
@@ -425,10 +425,6 @@ export async function verify(params: {
                 return eb.and(cond)
             })
             .executeTakeFirstOrThrow()
-
-        if (result.numUpdatedRows === 0n) {
-            throw new HttpErr.Forbidden('You cannot update this account from another company.')
-        }
 
         await trx
             .updateTable('auth.user as u')
