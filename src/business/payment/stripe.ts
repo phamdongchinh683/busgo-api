@@ -9,7 +9,7 @@ const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
 const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
 
 type ExchangeRate = {
-    usdToVnd: number    
+    usdToVnd: number
     vndToUsd: number
 }
 
@@ -165,10 +165,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         }),
     }
 }
-export async function withdrawBalance(params: {
-    amount: number
-    accountStripeId: string
-}) {
+export async function withdrawBalance(params: { amount: number; accountStripeId: string }) {
     const [rate, balance] = await Promise.all([
         getUsdVndRate(),
         service.stripe.connect.getConnectedAccountBalance(params.accountStripeId),
@@ -178,10 +175,7 @@ export async function withdrawBalance(params: {
     const payoutAmountUsdCents = Math.round(usdAmount * 100)
 
     if (payoutAmountUsdCents <= 0) {
-        throw new HttpErr.BadRequest(
-            'Payout amount is too small',
-            'INVALID_PAYOUT_AMOUNT'
-        )
+        throw new HttpErr.BadRequest('Payout amount is too small', 'INVALID_PAYOUT_AMOUNT')
     }
 
     const available = balance.available.find(i => i.currency === 'usd')
@@ -213,7 +207,7 @@ export async function withdrawBalance(params: {
 
 export async function getPayouts(q: StripePayoutListRequest, accountStripeId: string) {
     const payouts = await service.stripe.connect.listPayouts(q, accountStripeId)
-    const next = payouts.has_more ? payouts.data[payouts.data.length - 1]?.id ?? null : null
+    const next = payouts.has_more ? (payouts.data[payouts.data.length - 1]?.id ?? null) : null
 
     return {
         payouts: payouts.data,

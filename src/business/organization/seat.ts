@@ -2,6 +2,7 @@ import { dal } from '../../database/index.js'
 import { OrganizationVehicleId } from '../../database/organization/vehicle/type.js'
 import { SeatCreateBody } from '../../model/body/seat/index.js'
 import { TripSeatParam } from '../../model/params/trip/index.js'
+import { HttpErr } from '../../app/index.js'
 
 export async function getSeats(params: TripSeatParam) {
     return {
@@ -10,6 +11,11 @@ export async function getSeats(params: TripSeatParam) {
 }
 
 export async function createSeat(body: SeatCreateBody) {
+    const seats = await dal.organization.seat.cmd.getSeatsByVehicle(body.vehicleId)
+    if (seats.length > 0) {
+        throw new HttpErr.UnprocessableEntity('Vehicle has no available seats')
+    }
+
     await dal.organization.seat.query.createOne(body)
 
     return {

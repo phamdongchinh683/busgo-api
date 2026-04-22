@@ -320,7 +320,7 @@ export async function updatePassword(params: {
     const hashPassword = utils.password.hashPassword(password)
     return db
         .updateTable('auth.user')
-        .set({ password: hashPassword})
+        .set({ password: hashPassword })
         .where(eb => {
             const cond = []
             if (userId) cond.push(eb('id', '=', userId))
