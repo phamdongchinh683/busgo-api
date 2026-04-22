@@ -4,6 +4,7 @@ import { dal } from '../../database/index.js'
 import { HttpErr } from '../../app/index.js'
 import { auth } from '../../app/jwt/index.js'
 import { StripePayoutListRequest } from '../../service/stripe/type.js'
+import { db } from '../../datasource/db.js'
 
 const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
 const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
@@ -91,11 +92,24 @@ export async function setDefault(userInfo: UserInfo, paymentMethodId: string) {
         paymentMethodId: paymentMethodId,
     })
 
-    await dal.payment.customerPaymentMethod.cmd.upsertOne({
-        userId: userInfo.id,
-        stripeCustomerId: userInfo.accountStripeId ?? '',
-        stripePaymentMethodId: paymentMethodId,
-        isDefault: true,
+    await db.transaction().execute(async (trx) => {
+        await dal.payment.customerPaymentMethod.cmd.resetDefaultByUser(
+            {
+                userId: userInfo.id,
+                stripeCustomerId: userInfo.accountStripeId ?? '',
+            },
+            trx
+        )
+
+        await dal.payment.customerPaymentMethod.cmd.upsertOne(
+            {
+                userId: userInfo.id,
+                stripeCustomerId: userInfo.accountStripeId ?? '',
+                stripePaymentMethodId: paymentMethodId,
+                isDefault: true,
+            },
+            trx
+        )
     })
 
     return {

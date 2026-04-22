@@ -1,14 +1,31 @@
 import { db } from '../../../datasource/db.js'
 import { PaymentCustomerPaymentMethodTableInsert } from './table.js'
 import { AuthUserId } from '../../auth/user/type.js'
+import { Database } from '../../../datasource/type.js'
+import { Transaction } from 'kysely'
 
-export async function upsertOne(params: PaymentCustomerPaymentMethodTableInsert) {
-    return db
+export async function upsertOne(
+    params: PaymentCustomerPaymentMethodTableInsert,
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
         .insertInto('payment.customer_payment_method')
         .values(params)
         .onConflict(oc => oc.column('stripePaymentMethodId').doUpdateSet(params))
         .returningAll()
         .executeTakeFirstOrThrow()
+}
+
+export async function resetDefaultByUser(
+    params: { userId: AuthUserId; stripeCustomerId: string },
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
+        .updateTable('payment.customer_payment_method')
+        .set({ isDefault: false })
+        .where('userId', '=', params.userId)
+        .where('stripeCustomerId', '=', params.stripeCustomerId)
+        .executeTakeFirst()
 }
 
 export async function findMany(userId: AuthUserId) {
