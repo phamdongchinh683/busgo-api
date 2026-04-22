@@ -1,7 +1,5 @@
 export function otpTemplate(params: { otp: string }) {
     const { otp } = params
-    const logoUrl =
-        'https://res.cloudinary.com/dinvm5h7g/image/upload/v1776836282/logo/ChatGPT_Image_Apr_22_2026_12_37_40_PM_melvlj.png'
 
     return `
 <div style="margin:0;padding:28px;background:#f3f7f4;font-family:'Inter','Segoe UI',Roboto,Arial,sans-serif;color:#1b2a1f;">
@@ -11,7 +9,7 @@ export function otpTemplate(params: { otp: string }) {
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
         <tr>
           <td style="width:116px;vertical-align:middle;">
-            <img src="${logoUrl}" alt="Bus Go" style="display:block;width:108px;max-width:108px;height:auto;border:0;background:transparent;" />
+            <img src="cid:bus-go-logo" alt="Bus Go" style="display:block;width:108px;max-width:108px;height:auto;border:0;background:transparent;" />
           </td>
           <td style="vertical-align:middle;text-align:left;padding-left:8px;">
             <div style="font-size:18px;font-weight:800;letter-spacing:0.2px;color:#1f3b27;">Hệ thống xe khách</div>
@@ -44,9 +42,6 @@ export function otpTemplate(params: { otp: string }) {
 }
 
 export function departureReminderTemplate() {
-    const logoUrl =
-        'https://res.cloudinary.com/dinvm5h7g/image/upload/v1776836282/logo/ChatGPT_Image_Apr_22_2026_12_37_40_PM_melvlj.png'
-
     return `
 <div style="margin:0;padding:28px;background:#f3f7f4;font-family:'Inter','Segoe UI',Roboto,Arial,sans-serif;color:#1b2a1f;">
   <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #dde7df;border-radius:16px;overflow:hidden;box-shadow:0 12px 28px rgba(18,38,24,0.08);">
@@ -55,7 +50,7 @@ export function departureReminderTemplate() {
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
         <tr>
           <td style="width:116px;vertical-align:middle;">
-            <img src="${logoUrl}" alt="Bus Go" style="display:block;width:108px;max-width:108px;height:auto;border:0;background:transparent;" />
+            <img src="cid:bus-go-logo" alt="Bus Go" style="display:block;width:108px;max-width:108px;height:auto;border:0;background:transparent;" />
           </td>
           <td style="vertical-align:middle;text-align:left;padding-left:8px;">
             <div style="font-size:18px;font-weight:800;letter-spacing:0.2px;color:#1f3b27;">Bus Go</div>

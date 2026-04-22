@@ -30,7 +30,7 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
 
     await service.email.sender.send({
         to: to,
-        subject: 'Bus System OTP Code',
+        subject: 'Bus Go OTP Code',
         html: service.email.template.otpTemplate({ otp: otp.toString() }),
     })
 
