@@ -48,9 +48,18 @@ async function getUsdVndRate() {
 }
 
 export async function setUpIntent(userInfo: UserInfo) {
+
+    const user = await dal.auth.user.query.getOne({ id: userInfo.id })
+    if (!user?.accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Customer Stripe account not found',
+            'CUSTOMER_STRIPE_NOT_FOUND'
+        )
+    }
     const intent = await service.stripe.client.createSetupIntent({
-        customerId: userInfo.accountStripeId ?? '',
+        customerId: user.accountStripeId,
     })
+
     return {
         clientSecret: intent.client_secret ?? '',
     }
