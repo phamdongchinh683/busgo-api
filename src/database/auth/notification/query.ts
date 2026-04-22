@@ -17,7 +17,6 @@ export async function findAllByUserId(query: {
                 cond.push(eb('id', '>', next))
             }
             cond.push(eb('userId', '=', userId))
-            cond.push(eb('isRead', '=', false))
             return eb.and(cond)
         })
         .orderBy('createdAt', 'desc')
