@@ -226,6 +226,6 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
         message: 'OK',
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
-        payment,
+        payment: payment,
     }
 }

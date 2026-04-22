@@ -23,6 +23,8 @@ const __dirname = dirname(__filename)
 const rootDir = path.join(__dirname, '..')
 const apiDir = path.join(rootDir, 'api')
 const isProduction = process.env.NODE_ENV === 'production'
+const enableHttpDebugLogs =
+    process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 
 const swaggerFaviconSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
@@ -46,14 +48,14 @@ type RawWithStripeBody = import('http').IncomingMessage & { rawBody?: Buffer }
 
 api.addContentTypeParser(
     'application/json',
-    { parseAs: 'buffer' },
-    (request: FastifyRequest, body: Buffer, done) => {
+    { parseAs: 'string' },
+    (request: FastifyRequest, body: string, done) => {
         try {
             const pathname = request.url.split('?')[0] ?? ''
             if (pathname === STRIPE_WEBHOOK_PATH) {
-                ;(request.raw as RawWithStripeBody).rawBody = body
+                ;(request.raw as RawWithStripeBody).rawBody = Buffer.from(body, 'utf8')
             }
-            const json = JSON.parse(body.toString('utf8')) as unknown
+            const json = JSON.parse(body) as unknown
             done(null, json)
         } catch (err) {
             ;(err as { statusCode?: number }).statusCode = 400
@@ -63,7 +65,11 @@ api.addContentTypeParser(
 )
 
 api.addHook('preHandler', async (request, reply) => {
-    if (!request.url.includes('swagger') && !request.url.startsWith('/docs')) {
+    if (
+        enableHttpDebugLogs &&
+        !request.url.includes('swagger') &&
+        !request.url.startsWith('/docs')
+    ) {
         const preHandler = {
             method: request.method,
             url: request.url,
@@ -77,7 +83,11 @@ api.addHook('preHandler', async (request, reply) => {
 })
 
 api.addHook('preSerialization', async (request, reply, response) => {
-    if (!request.url.includes('swagger') && !request.url.startsWith('/docs')) {
+    if (
+        enableHttpDebugLogs &&
+        !request.url.includes('swagger') &&
+        !request.url.startsWith('/docs')
+    ) {
         request.log.info({
             preSerialization: {
                 method: request.method,
@@ -87,6 +97,27 @@ api.addHook('preSerialization', async (request, reply, response) => {
         })
     }
     return response
+})
+
+api.addHook('onSend', async (request, reply, payload) => {
+    if (reply.hasHeader('cache-control')) return payload
+
+    const pathname = request.url.split('?')[0] ?? ''
+    const isSwaggerPath = pathname.includes('/swagger') || pathname.startsWith('/docs')
+    if (isSwaggerPath) return payload
+
+    if (request.method === 'GET' && pathname === '/health') {
+        reply.header('Cache-Control', 'public, max-age=15, stale-while-revalidate=30')
+        return payload
+    }
+
+    if (request.method === 'GET' && pathname.startsWith('/public/')) {
+        reply.header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
+        return payload
+    }
+
+    reply.header('Cache-Control', 'no-store')
+    return payload
 })
 
 export const bearer = [{ bearerAuth: [] }]
@@ -158,7 +189,7 @@ const start = async () => {
             openapi: {
                 info: {
                     title: 'API',
-                    description: 'API documentation for the Bus Ticketing System',
+                    description: 'API documentation for the Bus Go',
                     version: '1.0.0',
                 },
                 components: {
