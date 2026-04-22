@@ -8,7 +8,7 @@ import { Database } from '../../datasource/type.js'
 
 export function expireBooking(db: Kysely<Database>) {
     cron.schedule(
-        '* * * * * *',
+        '* /15 * * * *',
         async () => {
             await db.transaction().execute(async trx => {
                 const expiredBookings = await trx
