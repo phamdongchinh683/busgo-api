@@ -26,18 +26,6 @@ const isProduction = process.env.NODE_ENV === 'production'
 const enableHttpDebugLogs =
     process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 
-function toPositiveInt(value: string | undefined, fallback: number): number {
-    const parsed = Number.parseInt(value ?? '', 10)
-    return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
-}
-
-const publicBrowserCacheSeconds = toPositiveInt(process.env.PUBLIC_BROWSER_CACHE_SECONDS, 60)
-const publicCdnCacheSeconds = toPositiveInt(process.env.PUBLIC_CDN_CACHE_SECONDS, 300)
-const cacheStaleWhileRevalidateSeconds = toPositiveInt(
-    process.env.CACHE_STALE_WHILE_REVALIDATE_SECONDS,
-    120
-)
-
 const swaggerFaviconSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
     <circle cx="16" cy="16" r="16" fill="#85e92c"/>
@@ -123,7 +111,7 @@ api.addHook('onSend', async (request, reply, payload) => {
     if (request.method === 'GET' && pathname.startsWith('/public/')) {
         reply.header(
             'Cache-Control',
-            `public, max-age=${publicBrowserCacheSeconds}, s-maxage=${publicCdnCacheSeconds}, stale-while-revalidate=${cacheStaleWhileRevalidateSeconds}`
+            `public, max-age=60, s-maxage=300, stale-while-revalidate=120`
         )
         return payload
     }
