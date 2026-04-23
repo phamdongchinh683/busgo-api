@@ -48,14 +48,14 @@ type RawWithStripeBody = import('http').IncomingMessage & { rawBody?: Buffer }
 
 api.addContentTypeParser(
     'application/json',
-    { parseAs: 'string' },
-    (request: FastifyRequest, body: string, done) => {
+    { parseAs: 'buffer' },
+    (request: FastifyRequest, body: Buffer, done) => {
         try {
             const pathname = request.url.split('?')[0] ?? ''
-            if (pathname === STRIPE_WEBHOOK_PATH) {
-                ;(request.raw as RawWithStripeBody).rawBody = Buffer.from(body, 'utf8')
+            if (pathname === STRIPE_WEBHOOK_PATH || pathname.startsWith(`${STRIPE_WEBHOOK_PATH}/`)) {
+                ;(request.raw as RawWithStripeBody).rawBody = body
             }
-            const json = JSON.parse(body) as unknown
+            const json = JSON.parse(body.toString('utf8')) as unknown
             done(null, json)
         } catch (err) {
             ;(err as { statusCode?: number }).statusCode = 400
