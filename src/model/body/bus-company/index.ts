@@ -7,6 +7,8 @@ export const BusCompanyBody = z.object({
     hotline: Phone,
     logoUrl: z.string(),
     address: z.string(),
+    lat: z.number().min(-90).max(90),
+    long: z.number().min(-180).max(180),
 })
 export type BusCompanyBody = z.infer<typeof BusCompanyBody>
 
