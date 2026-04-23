@@ -8,8 +8,8 @@ export interface OrganizationBusCompanyTable extends Timestamps {
     hotline: string
     logoUrl: string
     address: string
-    lat: number
-    long: number
+    latitude: number
+    longitude: number
 }
 
 export type OrganizationBusCompanyTableInsert = Insertable<OrganizationBusCompanyTable>
