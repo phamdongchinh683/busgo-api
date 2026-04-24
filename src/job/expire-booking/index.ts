@@ -1,13 +1,14 @@
 import cron from 'node-cron'
 import { BookingStatus } from '../../database/booking/booking/type.js'
 import { BookingTicketStatus } from '../../database/booking/ticket/type.js'
+import { PaymentStatus } from '../../database/payment/payment/type.js'
 import { utils } from '../../utils/index.js'
 import { Kysely } from 'kysely'
 import { Database } from '../../datasource/type.js'
 
 export function expireBooking(db: Kysely<Database>) {
     cron.schedule(
-        '*/15 * * * *',
+        '*/10 * * * *',
         async () => {
             await db.transaction().execute(async trx => {
                 const expiredBookings = await trx
@@ -31,6 +32,13 @@ export function expireBooking(db: Kysely<Database>) {
                     .set({ status: BookingStatus.enum.expired })
                     .where('b.id', 'in', bookingIds)
                     .executeTakeFirstOrThrow()
+
+                await trx
+                    .updateTable('payment.payment as pp')
+                    .set({ status: PaymentStatus.enum.failed })
+                    .where('pp.bookingId', 'in', bookingIds)
+                    .where('pp.status', '=', PaymentStatus.enum.pending)
+                    .executeTakeFirst()
 
                 const tickets = await trx
                     .updateTable('booking.ticket as t')

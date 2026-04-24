@@ -4,12 +4,13 @@ import { dal } from '../../database/index.js'
 import { HttpErr } from '../../app/index.js'
 import { auth } from '../../app/jwt/index.js'
 import { StripePayoutListRequest } from '../../service/stripe/type.js'
+import { db } from '../../datasource/db.js'
 
 const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
 const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
 
 type ExchangeRate = {
-    usdToVnd: number    
+    usdToVnd: number
     vndToUsd: number
 }
 
@@ -47,9 +48,18 @@ async function getUsdVndRate() {
 }
 
 export async function setUpIntent(userInfo: UserInfo) {
+
+    const user = await dal.auth.user.query.getOne({ id: userInfo.id })
+    if (!user?.accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Customer Stripe account not found',
+            'CUSTOMER_STRIPE_NOT_FOUND'
+        )
+    }
     const intent = await service.stripe.client.createSetupIntent({
-        customerId: userInfo.accountStripeId ?? '',
+        customerId: user.accountStripeId,
     })
+
     return {
         clientSecret: intent.client_secret ?? '',
     }
@@ -91,11 +101,24 @@ export async function setDefault(userInfo: UserInfo, paymentMethodId: string) {
         paymentMethodId: paymentMethodId,
     })
 
-    await dal.payment.customerPaymentMethod.cmd.upsertOne({
-        userId: userInfo.id,
-        stripeCustomerId: userInfo.accountStripeId ?? '',
-        stripePaymentMethodId: paymentMethodId,
-        isDefault: true,
+    await db.transaction().execute(async (trx) => {
+        await dal.payment.customerPaymentMethod.cmd.resetDefaultByUser(
+            {
+                userId: userInfo.id,
+                stripeCustomerId: userInfo.accountStripeId ?? '',
+            },
+            trx
+        )
+
+        await dal.payment.customerPaymentMethod.cmd.upsertOne(
+            {
+                userId: userInfo.id,
+                stripeCustomerId: userInfo.accountStripeId ?? '',
+                stripePaymentMethodId: paymentMethodId,
+                isDefault: true,
+            },
+            trx
+        )
     })
 
     return {
@@ -165,10 +188,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         }),
     }
 }
-export async function withdrawBalance(params: {
-    amount: number
-    accountStripeId: string
-}) {
+export async function withdrawBalance(params: { amount: number; accountStripeId: string }) {
     const [rate, balance] = await Promise.all([
         getUsdVndRate(),
         service.stripe.connect.getConnectedAccountBalance(params.accountStripeId),
@@ -178,10 +198,7 @@ export async function withdrawBalance(params: {
     const payoutAmountUsdCents = Math.round(usdAmount * 100)
 
     if (payoutAmountUsdCents <= 0) {
-        throw new HttpErr.BadRequest(
-            'Payout amount is too small',
-            'INVALID_PAYOUT_AMOUNT'
-        )
+        throw new HttpErr.BadRequest('Payout amount is too small', 'INVALID_PAYOUT_AMOUNT')
     }
 
     const available = balance.available.find(i => i.currency === 'usd')
@@ -213,7 +230,7 @@ export async function withdrawBalance(params: {
 
 export async function getPayouts(q: StripePayoutListRequest, accountStripeId: string) {
     const payouts = await service.stripe.connect.listPayouts(q, accountStripeId)
-    const next = payouts.has_more ? payouts.data[payouts.data.length - 1]?.id ?? null : null
+    const next = payouts.has_more ? (payouts.data[payouts.data.length - 1]?.id ?? null) : null
 
     return {
         payouts: payouts.data,

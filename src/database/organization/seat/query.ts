@@ -21,6 +21,7 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
         .selectFrom('organization.seat as s')
         .where('s.vehicleId', '=', vehicleId)
         .select(['s.id', 's.seatNumber'])
+        .execute()
 }
 
 function getOccupiedSeatsSubQuery(params: TripSeatParam) {

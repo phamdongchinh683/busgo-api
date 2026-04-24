@@ -122,8 +122,8 @@ export async function signUpCompanyAdmin(
 
     const notification = await dal.auth.notification.cmd.insertOne({
         userId: userDevice[0].userId,
-        title: `New Account Request from ${params.fullName}`,
-        body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
+        body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
         data: JSON.stringify({
             userNewAccountId: user.id.toString(),
         }),
@@ -131,8 +131,8 @@ export async function signUpCompanyAdmin(
     })
     await service.firebase.fcm.sendFcm({
         fcmTokens: userDevice.map(device => device.fcmToken),
-        title: `New Account Request from ${params.fullName}`,
-        body: 'A new account request has been made for your company. Please verify the account to access the app.',
+        title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
+        body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
         data: {
             userNewAccountId: user.id.toString(),
             id: notification.id.toString(),
@@ -140,7 +140,7 @@ export async function signUpCompanyAdmin(
     })
 
     return {
-        message: 'Sent request to super admin to verify your account',
+        message: 'Yêu cầu tạo tài khoản mới đã được gửi đến quản trị viên cấp cao',
     }
 }
 
@@ -183,8 +183,8 @@ export async function createCompanyAccount(
             await dal.auth.notification.cmd.insertOne(
                 {
                     userId: newUser.id,
-                    title: 'Welcome to the app',
-                    body: 'Your account has been created by super admin and is ready to use',
+                    title: 'Chào mừng bạn đến với ứng dụng',
+                    body: 'Tài khoản của bạn đã được tạo bởi quản trị viên cấp cao',
                     isRead: false,
                 },
                 trx
@@ -261,9 +261,12 @@ export async function signUpCompanyAdminWithCompany(
 
             await dal.auth.notification.cmd.insertOne({
                 userId: companyAdmin.userId,
-                title: 'New Account Request',
-                body: 'A new account request has been made for your company. Please verify the account to access the app.',
+                title: `Hiện tại có yêu cầu tạo tài khoản mới từ công ty bạn ${params.fullName}`,
+                body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
                 isRead: false,
+                data: JSON.stringify({
+                    userNewAccountId: newUser.id.toString(),
+                }),
             })
 
             return newUser
@@ -293,7 +296,7 @@ export async function signUpCompanyAdminWithCompany(
     })
 
     return {
-        message: 'Sent request to company admin to verify your account',
+        message: 'Yêu cầu tạo tài khoản mới đã được gửi đến quản trị viên công ty',
     }
 }
 
@@ -320,7 +323,7 @@ export async function updatePassword(params: {
     const hashPassword = utils.password.hashPassword(password)
     return db
         .updateTable('auth.user')
-        .set({ password: hashPassword})
+        .set({ password: hashPassword })
         .where(eb => {
             const cond = []
             if (userId) cond.push(eb('id', '=', userId))
@@ -365,15 +368,15 @@ export async function insertDriver(
             await dal.auth.notification.cmd.insertOne(
                 {
                     userId: companyAdmin.userId,
-                    title: 'New Driver Request',
-                    body: 'A new driver request has been made for your company. Please verify the driver to access the app.',
+                    title: `Hiện tại có yêu cầu tạo tài khoản cho tài xế từ công ty bạn ${params.fullName}`,
+                    body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
                     isRead: false,
                 },
                 trx
             )
 
             return {
-                message: 'Sent request to company admin to verify your account',
+                message: 'Yêu cầu tạo tài khoản cho tài xế đã được gửi đến quản trị viên công ty',
             }
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {

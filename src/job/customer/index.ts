@@ -38,7 +38,7 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                         'trip.id as tripId',
                         'trip.departureDate as departureDate',
                     ])
-                    .where((eb) => {
+                    .where(eb => {
                         const isPaidBooking = eb.and([
                             eb('b.status', '=', BookingStatus.enum.paid),
                             eb('t.status', '=', BookingTicketStatus.enum.paid),
@@ -62,7 +62,7 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                     .where('trip.status', '=', OperationTripStatus.enum.scheduled)
                     .where('trip.departureDate', '>=', windowStart)
                     .where('trip.departureDate', '<', windowEnd)
-                    .where((eb) => {
+                    .where(eb => {
                         const alreadyNotified = eb.exists(
                             eb
                                 .selectFrom('auth.notification as n')
@@ -114,7 +114,7 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                         html: service.email.template.departureReminderTemplate(),
                     })
                 }
-                console.log("OK")
+                console.log('OK')
             } catch (err) {
                 console.error(err)
             }
