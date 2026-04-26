@@ -4,7 +4,7 @@ import { dal } from '../../database/index.js'
 import { TicketFilter, TicketSupportFilter } from '../../model/query/ticket/index.js'
 import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
-import { OperationTripId } from '../../database/operation/trip/type.js'
+import { OperationTripId, OperationTripStatus } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { BookingStatus } from '../../database/booking/booking/type.js'
 
@@ -35,11 +35,19 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
         throw new HttpErr.Forbidden('You are not allowed to cancel this ticket')
     }
 
+    if (
+        data.tripStatus === OperationTripStatus.enum.running ||
+        data.tripStatus === OperationTripStatus.enum.completed
+    ) {
+        throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
+    }
+
     if (data.status === BookingStatus.enum.paid && data.createdAt < utils.time.getNow().toDate()) {
         throw new HttpErr.Forbidden('Ticket completed you can not cancel it')
     }
 
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)
+    
     return {
         message: 'OK',
         tickets: tickets,
