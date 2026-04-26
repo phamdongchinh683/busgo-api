@@ -6,6 +6,7 @@ import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
+import { BookingStatus } from '../../database/booking/booking/type.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {
     const tickets = await dal.booking.ticket.query.findAll(q, userId)
@@ -32,6 +33,10 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
 
     if (!data) {
         throw new HttpErr.Forbidden('You are not allowed to cancel this ticket')
+    }
+
+    if (data.status === BookingStatus.enum.paid && data.createdAt < utils.time.getNow().toDate()) {
+        throw new HttpErr.Forbidden('Ticket completed you can not cancel it')
     }
 
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)

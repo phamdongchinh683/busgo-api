@@ -126,7 +126,7 @@ export async function findPassengersByDriverAndTripId(
         .select([
             't.id',
             'u.phone as phoneNumber',
-            sql<string>`COALESCE(u.full_name, u.username)`.as('fullName'),
+            'u.fullName as fullName',
             'seat.seatNumber',
             'b.status',
             'fs.address as pickup',

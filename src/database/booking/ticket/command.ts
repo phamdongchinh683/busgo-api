@@ -6,8 +6,9 @@ import { BookingTicketId, BookingTicketStatus } from './type.js'
 import { BookingId, BookingStatus } from '../booking/type.js'
 import { db } from '../../../datasource/db.js'
 import { dal } from '../../index.js'
-import { PaymentStatus } from '../../payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../../payment/payment/type.js'
 import { OperationTripId } from '../../operation/trip/type.js'
+import { service } from '../../../service/index.js'
 
 export async function createTicketTransaction(
     params: BookingTicketTableInsert,
@@ -85,13 +86,25 @@ export async function cancelTicketTransaction(id: BookingTicketId) {
         )
 
         const payment = await dal.payment.payment.query.getPayment(ticket.bookingId, undefined, trx)
-        if (payment) {
-            await dal.payment.payment.query.updateStatusPaymentTransaction(
-                PaymentStatus.enum.failed,
-                ticket.bookingId,
-                trx
-            )
+
+        const shouldRefundStripePayment =
+            payment &&
+            payment.method === PaymentMethod.enum.stripe &&
+            payment.status === PaymentStatus.enum.success
+
+        if (!shouldRefundStripePayment) {
+            return tickets
         }
+
+        await service.stripe.client.createRefund({
+            paymentIntentId: payment.transactionNo ?? '',
+        })
+
+        await dal.payment.payment.query.updateStatusPaymentTransaction(
+            PaymentStatus.enum.refunded,
+            ticket.bookingId,
+            trx
+        )
 
         return tickets
     })

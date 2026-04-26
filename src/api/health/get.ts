@@ -13,9 +13,11 @@ api.route({
     },
 
     schema: {
-        response: { 200: z.object({
-            status: z.string(),
-        }) },
+        response: {
+            200: z.object({
+                status: z.string(),
+            }),
+        },
         tags: tags(__filename),
     },
 })
