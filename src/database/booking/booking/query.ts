@@ -37,10 +37,7 @@ export async function getBookingByUserIdAndBookingId(
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .selectAll()
-        .select([
-            'trip.status as tripStatus',
-            'trip.departureDate',
-        ])
+        .select(['trip.status as tripStatus', 'trip.departureDate'])
         .where(eb => {
             const cond = []
             cond.push(eb('b.userId', '=', userId))
@@ -48,6 +45,17 @@ export async function getBookingByUserIdAndBookingId(
             if (ticketId) cond.push(eb('t.id', '=', ticketId))
             return eb.and(cond)
         })
+        .executeTakeFirst()
+}
+
+export async function getBookingByTicketId(ticketId: BookingTicketId, trx?: Transaction<Database>) {
+    return (trx ?? db)
+        .selectFrom('booking.booking as b')
+        .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
+        .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .selectAll()
+        .select(['trip.status as tripStatus', 'trip.departureDate'])
+        .where('t.id', '=', ticketId)
         .executeTakeFirst()
 }
 

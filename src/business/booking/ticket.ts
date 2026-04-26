@@ -6,7 +6,6 @@ import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripId, OperationTripStatus } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { BookingStatus } from '../../database/booking/booking/type.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {
     const tickets = await dal.booking.ticket.query.findAll(q, userId)
@@ -31,9 +30,9 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
         ticketId: id,
     })
 
-    if (!data) {
-        throw new HttpErr.Forbidden('You are not allowed to cancel this ticket')
-    }
+    console.log(data)
+
+    if (!data) throw new HttpErr.Forbidden('You cannot cancel this ticket because you are not the owner of it')
 
     if (
         data.tripStatus === OperationTripStatus.enum.running ||
@@ -42,12 +41,12 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
         throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
     }
 
-    if (data.status === BookingStatus.enum.paid && data.createdAt < utils.time.getNow().toDate()) {
-        throw new HttpErr.Forbidden('Ticket completed you can not cancel it')
+    if (utils.time.isOutsideCancelableWindow({ departureDate: data.departureDate, now: utils.time.getNow().toDate() })) {
+        throw new HttpErr.Forbidden('You can only cancel ticket before 24 hours of trip departure')
     }
 
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)
-    
+
     return {
         message: 'OK',
         tickets: tickets,
@@ -89,8 +88,28 @@ export async function detailTicketSupport(
 }
 
 export async function deleteTicket(id: BookingTicketId) {
+    const data = await dal.booking.booking.query.getBookingByTicketId(id)
+    if (!data) {
+        throw new HttpErr.Forbidden('Ticket not found')
+    }
+
+    assertTicketCanBeCancelled(data.tripStatus, data.departureDate)
+
     return {
         message: 'OK',
         tickets: await dal.booking.ticket.cmd.cancelTicketTransaction(id),
+    }
+}
+
+function assertTicketCanBeCancelled(tripStatus: OperationTripStatus, departureDate: Date) {
+    if (
+        tripStatus === OperationTripStatus.enum.running ||
+        tripStatus === OperationTripStatus.enum.completed
+    ) {
+        throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
+    }
+
+    if (utils.time.isOutsideCancelableWindow({ departureDate, now: utils.time.getNow().toDate() })) {
+        throw new HttpErr.Forbidden('You can only cancel ticket before 24 hours of trip departure')
     }
 }
