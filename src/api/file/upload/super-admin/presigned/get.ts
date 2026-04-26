@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     config: {
         rateLimit: {
-            max: 60,
+            max: 20,
             timeWindow: '1m',
         },
     },
