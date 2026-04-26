@@ -30,9 +30,10 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
         ticketId: id,
     })
 
-    console.log(data)
-
-    if (!data) throw new HttpErr.Forbidden('You cannot cancel this ticket because you are not the owner of it')
+    if (!data)
+        throw new HttpErr.Forbidden(
+            'You cannot cancel this ticket because you are not the owner of it'
+        )
 
     if (
         data.tripStatus === OperationTripStatus.enum.running ||
@@ -41,7 +42,12 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
         throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
     }
 
-    if (utils.time.isOutsideCancelableWindow({ departureDate: data.departureDate, now: utils.time.getNow().toDate() })) {
+    if (
+        utils.time.isOutsideCancelableWindow({
+            departureDate: data.departureDate,
+            now: utils.time.getNow().toDate(),
+        })
+    ) {
         throw new HttpErr.Forbidden('You can only cancel ticket before 24 hours of trip departure')
     }
 
@@ -109,7 +115,9 @@ function assertTicketCanBeCancelled(tripStatus: OperationTripStatus, departureDa
         throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
     }
 
-    if (utils.time.isOutsideCancelableWindow({ departureDate, now: utils.time.getNow().toDate() })) {
+    if (
+        utils.time.isOutsideCancelableWindow({ departureDate, now: utils.time.getNow().toDate() })
+    ) {
         throw new HttpErr.Forbidden('You can only cancel ticket before 24 hours of trip departure')
     }
 }

@@ -85,26 +85,7 @@ export async function cancelTicketTransaction(id: BookingTicketId) {
             trx
         )
 
-        const payment = await dal.payment.payment.query.getPayment(ticket.bookingId, undefined, trx)
-
-        const shouldRefundStripePayment =
-            payment &&
-            payment.method === PaymentMethod.enum.stripe &&
-            payment.status === PaymentStatus.enum.success
-
-        if (!shouldRefundStripePayment) {
-            return tickets
-        }
-
-        await service.stripe.client.createRefund({
-            paymentIntentId: payment.transactionNo ?? '',
-        })
-
-        await dal.payment.payment.query.updateStatusPaymentTransaction(
-            PaymentStatus.enum.refunded,
-            ticket.bookingId,
-            trx
-        )
+        await handleRefund(trx, ticket.bookingId)
 
         return tickets
     })
@@ -121,7 +102,7 @@ export async function updateStatusTicket(params: {
             trx
         )
         if (ticket.status === BookingTicketStatus.enum.checked_in) {
-            await dal.booking.booking.cmd.updateBookingStatus(
+             await dal.booking.booking.cmd.updateBookingStatus(
                 ticket.bookingId,
                 BookingStatus.enum.paid,
                 trx
@@ -143,4 +124,32 @@ export async function updateStatusTicket(params: {
         }
         return ticket
     })
+}
+
+async function handleRefund(trx: Transaction<Database>, bookingId: BookingId) {
+    const payment = await dal.payment.payment.query.getPayment(bookingId, undefined, trx)
+
+    if (!payment || payment.status !== PaymentStatus.enum.success) {
+        return
+    }
+
+    if (payment.method === PaymentMethod.enum.vnpay) {
+        await dal.payment.payment.query.updateStatusPaymentTransaction(
+            PaymentStatus.enum.refunded,
+            bookingId,
+            trx
+        )
+    }
+
+    if (payment.method === PaymentMethod.enum.stripe) {
+        await service.stripe.client.createRefund({
+            paymentIntentId: payment.transactionNo ?? '',
+        })
+
+        await dal.payment.payment.query.updateStatusPaymentTransaction(
+            PaymentStatus.enum.refunded,
+            bookingId,
+            trx
+        )
+    }
 }
