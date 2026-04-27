@@ -9,7 +9,7 @@ export async function register(params: AuthCompanyAdminSignUpBody, role: AuthSta
         ...params,
         password: utils.password.hashPassword(params.password),
         status: AuthUserStatus.enum.inactive,
-        role: AuthUserRole.enum.agent,
+        role: AuthUserRole.enum.operator,
     }
     return dal.auth.user.cmd.signUpCompanyAdminWithCompany(data, role, params.companyId)
 }
@@ -19,7 +19,7 @@ export async function registerCompanyAdmin(params: AuthCompanyAdminSignUpBody) {
         ...params,
         password: utils.password.hashPassword(params.password),
         status: AuthUserStatus.enum.inactive,
-        role: AuthUserRole.enum.agent,
+        role: AuthUserRole.enum.operator,
     }
     return dal.auth.user.cmd.signUpCompanyAdmin(data, AuthStaffProfileRole.enum.company_admin)
 }

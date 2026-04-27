@@ -14,7 +14,7 @@ api.route({
     handler: async request => {
         const userInfo = await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.agent],
+            [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.accountant]
         )
         return bus.payment.payment.getRevenueByCompanyId(userInfo.companyId)
