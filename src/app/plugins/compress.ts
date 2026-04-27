@@ -6,6 +6,6 @@ export const compressPlugin = fastifyPlugin(async (app: FastifyInstance) => {
     await app.register(compress, {
         global: true,
         threshold: 1024,
-        encodings: ['br','gzip'],
+        encodings: ['br', 'gzip'],
     })
 })

@@ -220,8 +220,6 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
         transactionCode: payment.transactionCode,
     })
 
-    await dal.booking.booking.cmd.updateExpiredBooking(params.id)
-
     return {
         message: 'OK',
         clientSecret: paymentIntent.client_secret,

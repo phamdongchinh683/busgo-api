@@ -21,7 +21,6 @@ export const buildAppTransId = (transactionCode: string) => {
 
 const REPORT_TZ = 'Asia/Ho_Chi_Minh'
 
-/** Inclusive calendar year in Vietnam time, as UTC instants for DB comparison. */
 export const getPeriodStartAndEnd = (year: number) => {
     return {
         start: dayjs.tz(`${year}-01-01`, REPORT_TZ).startOf('day').toDate(),
@@ -29,7 +28,6 @@ export const getPeriodStartAndEnd = (year: number) => {
     }
 }
 
-/** For the selected calendar year: past years show all 12 months; current year stops at today’s month (Asia/Ho_Chi_Minh). */
 export const getMaxMonthInclusiveForPeriodYear = (year: number) => {
     const now = getNow()
     if (year < now.year()) return 12
@@ -37,7 +35,6 @@ export const getMaxMonthInclusiveForPeriodYear = (year: number) => {
     return now.month() + 1
 }
 
-/** Twelve entries for months 1–12; months absent from `rows` use value 0. */
 export const normalizeMonthlySeries = (
     rows: ReadonlyArray<readonly [month: number, value: number]>,
     options?: { maxMonthInclusive?: number }
@@ -49,4 +46,8 @@ export const normalizeMonthlySeries = (
         const raw = byMonth.get(month) ?? 0
         return [month, month <= cap ? raw : 0]
     })
+}
+
+export const isOutsideCancelableWindow = (params: { departureDate: Date; now: Date }) => {
+    return dayjs(params.departureDate).diff(dayjs(params.now), 'hour', true) <= 24
 }

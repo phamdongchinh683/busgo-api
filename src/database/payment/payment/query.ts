@@ -56,7 +56,10 @@ export async function getPayment(
             'pp.method',
             'pp.status',
             'pp.transactionCode',
+            'pp.transactionNo',
+            'pp.payDate',
             'pp.paidAt',
+            'pp.createdAt',
             'b.expiredAt',
         ])
         .where(eb => {

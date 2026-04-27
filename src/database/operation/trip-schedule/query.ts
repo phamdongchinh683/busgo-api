@@ -4,12 +4,19 @@ import { OperationTripScheduleTableInsert } from './table.js'
 import { db } from '../../../datasource/db.js'
 import { OperationStationId } from '../station/type.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
+import { sql } from 'kysely'
 
 export async function findAllByFilter(
     query: TripScheduleFilter,
     companyId?: OrganizationBusCompanyId
 ) {
     const { limit = 10, next, from, to, date, orderBy } = query
+    const vietnameseChars =
+        'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ' +
+        'ÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ'
+    const asciiChars =
+        'aaaaaaaaaaaaaaaaaeeeeeeeeeeeiiiiiooooooooooooooooouuuuuuuuuuuyyyyyd' +
+        'AAAAAAAAAAAAAAAAAEEEEEEEEEEEIIIIIOOOOOOOOOOOOOOOOOUUUUUUUUUUUYYYYYD'
 
     return db
         .selectFrom('operation.trip_schedule as ts')
@@ -33,10 +40,16 @@ export async function findAllByFilter(
             const cond = []
             cond.push(eb('ts.status', '=', true))
             if (from) {
-                cond.push(eb('r.fromLocation', '=', from))
+                cond.push(sql<boolean>`
+            translate(lower(r.from_location), ${vietnameseChars}, ${asciiChars}) ILIKE
+            translate(lower(${`%${from}%`}::text), ${vietnameseChars}, ${asciiChars})
+                `)
             }
             if (to) {
-                cond.push(eb('r.toLocation', '=', to))
+                cond.push(sql<boolean>`
+            translate(lower(r.to_location), ${vietnameseChars}, ${asciiChars}) ILIKE
+            translate(lower(${`%${to}%`}::text), ${vietnameseChars}, ${asciiChars})
+                `)
             }
             if (date) {
                 cond.push(eb('ts.startDate', '<=', date))

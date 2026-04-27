@@ -86,3 +86,12 @@ export async function createPaymentIntentWithCommission(params: {
         },
     })
 }
+
+export async function createRefund(params: { paymentIntentId: string }) {
+    return stripe.refunds.create({
+        payment_intent: params.paymentIntentId,
+        refund_application_fee: true,
+        reverse_transfer: true,
+        reason: 'requested_by_customer',
+    })
+}

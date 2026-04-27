@@ -48,7 +48,6 @@ async function getUsdVndRate() {
 }
 
 export async function setUpIntent(userInfo: UserInfo) {
-
     const user = await dal.auth.user.query.getOne({ id: userInfo.id })
     if (!user?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
@@ -101,7 +100,7 @@ export async function setDefault(userInfo: UserInfo, paymentMethodId: string) {
         paymentMethodId: paymentMethodId,
     })
 
-    await db.transaction().execute(async (trx) => {
+    await db.transaction().execute(async trx => {
         await dal.payment.customerPaymentMethod.cmd.resetDefaultByUser(
             {
                 userId: userInfo.id,
@@ -147,13 +146,6 @@ export async function getBalance(accountStripeId: string) {
     return {
         available: balance.available,
         pending: balance.pending,
-    }
-}
-
-export async function updatePayoutSchedule(accountStripeId: string) {
-    await service.stripe.connect.updatePayoutSchedule(accountStripeId)
-    return {
-        message: 'OK',
     }
 }
 

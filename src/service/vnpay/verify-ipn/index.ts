@@ -1,5 +1,4 @@
 import { buildSignData, createSecureHash, hashSecret, normalizeQueryValue } from '../common.js'
-const vnpayUrl = process.env.VNPAY_URL ?? ''
 
 export function verifyIpn(query: Record<string, string>) {
     const rawQuery = query as Record<string, string>

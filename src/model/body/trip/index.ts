@@ -87,7 +87,20 @@ export type TripSeatResponse = z.infer<typeof TripSeatResponse>
 export const TripBody = z.object({
     scheduleId: OperationTripScheduleId,
     companyId: OrganizationBusCompanyId,
-    departureDate: z.coerce.date(),
+    departureDate: z.coerce.date().refine(
+        value => {
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+
+            const input = new Date(value)
+            input.setHours(0, 0, 0, 0)
+
+            return input >= today
+        },
+        {
+            message: 'departureDate must be today or in the future',
+        }
+    ),
 })
 
 export type TripBody = z.infer<typeof TripBody>

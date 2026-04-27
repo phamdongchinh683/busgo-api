@@ -23,8 +23,7 @@ const __dirname = dirname(__filename)
 const rootDir = path.join(__dirname, '..')
 const apiDir = path.join(rootDir, 'api')
 const isProduction = process.env.NODE_ENV === 'production'
-const enableHttpDebugLogs =
-    process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
+const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 
 const swaggerFaviconSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
@@ -52,7 +51,10 @@ api.addContentTypeParser(
     (request: FastifyRequest, body: Buffer, done) => {
         try {
             const pathname = request.url.split('?')[0] ?? ''
-            if (pathname === STRIPE_WEBHOOK_PATH || pathname.startsWith(`${STRIPE_WEBHOOK_PATH}/`)) {
+            if (
+                pathname === STRIPE_WEBHOOK_PATH ||
+                pathname.startsWith(`${STRIPE_WEBHOOK_PATH}/`)
+            ) {
                 ;(request.raw as RawWithStripeBody).rawBody = body
             }
             const json = JSON.parse(body.toString('utf8')) as unknown
@@ -105,8 +107,6 @@ api.addHook('onSend', async (request, reply, payload) => {
     const pathname = request.url.split('?')[0] ?? ''
     const isSwaggerPath = pathname.includes('/swagger') || pathname.startsWith('/docs')
     if (isSwaggerPath) return payload
-
-
 
     if (request.method === 'GET' && pathname.startsWith('/public/')) {
         reply.header(
