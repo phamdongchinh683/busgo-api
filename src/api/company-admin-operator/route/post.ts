@@ -16,7 +16,7 @@ api.route({
     handler: async request => {
         const userInfo = await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.admin],
+            [AuthUserRole.enum.agent],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
         return bus.operation.route.createRoute({

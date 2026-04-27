@@ -67,7 +67,7 @@ export async function signUpCompanyAdmin(
                     phone,
                     email,
                     status: AuthUserStatus.enum.inactive,
-                    role: AuthUserRole.enum.admin,
+                    role: AuthUserRole.enum.agent,
                 },
                 trx
             )
@@ -161,7 +161,7 @@ export async function createCompanyAccount(
                     phone: phone,
                     email: email,
                     status: AuthUserStatus.enum.active,
-                    role: AuthUserRole.enum.admin,
+                    role: AuthUserRole.enum.agent,
                 },
                 trx
             )
@@ -238,7 +238,7 @@ export async function signUpCompanyAdminWithCompany(
                     phone: phone,
                     email: email,
                     status: AuthUserStatus.enum.inactive,
-                    role: AuthUserRole.enum.admin,
+                    role: AuthUserRole.enum.agent,
                 },
                 trx
             )

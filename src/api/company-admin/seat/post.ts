@@ -14,7 +14,7 @@ api.route({
     handler: async request => {
         const userInfo = await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.admin],
+            [AuthUserRole.enum.agent],
             [AuthStaffProfileRole.enum.company_admin]
         )
         return bus.organization.seat.createSeat(request.body)
