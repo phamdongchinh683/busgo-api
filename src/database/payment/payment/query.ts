@@ -94,6 +94,8 @@ export async function getPayments(
     companyId: OrganizationBusCompanyId,
     trx?: Transaction<Database>
 ) {
+    const { limit, next } = params
+
     return (trx ?? db)
         .selectFrom('payment.payment as pp')
         .innerJoin('booking.booking as b', 'b.id', 'pp.bookingId')
@@ -111,6 +113,7 @@ export async function getPayments(
         ])
         .where(eb => {
             const cond = []
+            if (next) cond.push(eb('pp.id', '>', next))
             if (params.transactionCode)
                 cond.push(eb('pp.transactionCode', '=', params.transactionCode))
             if (params.status) cond.push(eb('pp.status', '=', params.status))
@@ -128,6 +131,8 @@ export async function getPayments(
             )
             return eb.and(cond)
         })
+        .orderBy('pp.id', 'asc')
+        .limit(limit + 1)
         .execute()
 }
 
@@ -233,32 +238,14 @@ function companyRevenueExportJoin(q: RevenueExportQuery) {
 export async function getRevenueByCompanyYearlyForPeriod(
     q: RevenueExportQuery
 ): Promise<CompanyRevenueYearlyRow[]> {
-    const rows = await companyRevenueExportJoin(q)
+    return companyRevenueExportJoin(q)
         .select([
-            'pp.id as paymentId',
-            'pp.amount as paymentAmount',
-            'bc.id as companyId',
             'bc.name as companyName',
+            sql<number>`coalesce(sum(pp.amount), 0)::int`.as('total'),
         ])
-        .groupBy(['pp.id', 'pp.amount', 'bc.id', 'bc.name'])
+        .groupBy(['bc.id', 'bc.name'])
+        .orderBy('bc.name', 'asc')
         .execute()
-
-    const map = new Map<number, CompanyRevenueYearlyRow>()
-    for (const r of rows) {
-        const id = Number(r.companyId)
-        const amt = Number(r.paymentAmount)
-        const existing = map.get(id)
-        if (existing) {
-            existing.total += amt
-        } else {
-            map.set(id, {
-                companyName: r.companyName,
-                total: amt,
-            })
-        }
-    }
-
-    return [...map.values()].sort((a, b) => a.companyName.localeCompare(b.companyName))
 }
 
 export async function getRevenueByCompanyMonthlyForPeriod(
@@ -272,12 +259,11 @@ export async function getRevenueByCompanyMonthlyForPeriod(
     const rows = await companyRevenueExportJoin(q)
         .select([
             monthSql.as('month'),
-            'pp.id as paymentId',
-            'pp.amount as paymentAmount',
             'bc.id as companyId',
             'bc.name as companyName',
+            sql<number>`coalesce(sum(pp.amount), 0)::int`.as('total'),
         ])
-        .groupBy([monthSql, 'pp.id', 'pp.amount', 'bc.id', 'bc.name'])
+        .groupBy([monthSql, 'bc.id', 'bc.name'])
         .execute()
 
     const map = new Map<number, { companyName: string; months: number[] }>()
@@ -289,7 +275,7 @@ export async function getRevenueByCompanyMonthlyForPeriod(
         }
 
         const id = Number(r.companyId)
-        const amt = Number(r.paymentAmount)
+        const amt = Number(r.total)
         let entry = map.get(id)
         if (!entry) {
             entry = { companyName: r.companyName, months: Array(12).fill(0) }

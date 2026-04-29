@@ -45,7 +45,7 @@ export const PaymentFilter = z.object({
     transactionCode: z.string().optional(),
     status: PaymentStatus.optional(),
     method: PaymentMethod.optional(),
-    limit: z.coerce.number().optional().default(10),
+    limit: z.coerce.number().min(1).max(100).optional().default(10),
     next: PaymentId.optional(),
 })
 
