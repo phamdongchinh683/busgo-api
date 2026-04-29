@@ -3,7 +3,7 @@ import { bus } from '../../business/index.js'
 
 export function cleanupTripWeekly() {
     cron.schedule(
-        '0 7 * * 0,6',
+        '0 9 * * 0,6',
         async () => {
             try {
                 await bus.operation.trip.cleanupTrips()
