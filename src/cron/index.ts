@@ -5,6 +5,7 @@ async function main() {
     console.log({ message: 'Start cron jobs' })
     job.booking.expireBooking(db)
     job.customer.notificationDepatureDate(db)
+    job.superAdmin.cleanupTripWeekly()
 }
 
 main().catch(err => {
