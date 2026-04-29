@@ -12,18 +12,6 @@ services:
       - internal-net
     depends_on:
       - db
-  job:
-    image: phamdongchinh683/backend-fastify:latest
-    container_name: cron
-    restart: always
-    mem_limit: 128m
-    command: yarn cron-start
-    env_file:
-      - .env
-    networks:
-      - internal-net
-    depends_on:
-      - db
   db:
     image: postgres:15
     container_name: postgres
