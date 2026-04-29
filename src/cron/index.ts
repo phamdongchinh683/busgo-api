@@ -2,7 +2,7 @@ import { db } from '../datasource/db.js'
 import { job } from '../job/index.js'
 
 async function main() {
-    console.log({ message: '--------- Started cron jobs ---------' })
+    console.log({ message: 'Start cron jobs' })
     job.booking.expireBooking(db)
     job.customer.notificationDepatureDate(db)
 }
