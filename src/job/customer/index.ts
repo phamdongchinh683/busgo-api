@@ -88,7 +88,7 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                     .limit(100)
                     .execute()
 
-                    console.log('candidates', candidates)
+                console.log('candidates', candidates)
                 if (candidates.length === 0) return
 
                 await db
