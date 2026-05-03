@@ -35,10 +35,7 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
     }
 
     return qb
-        .select([
-            'b.id',
-            'b.title',
-        ])
+        .select(['b.id', 'b.title', 'b.lastMessage'])
         .orderBy('b.id', 'asc')
         .limit(limit + 1)
         .execute()

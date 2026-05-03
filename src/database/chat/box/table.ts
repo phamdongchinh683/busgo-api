@@ -7,6 +7,7 @@ export interface ChatBoxTable extends Timestamps {
     id: GeneratedAlways<ChatBoxId>
     userIds: string
     title: string | null
+    lastMessage: string
     createdBy: AuthUserId
 }
 

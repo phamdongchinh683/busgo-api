@@ -1,7 +1,8 @@
 import { api, bearer, endpoint, tags } from '../../../app/api.js'
 import { auth } from '../../../app/jwt/index.js'
 import { bus } from '../../../business/index.js'
-import { ChatBoxQuery, ChatBoxResponse } from '../../../model/query/chat/index.js'    
+import { ChatBoxQuery } from '../../../model/query/chat/index.js'    
+import { ChatBoxResponse } from '../../../model/body/chat/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 const __filename = new URL('', import.meta.url).pathname
 
