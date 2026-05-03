@@ -1,33 +1,24 @@
-import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
-import { AuthUserId } from '../../auth/user/type.js';
-import { ChatBoxId } from './type.js'
-import { ChatBoxQuery } from '../../../model/query/chat/index.js';
-
-export async function findById(id: ChatBoxId) {
-    return db.selectFrom('chat.box').selectAll().where('id', '=', id).executeTakeFirst()
-}
-
-export async function findAll(params: { limit: number; next?: ChatBoxId }) {
-    return db
-        .selectFrom('chat.box as b')
-        .where(eb => {
-            const cond = []
-            if (params.next) cond.push(eb('b.id', '>', params.next))
-            return eb.and(cond)
-        })
-        .selectAll()
-        .orderBy('b.id', 'asc')
-        .limit(params.limit + 1)
-        .execute()
-}
+import { AuthUserId } from '../../auth/user/type.js'
+import { ChatBoxQuery } from '../../../model/query/chat/index.js'
 
 export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
     const { limit, next } = q
     let qb = db
         .selectFrom('chat.box as b')
-        .where(
-            sql<boolean>`(',' || b.user_ids || ',') like ${`%,${userId},%`}`,
+        .innerJoin('auth.user as peer', join =>
+            join.on(eb =>
+                eb.or([
+                    eb.and([
+                        eb('b.senderId', '=', userId),
+                        eb('peer.id', '=', eb.ref('b.receiverId')),
+                    ]),
+                    eb.and([
+                        eb('b.receiverId', '=', userId),
+                        eb('peer.id', '=', eb.ref('b.senderId')),
+                    ]),
+                ])
+            )
         )
 
     if (next) {
@@ -35,8 +26,20 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
     }
 
     return qb
-        .select(['b.id', 'b.title', 'b.lastMessage'])
-        .orderBy('b.id', 'asc')
+        .select([
+            'b.id',
+            'b.title',
+            'b.lastMessage',
+            'b.senderId',
+            'b.receiverId',
+            'peer.fullName as senderFullName',
+            'b.senderMessageCount',
+            'b.receiverMessageCount',
+            'b.unreadReceiverCount',
+            'b.unreadSenderCount',
+            'b.lastMessageSenderId',
+        ])
+        .orderBy('b.unreadReceiverCount', 'desc')
         .limit(limit + 1)
         .execute()
 }

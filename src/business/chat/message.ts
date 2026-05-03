@@ -27,20 +27,25 @@ export async function sendMessage(
     })
 
     client.emit('chat:message:send', {
-        boxId: result.boxId,
-        body: result.body,
-        createdAt: result.createdAt,
+        boxId: String(result.box.id),
+        body: result.row.body,
+        senderId: result.row.senderId,
+        receiverId: result.box.receiverId === userId ? result.box.senderId : result.box.receiverId,
+        createdAt: result.row.createdAt,
+        unreadReceiverCount: result.box.unreadReceiverCount,
+        unreadSenderCount: result.box.unreadSenderCount,
     })
 
     return { message: 'OK' }
 }
 
-
-export async function getMessages(params: {
-    boxId: ChatBoxId
-}, 
-query: ChatMessageQuery) {
-    const {boxId } = params
+export async function getMessages(
+    params: {
+        boxId: ChatBoxId
+    },
+    query: ChatMessageQuery
+) {
+    const { boxId } = params
 
     const result = await dal.chat.message.query.findAllMessagesByBoxId({ boxId }, query)
 

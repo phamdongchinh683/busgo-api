@@ -10,7 +10,10 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.operator, AuthUserRole.enum.super_admin])
+        const userInfo = await auth.requireRoles(request.headers, [
+            AuthUserRole.enum.operator,
+            AuthUserRole.enum.super_admin,
+        ])
         return bus.chat.box.createBox({
             token: request.headers.authorization ?? '',
             userId: userInfo.id,

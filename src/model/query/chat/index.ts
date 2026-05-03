@@ -5,7 +5,7 @@ import { ChatMessageId } from '../../../database/chat/message/type.js'
 export const ChatBoxQuery = z.object({
     limit: z.coerce.number().min(10).max(100).default(10),
     next: ChatBoxId.optional().nullable(),
-})      
+})
 
 export type ChatBoxQuery = z.infer<typeof ChatBoxQuery>
 

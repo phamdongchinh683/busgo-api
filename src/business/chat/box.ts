@@ -1,7 +1,7 @@
-import { WsClient } from '../../app/index.js'
+import { HttpErr, WsClient } from '../../app/index.js'
 
 import { AuthUserId } from '../../database/auth/user/type.js'
-import { ChatBoxId } from '../../database/chat/box/type.js';
+import { ChatBoxId } from '../../database/chat/box/type.js'
 import { dal } from '../../database/index.js'
 import { ChatBoxBody } from '../../model/body/chat/index.js'
 import { ChatBoxQuery } from '../../model/query/chat/index.js';
@@ -20,7 +20,8 @@ export async function createBox(params: { token: string; userId: AuthUserId; bod
     client.emit('chat:new', {
         boxId: result.boxId,
         title: result.title,
-        userIds: result.userIds,
+        senderId: userId,
+        receiverId: result.receiverId,
         body: result.body,
         createdAt: result.createdAt,
     })
@@ -30,15 +31,24 @@ export async function createBox(params: { token: string; userId: AuthUserId; bod
     }
 }
 
-
 export async function getBox(userId: AuthUserId, query: ChatBoxQuery) {
-
     const result = await dal.chat.box.query.findAllByUserId(query, userId)
-    
+
     const { data, next } = utils.common.paginateByCursor(result, query.limit)
 
     return {
         boxes: data,
         next: next,
+    }
+}
+
+export async function markRead(boxId: ChatBoxId, userId: AuthUserId) {
+    const row = await dal.chat.box.cmd.markRead(boxId, userId)
+
+    return {
+        message: 'OK',
+        boxId: row.id,
+        unreadReceiverCount: row.unreadReceiverCount,
+        unreadSenderCount: row.unreadSenderCount,
     }
 }

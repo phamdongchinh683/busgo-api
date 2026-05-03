@@ -4,7 +4,7 @@ import type { ChatBoxId } from '../box/type.js'
 
 export async function findAllMessagesByBoxId(
     params: {
-        boxId: ChatBoxId,
+        boxId: ChatBoxId
     },
     query: ChatMessageQuery
 ) {
