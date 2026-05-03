@@ -15,7 +15,6 @@ export function notificationDepatureDate(db: Kysely<Database>) {
         async () => {
             try {
                 const now = utils.time.getNow()
-
                 const windowStart = now.toDate()
                 const windowEnd = now.endOf('day').toDate()
 
@@ -89,6 +88,7 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                     .limit(100)
                     .execute()
 
+                console.log('candidates', candidates)
                 if (candidates.length === 0) return
 
                 await db
@@ -108,6 +108,7 @@ export function notificationDepatureDate(db: Kysely<Database>) {
                     .execute()
 
                 if (candidates.length > 0) {
+                    console.log('send email to customers')
                     await service.email.sender.sendMany({
                         to: candidates.map(item => item.email),
                         subject: 'Reminder: Trip departs today',

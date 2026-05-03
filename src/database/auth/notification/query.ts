@@ -6,8 +6,9 @@ export async function findAllByUserId(query: {
     limit: number
     next?: AuthNotificationId
     userId: AuthUserId
+    status?: boolean
 }) {
-    const { limit, next, userId } = query
+    const { limit, next, userId, status } = query
     return db
         .selectFrom('auth.notification')
         .selectAll()
@@ -15,6 +16,9 @@ export async function findAllByUserId(query: {
             const cond = []
             if (next) {
                 cond.push(eb('id', '>', next))
+            }
+            if (status !== undefined) {
+                cond.push(eb('isRead', '=', status))
             }
             cond.push(eb('userId', '=', userId))
             return eb.and(cond)

@@ -102,7 +102,7 @@ export async function updateStatusTicket(params: {
             trx
         )
         if (ticket.status === BookingTicketStatus.enum.checked_in) {
-             await dal.booking.booking.cmd.updateBookingStatus(
+            await dal.booking.booking.cmd.updateBookingStatus(
                 ticket.bookingId,
                 BookingStatus.enum.paid,
                 trx

@@ -18,7 +18,7 @@ api.route({
     handler: async request => {
         const userInfo = await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.admin],
+            [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin]
         )
         return service.cloudinary.presigned.presignedUpload('company', userInfo.companyId)

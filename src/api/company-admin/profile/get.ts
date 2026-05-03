@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.admin])
+        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.operator])
         return bus.auth.profile.getProfile(userInfo)
     },
 
