@@ -42,7 +42,7 @@ export async function findDeviceSuperAdmin(trx?: Transaction<Database>) {
 //         .where(eb => {
 //             const cond = []
 //             cond.push(eb('sd.status', '=', AuthUserStatus.enum.active))
-//             cond.push(eb('auth.user.role', '=', AuthUserRole.enum.operator))
+//             cond.push(eb('auth.user.role', '=', AuthUserRole.enum.admin))
 //             cond.push(eb('sd.companyId', '=', companyId))
 //             return eb.and(cond)
 //         })

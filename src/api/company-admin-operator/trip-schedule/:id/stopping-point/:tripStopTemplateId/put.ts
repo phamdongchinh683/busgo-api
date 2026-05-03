@@ -17,7 +17,7 @@ api.route({
     handler: async request => {
         const userInfo = await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.operator],
+            [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.operator]
         )
         const { id, tripStopTemplateId } = request.params

@@ -14,7 +14,7 @@ api.route({
     handler: async request => {
         await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.operator],
+            [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin]
         )
         return bus.auth.superAdmin.updateOne(request.params.userId, request.body)

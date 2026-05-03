@@ -42,7 +42,6 @@ export async function getMyNotifications(query: NotificationQuery, userId: AuthU
         limit: query.limit ?? 10,
         next: query.next,
         userId: userId,
-        ...(query.status !== undefined ? { status: query.status === 1 } : {}),
     })
     const { data, next } = utils.common.paginateByCursor(notifications, query.limit ?? 10)
 

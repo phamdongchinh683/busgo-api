@@ -19,8 +19,6 @@ import { OperationTripScheduleTable } from '../database/operation/trip-schedule/
 import { OperationTripStopTemplateTable } from '../database/operation/trip-stop-template/table.js'
 import { OperationTripPriceTemplateTable } from '../database/operation/trip_price_template/table.js'
 import { OrganizationCompanyDriverTable } from '../database/organization/company_driver/table.js'
-import { ChatBoxTable } from '../database/chat/box/table.js'
-import { ChatMessageTable } from '../database/chat/message/table.js'
 
 export interface Database {
     'auth.user': AuthUserTable
@@ -44,6 +42,4 @@ export interface Database {
     'operation.trip_stop_template': OperationTripStopTemplateTable
     'operation.trip_price_template': OperationTripPriceTemplateTable
     'organization.company_driver': OrganizationCompanyDriverTable
-    'chat.box': ChatBoxTable
-    'chat.message': ChatMessageTable
 }

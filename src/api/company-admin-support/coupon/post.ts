@@ -14,7 +14,7 @@ api.route({
     handler: async request => {
         await auth.requireStaffProfileRole(
             request.headers,
-            [AuthUserRole.enum.operator],
+            [AuthUserRole.enum.admin],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
         return bus.booking.coupon.createCoupon(request.body)
