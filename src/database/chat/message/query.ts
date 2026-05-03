@@ -30,7 +30,7 @@ export async function findAllMessagesByBoxId(
             'u.email as email',
             'm.createdAt',
         ])
-        .orderBy('m.id', 'asc')
+        .orderBy('m.createdAt', 'desc')
         .limit(limit + 1)
         .execute()
 }
