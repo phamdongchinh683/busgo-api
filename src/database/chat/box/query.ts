@@ -1,3 +1,4 @@
+import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js';
 import { ChatBoxId } from './type.js'
@@ -23,14 +24,17 @@ export async function findAll(params: { limit: number; next?: ChatBoxId }) {
 
 export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
     const { limit, next } = q
-    return db
+    let qb = db
         .selectFrom('chat.box as b')
-        .where(eb => {
-            const cond = []
-            if(next) cond.push(eb('b.id', '>', next))
-            cond.push(eb('b.userIds', 'like', `%,${userId}%`))
-            return eb.and(cond)
-        })
+        .where(
+            sql<boolean>`(',' || b.user_ids || ',') like ${`%,${userId},%`}`,
+        )
+
+    if (next) {
+        qb = qb.where('b.id', '>', next)
+    }
+
+    return qb
         .select([
             'b.id',
             'b.title',
