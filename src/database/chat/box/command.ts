@@ -1,7 +1,5 @@
 import _ from 'lodash'
 import { db } from '../../../datasource/db.js'
-import { Transaction } from 'kysely'
-import { Database } from '../../../datasource/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { ChatBoxBody } from '../../../model/body/chat/index.js'
 
@@ -15,6 +13,7 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
                 userIds: body.userIds.join(','),
                 title: body.title ?? null,
                 createdBy: createdBy,
+                lastMessage: body.message,
             })
             .onConflict(oc => oc.columns(['userIds']).doNothing())
             .returningAll()
@@ -29,6 +28,12 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
             })
             .returningAll()
             .executeTakeFirstOrThrow()
+
+        await trx
+            .updateTable('chat.box')
+            .set({ lastMessage: message.body })
+            .where('id', '=', box.id)
+            .execute()
 
         return {
             boxId: box.id,

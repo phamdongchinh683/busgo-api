@@ -9,18 +9,6 @@ export const ChatBoxQuery = z.object({
 
 export type ChatBoxQuery = z.infer<typeof ChatBoxQuery>
 
-export const ChatBoxResponse = z.object({
-    boxes: z.array(
-        z.object({
-            id: ChatBoxId,
-            title: z.string().nullable(),
-        })
-    ),
-    next: ChatBoxId.nullable(),
-})
-
-export type ChatBoxResponse = z.infer<typeof ChatBoxResponse>
-
 export const ChatMessageQuery = z.object({
     message: z.string().optional(),
     limit: z.coerce.number().min(10).max(100).default(10),
