@@ -27,7 +27,7 @@ export async function sendMessage(
     })
 
     client.emit('chat:message:send', {
-        boxId: result.boxId.toString(),
+        boxId: result.boxId,
         body: result.body,
         createdAt: result.createdAt,
     })
