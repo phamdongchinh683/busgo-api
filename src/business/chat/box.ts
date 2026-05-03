@@ -24,11 +24,7 @@ export async function createBox(params: { token: string; userId: AuthUserId; bod
         body: result.body,
         createdAt: result.createdAt,
     })
-
-    client.emit("chat:join", {
-        boxId: result.boxId,
-    })
-
+    
     return {
         message: 'OK',
     }
