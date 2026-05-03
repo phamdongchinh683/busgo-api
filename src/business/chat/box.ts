@@ -1,8 +1,11 @@
 import { WsClient } from '../../app/index.js'
 
 import { AuthUserId } from '../../database/auth/user/type.js'
+import { ChatBoxId } from '../../database/chat/box/type.js';
 import { dal } from '../../database/index.js'
 import { ChatBoxBody } from '../../model/body/chat/index.js'
+import { ChatBoxQuery } from '../../model/query/chat/index.js';
+import { utils } from '../../utils/index.js';
 
 export async function createBox(params: { token: string; userId: AuthUserId; body: ChatBoxBody }) {
     const { token, userId, body } = params
@@ -28,5 +31,18 @@ export async function createBox(params: { token: string; userId: AuthUserId; bod
 
     return {
         message: 'OK',
+    }
+}
+
+
+export async function getBox(userId: AuthUserId, query: ChatBoxQuery) {
+
+    const result = await dal.chat.box.query.findAllByUserId(query, userId)
+    
+    const { data, next } = utils.common.paginateByCursor(result, query.limit)
+
+    return {
+        boxes: data,
+        next: next,
     }
 }

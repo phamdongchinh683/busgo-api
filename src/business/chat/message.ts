@@ -2,6 +2,8 @@ import { WsClient } from '../../app/index.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { ChatBoxId } from '../../database/chat/box/type.js'
+import { ChatMessageQuery } from '../../model/query/chat/index.js'
+import { utils } from '../../utils/index.js'
 
 export async function sendMessage(
     params: {
@@ -31,4 +33,21 @@ export async function sendMessage(
     })
 
     return { message: 'OK' }
+}
+
+
+export async function getMessages(params: {
+    boxId: ChatBoxId
+}, 
+query: ChatMessageQuery) {
+    const {boxId } = params
+
+    const result = await dal.chat.message.query.findAllMessagesByBoxId({ boxId }, query)
+
+    const { data, next } = utils.common.paginateByCursor(result, query.limit)
+
+    return {
+        messages: data,
+        next: next,
+    }
 }
