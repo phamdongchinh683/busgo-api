@@ -7,6 +7,7 @@ import {
     validatorCompiler,
     type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
+import qs from 'qs'
 import { readdir, stat } from 'fs/promises'
 import path, { dirname, parse, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
@@ -59,6 +60,20 @@ api.addContentTypeParser(
             }
             const json = JSON.parse(body.toString('utf8')) as unknown
             done(null, json)
+        } catch (err) {
+            ;(err as { statusCode?: number }).statusCode = 400
+            done(err as Error, undefined)
+        }
+    }
+)
+
+api.addContentTypeParser(
+    'application/x-www-form-urlencoded',
+    { parseAs: 'string' },
+    (_request: FastifyRequest, body: string, done) => {
+        try {
+            const parsed = qs.parse(body)
+            done(null, parsed)
         } catch (err) {
             ;(err as { statusCode?: number }).statusCode = 400
             done(err as Error, undefined)
