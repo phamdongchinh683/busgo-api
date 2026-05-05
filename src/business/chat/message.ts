@@ -31,7 +31,8 @@ export async function sendMessage(
         senderName: userInfo.fullName,
         body: result.row.body,
         senderId: result.row.senderId,
-        receiverId: result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId,
+        receiverId:
+            result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId,
         createdAt: result.row.createdAt,
         unreadReceiverCount: result.box.unreadReceiverCount,
         unreadSenderCount: result.box.unreadSenderCount,

@@ -4,9 +4,9 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { ChatBoxId } from '../../database/chat/box/type.js'
 import { dal } from '../../database/index.js'
 import { ChatBoxBody } from '../../model/body/chat/index.js'
-import { ChatBoxQuery } from '../../model/query/chat/index.js';
-import { utils } from '../../utils/index.js';
-import { UserInfo } from '../../model/common.js';
+import { ChatBoxQuery } from '../../model/query/chat/index.js'
+import { utils } from '../../utils/index.js'
+import { UserInfo } from '../../model/common.js'
 
 export async function createBox(params: { token: string; userInfo: UserInfo; body: ChatBoxBody }) {
     const { token, userInfo, body } = params
@@ -26,7 +26,7 @@ export async function createBox(params: { token: string; userInfo: UserInfo; bod
         body: result.body,
         createdAt: result.createdAt,
     })
-    
+
     return {
         message: 'OK',
     }
