@@ -11,7 +11,6 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
         const box = await trx
             .insertInto('chat.box')
             .values({
-                title: body.title ?? null,
                 createdBy,
                 senderId: createdBy,
                 receiverId: body.receiverId,
@@ -43,7 +42,6 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
 
         return {
             boxId: box.id,
-            title: box.title,
             senderId: box.senderId,
             receiverId: box.receiverId,
             body: message.body,

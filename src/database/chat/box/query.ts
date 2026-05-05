@@ -28,11 +28,10 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
     return qb
         .select([
             'b.id',
-            'b.title',
             'b.lastMessage',
             'b.senderId',
             'b.receiverId',
-            'peer.fullName as senderFullName',
+            'peer.fullName as displayName',
             'b.senderMessageCount',
             'b.receiverMessageCount',
             'b.unreadReceiverCount',

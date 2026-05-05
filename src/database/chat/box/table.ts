@@ -5,7 +5,6 @@ import { AuthUserId } from '../../auth/user/type.js'
 
 export interface ChatBoxTable extends Timestamps {
     id: GeneratedAlways<ChatBoxId>
-    title: string | null
     senderId: AuthUserId
     receiverId: AuthUserId
     lastMessage: string

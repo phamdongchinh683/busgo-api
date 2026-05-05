@@ -16,7 +16,7 @@ api.route({
         ])
         return bus.chat.box.createBox({
             token: request.headers.authorization ?? '',
-            userId: userInfo.id,
+            userInfo: userInfo,
             body: request.body,
         })
     },

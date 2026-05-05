@@ -17,7 +17,7 @@ api.route({
         return bus.chat.message.sendMessage(
             {
                 token: request.headers.authorization ?? '',
-                userId: userInfo.id,
+                userInfo: userInfo,
             },
             {
                 message: request.body.message,

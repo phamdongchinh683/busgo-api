@@ -6,7 +6,6 @@ import { ChatBoxId } from '../../../database/chat/box/type.js'
 
 export const ChatBoxBody = z.object({
     message: z.string(),
-    title: z.string().optional(),
     receiverId: AuthUserId,
 })
 
@@ -39,7 +38,6 @@ export const ChatBoxResponse = z.object({
     boxes: z.array(
         z.object({
             id: ChatBoxId,
-            title: z.string().nullable(),
             lastMessage: z.string().nullable(),
             senderId: AuthUserId.nullable(),
             receiverId: AuthUserId.nullable(),
@@ -48,7 +46,7 @@ export const ChatBoxResponse = z.object({
             unreadReceiverCount: z.number().int().nonnegative(),
             unreadSenderCount: z.number().int().nonnegative(),
             lastMessageSenderId: AuthUserId.nullable(),
-            senderFullName: z.string().nullable(),
+            displayName: z.string().nullable(),
         })
     ),
     next: ChatBoxId.nullable(),

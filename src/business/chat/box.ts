@@ -6,21 +6,22 @@ import { dal } from '../../database/index.js'
 import { ChatBoxBody } from '../../model/body/chat/index.js'
 import { ChatBoxQuery } from '../../model/query/chat/index.js';
 import { utils } from '../../utils/index.js';
+import { UserInfo } from '../../model/common.js';
 
-export async function createBox(params: { token: string; userId: AuthUserId; body: ChatBoxBody }) {
-    const { token, userId, body } = params
-    const client = WsClient.client({ token, userId })
+export async function createBox(params: { token: string; userInfo: UserInfo; body: ChatBoxBody }) {
+    const { token, userInfo, body } = params
+    const client = WsClient.client({ token, userId: userInfo.id })
     if (!client) throw new Error('Socket URL or token invalid')
 
     const result = await dal.chat.box.cmd.createOne({
         body,
-        createdBy: userId,
+        createdBy: userInfo.id,
     })
 
     client.emit('chat:new', {
         boxId: result.boxId,
-        title: result.title,
-        senderId: userId,
+        senderId: userInfo.id,
+        senderName: userInfo.fullName,
         receiverId: result.receiverId,
         body: result.body,
         createdAt: result.createdAt,
