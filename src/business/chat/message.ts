@@ -1,13 +1,11 @@
-import { WsClient } from '../../app/index.js'
 import { dal } from '../../database/index.js'
 import { ChatBoxId } from '../../database/chat/box/type.js'
 import { ChatMessageQuery } from '../../model/query/chat/index.js'
 import { utils } from '../../utils/index.js'
 import { UserInfo } from '../../model/common.js'
-
+import { ws } from '../../app/index.js'
 export async function sendMessage(
     params: {
-        token: string
         userInfo: UserInfo
     },
     body: {
@@ -15,27 +13,39 @@ export async function sendMessage(
         boxId: ChatBoxId
     }
 ) {
-    const { token, userInfo } = params
+    const { userInfo } = params
     const { message, boxId } = body
-    const client = WsClient.client({ token, userId: userInfo.id })
-    if (!client) throw new Error('Socket URL or token invalid')
 
     const result = await dal.chat.message.cmd.insertOne({
         boxId: boxId,
         senderId: userInfo.id,
         body: message,
     })
+    const receiverId =
+        result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId
 
-    client.emit('chat:message:send', {
-        boxId: String(result.box.id),
-        senderName: userInfo.fullName,
-        body: result.row.body,
-        senderId: result.row.senderId,
-        receiverId:
-            result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId,
-        createdAt: result.row.createdAt,
-        unreadReceiverCount: result.box.unreadReceiverCount,
-        unreadSenderCount: result.box.unreadSenderCount,
+    ws.emitEvent({
+        targetId: String(result.box.id),
+        event: 'message:new',
+        data: {
+            boxId: String(result.box.id),
+            senderName: userInfo.fullName,
+            body: result.row.body,
+            senderId: result.row.senderId,
+            receiverId: receiverId,
+            createdAt: result.row.createdAt,
+        },
+    })
+
+    ws.emitEvent({
+        targetId: String(receiverId),
+        event: 'chat:unread:count',
+        data: {
+            boxId: String(result.box.id),
+            lastMessage: result.row.body,
+            unreadReceiverCount: result.box.unreadReceiverCount,
+            unreadSenderCount: result.box.unreadSenderCount,
+        },
     })
 
     return { message: 'OK' }

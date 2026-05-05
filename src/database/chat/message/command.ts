@@ -24,7 +24,14 @@ export async function insertOne(params: ChatMessageTableInsert) {
                 unreadReceiverCount: sql`b.unread_receiver_count + CASE WHEN b.sender_id = ${row.senderId} THEN 1 ELSE 0 END`,
             }))
             .where('b.id', '=', row.boxId)
-            .returning(['id', 'senderId', 'receiverId', 'unreadSenderCount', 'unreadReceiverCount'])
+            .returning([
+                'id',
+                'senderId',
+                'receiverId',
+                'unreadSenderCount',
+                'unreadReceiverCount',
+                'lastMessage',
+            ])
             .executeTakeFirstOrThrow()
 
         return { row, box }

@@ -3,6 +3,7 @@ import { db } from '../../../datasource/db.js'
 import { ChatBoxId } from './type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { ChatBoxBody } from '../../../model/body/chat/index.js'
+import { utils } from '../../../utils/index.js'
 
 export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUserId }) {
     const { body, createdBy } = params
@@ -21,7 +22,43 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
                 unreadSenderCount: 0,
                 unreadReceiverCount: 1,
             })
-            .returningAll()
+            .onConflict(oc =>
+                oc
+                    .expression(sql`LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)`)
+                    .doUpdateSet(eb => ({
+                        lastMessage: body.message,
+                        lastMessageSenderId: createdBy,
+                        unreadReceiverCount: sql`
+                        CASE 
+                            WHEN chat.box.sender_id = ${createdBy} 
+                            THEN chat.box.unread_receiver_count + 1
+                            ELSE chat.box.unread_receiver_count
+                        END
+                    `,
+                        unreadSenderCount: sql`
+                        CASE 
+                            WHEN chat.box.receiver_id = ${createdBy} 
+                            THEN chat.box.unread_sender_count + 1
+                            ELSE chat.box.unread_sender_count
+                        END
+                    `,
+                        senderMessageCount: sql`
+                        CASE
+                            WHEN chat.box.sender_id = ${createdBy}
+                            THEN chat.box.sender_message_count + 1
+                            ELSE chat.box.sender_message_count
+                        END
+                    `,
+                        receiverMessageCount: sql`
+                        CASE
+                            WHEN chat.box.receiver_id = ${createdBy}
+                            THEN chat.box.receiver_message_count + 1
+                            ELSE chat.box.receiver_message_count
+                        END
+                    `,
+                    }))
+            )
+            .returning(['id', 'senderId', 'receiverId'])
             .executeTakeFirstOrThrow()
 
         const message = await trx
@@ -34,18 +71,12 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
             .returningAll()
             .executeTakeFirstOrThrow()
 
-        await trx
-            .updateTable('chat.box')
-            .set({ lastMessage: message.body })
-            .where('id', '=', box.id)
-            .execute()
-
         return {
             boxId: box.id,
             senderId: box.senderId,
             receiverId: box.receiverId,
             body: message.body,
-            createdAt: message.createdAt,
+            createdAt: utils.time.getNow().toDate(),
         }
     })
 }

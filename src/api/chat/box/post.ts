@@ -15,7 +15,6 @@ api.route({
             AuthUserRole.enum.super_admin,
         ])
         return bus.chat.box.createBox({
-            token: request.headers.authorization ?? '',
             userInfo: userInfo,
             body: request.body,
         })

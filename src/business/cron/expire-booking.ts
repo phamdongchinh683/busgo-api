@@ -19,7 +19,6 @@ export async function expireBooking() {
             .execute()
 
         if (expiredBookings.length === 0)
-            
             return {
                 message: 'OK',
             }

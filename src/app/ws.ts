@@ -1,66 +1,59 @@
 import { io, Socket } from 'socket.io-client'
-import { AuthUserId } from '../database/auth/user/type.js'
+let sharedSocket: Socket | null = null
+let isConnecting = false
 
-const socketCache = new Map<AuthUserId, Socket>()
-const ttlTimers = new Map<AuthUserId, ReturnType<typeof setTimeout>>()
+const createSocket = (): Socket => {
+    const socket = io(process.env.SOCKET_SERVER_URL ?? '', {
+        transports: ['websocket'],
+        reconnection: false,
+        auth: {
+            token: process.env.INTERNAL_SOCKET_TOKEN ?? '',
+            type: 'internal',
+        },
+    })
 
-const SOCKET_CACHE_TTL_MS = 60_000
+    socket.on('connect', () => {
+        isConnecting = false
+        console.log('[internal socket] connected:', socket.id)
+    })
 
-const refreshTtl = (userId: AuthUserId) => {
-    const old = ttlTimers.get(userId)
-    if (old) clearTimeout(old)
+    socket.on('disconnect', reason => {
+        isConnecting = false
+        console.log('[internal socket] disconnected:', reason)
+        sharedSocket = null
+    })
 
-    const timer = setTimeout(() => {
-        const socket = socketCache.get(userId)
-        socket?.disconnect()
-
-        socketCache.delete(userId)
-        ttlTimers.delete(userId)
-    }, SOCKET_CACHE_TTL_MS)
-
-    ttlTimers.set(userId, timer)
-}
-
-export const client = (params: { token: string; userId: AuthUserId }) => {
-    const { token, userId } = params
-    const normalizedToken = token.replace(/^Bearer\s+/i, '').trim()
-    const url = (process.env.SOCKET_SERVER_URL ?? '').trim()
-    if (!url || !normalizedToken) return null
-
-    let socket = socketCache.get(userId)
-
-    if (!socket) {
-        socket = io(url, {
-            transports: ['websocket'],
-            reconnection: true,
-            auth: { token: normalizedToken },
-        })
-
-        socket.on('disconnect', () => {
-            socketCache.delete(userId)
-            const t = ttlTimers.get(userId)
-            if (t) clearTimeout(t)
-            ttlTimers.delete(userId)
-        })
-
-        socket.onAny(() => {
-            refreshTtl(userId)
-        })
-
-        socket.on('connect', () => {
-            refreshTtl(userId)
-        })
-        socket.on('connect_error', err => {
-            socketCache.delete(userId)
-        })
-
-        socketCache.set(userId, socket)
-    } else {
-        socket.auth = { token: normalizedToken }
-        socket.connect()
-    }
-
-    refreshTtl(userId)
+    socket.on('connect_error', err => {
+        isConnecting = false
+        console.error('[internal socket] connect error:', err.message)
+        sharedSocket = null
+    })
 
     return socket
+}
+
+const getInternalSocket = (): Socket | null => {
+    if (sharedSocket?.connected) return sharedSocket
+
+    if (isConnecting && sharedSocket) return sharedSocket
+
+    isConnecting = true
+    sharedSocket = createSocket()
+    return sharedSocket
+}
+
+export const emitEvent = (params: {
+    targetId: string
+    event: string
+    data: Record<string, unknown>
+}) => {
+    const socket = getInternalSocket()
+    if (!socket) {
+        throw new Error('Socket not connected')
+    }
+
+    socket.emit(params.event, {
+        targetId: params.targetId,
+        data: params.data,
+    })
 }
