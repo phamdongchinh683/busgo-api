@@ -255,11 +255,13 @@ const start = async () => {
             swagger: `http://${host}:${port}/swagger/docs`,
         })
     } catch (err) {
+        console.error(err)
         process.exit(1)
     }
 }
 
 start().catch(err => {
+    console.error(err)
     process.exit(1)
 })
 

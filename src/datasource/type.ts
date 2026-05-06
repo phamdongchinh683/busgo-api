@@ -21,6 +21,7 @@ import { OperationTripPriceTemplateTable } from '../database/operation/trip_pric
 import { OrganizationCompanyDriverTable } from '../database/organization/company_driver/table.js'
 import { ChatBoxTable } from '../database/chat/box/table.js'
 import { ChatMessageTable } from '../database/chat/message/table.js'
+import { OrganizationCompanyReviewTable } from '../database/organization/company_review/table.js'
 
 export interface Database {
     'auth.user': AuthUserTable
@@ -46,4 +47,6 @@ export interface Database {
     'organization.company_driver': OrganizationCompanyDriverTable
     'chat.box': ChatBoxTable
     'chat.message': ChatMessageTable
+    'organization.company_review': OrganizationCompanyReviewTable
+
 }
