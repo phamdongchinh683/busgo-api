@@ -12,13 +12,13 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        await auth.requireStaffProfileRole(
+        const userInfo = await auth.requireStaffProfileRole(
             request.headers, 
             [AuthUserRole.enum.operator], 
             [AuthStaffProfileRole.enum.company_admin]
         )
         const { reviewId } = request.params
-        return bus.organization.companyReview.replyToReview(reviewId, request.body)
+        return bus.organization.companyReview.replyToReview(reviewId, userInfo.companyId, request.body)
     },
     schema: {
         params: ReviewIdParam,

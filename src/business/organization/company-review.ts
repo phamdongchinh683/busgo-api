@@ -72,8 +72,16 @@ export async function getCompanyReviews(companyId: OrganizationBusCompanyId, que
 
 export async function replyToReview(
     reviewId: OrganizationCompanyReviewId,
+    companyId: OrganizationBusCompanyId,
     body: ReplyCompanyReviewBody
 ) {
+    const review = await dal.organization.companyReview.query.findReviewById(reviewId)
+    if (!review) {
+        throw new NotFound('Review not found')
+    }
+    if (review.companyId !== companyId) {
+        throw new Forbidden('You can only reply to reviews of your own company')
+    }
     const { reply } = body
     await dal.organization.companyReview.cmd.replyToReview(reviewId, reply)
     return { message: 'Reply sent successfully' }
