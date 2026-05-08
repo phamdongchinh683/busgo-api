@@ -15,7 +15,13 @@ export async function list(query: BusCompanyListQuery) {
 }
 
 export async function createOne(body: BusCompanyBody) {
-    return { company: await dal.organization.busCompany.cmd.upsertOne(body) }
+    return {
+        company: await dal.organization.busCompany.cmd.upsertOne({
+            ...body,
+            reviewCount: 0,
+            reviewAvgStars: 0,
+        }),
+    }
 }
 
 export async function deleteOne(id: OrganizationBusCompanyId) {

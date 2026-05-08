@@ -2,6 +2,7 @@ import z from 'zod'
 import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
 import { BookingId, BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OrganizationVehicleType } from '../../../database/organization/vehicle/type.js'
+import { OperationTripId, OperationTripStatus } from '../../../database/operation/trip/type.js'
 
 export const TicketBody = z.object({
     id: BookingTicketId,
@@ -31,6 +32,8 @@ export const TicketsResponse = z.object({
         TicketBody.extend({
             bookingId: BookingId,
             departureDate: z.date(),
+            tripId: OperationTripId,
+            tripStatus: OperationTripStatus,
         })
     ),
     next: BookingTicketId.nullable(),

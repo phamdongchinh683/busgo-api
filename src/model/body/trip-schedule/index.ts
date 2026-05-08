@@ -28,6 +28,7 @@ export const TripScheduleResponse = z.object({
             distanceKm: z.number(),
             companyId: OrganizationBusCompanyId,
             durationMinutes: z.number(),
+            totalStars: z.number().min(0).max(5),
         })
     ),
     next: OperationTripScheduleId.nullable(),

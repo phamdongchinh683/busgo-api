@@ -34,6 +34,7 @@ export async function findAllByFilter(
             'ts.companyId',
             'r.distanceKm',
             'r.durationMinutes',
+            'bc.reviewAvgStars as totalStars',
         ])
 
         .where(eb => {
@@ -66,6 +67,7 @@ export async function findAllByFilter(
         })
         .limit(limit + 1)
         .orderBy('ts.departureTime', orderBy)
+        .orderBy('bc.reviewAvgStars', orderBy)
         .execute()
 }
 

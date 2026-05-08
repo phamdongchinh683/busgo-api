@@ -16,6 +16,8 @@ export const BusCompanyListResponse = z.object({
     companies: z.array(
         BusCompanyBody.extend({
             id: OrganizationBusCompanyId,
+            reviewCount: z.number().int().min(0),
+            reviewAvgStars: z.number().min(0).max(5),
         })
     ),
     next: OrganizationBusCompanyId.nullable(),

@@ -24,7 +24,9 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
             })
             .onConflict(oc =>
                 oc
-                    .expression(sql`LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)`)
+                    .expression(
+                        sql`LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)`
+                    )
                     .doUpdateSet(eb => ({
                         lastMessage: body.message,
                         lastMessageSenderId: createdBy,

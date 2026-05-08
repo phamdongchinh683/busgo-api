@@ -10,6 +10,8 @@ export interface OrganizationBusCompanyTable extends Timestamps {
     address: string
     latitude: number
     longitude: number
+    reviewCount: number
+    reviewAvgStars: number
 }
 
 export type OrganizationBusCompanyTableInsert = Insertable<OrganizationBusCompanyTable>

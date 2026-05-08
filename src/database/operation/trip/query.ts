@@ -1,4 +1,3 @@
-import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { DriverTripQuery, TripFilter } from '../../../model/query/trip/index.js'
 import { OperationTripId, OperationTripStatus } from './type.js'
@@ -152,5 +151,19 @@ export async function findByScheduleIdAndDepartureDate(params: {
             return eb.and(cond)
         })
         .selectAll()
+        .executeTakeFirstOrThrow()
+}
+
+export async function findById(id: OperationTripId) {
+    return db
+        .selectFrom('operation.trip as t')
+        .innerJoin('operation.trip_schedule as ts', 'ts.id', 't.scheduleId')
+        .where(eb => {
+            const cond = []
+            cond.push(eb('t.id', '=', id))
+            cond.push(eb('t.status', '=', OperationTripStatus.enum.completed))
+            return eb.and(cond)
+        })
+        .select(['t.id', 't.status', 'ts.companyId'])
         .executeTakeFirstOrThrow()
 }

@@ -9,6 +9,7 @@ import { BookingTable } from '../database/booking/booking/table.js'
 import { BookingTicketTable } from '../database/booking/ticket/table.js'
 import { BookingSeatSegmentTable } from '../database/booking/seat_segment/table.js'
 import { BookingCouponTable } from '../database/booking/coupon/table.js'
+import { BookingPromotionNewsTable } from '../database/booking/promotion_new/table.js'
 import { OperationTripTable } from '../database/operation/trip/table.js'
 import { OperationStationTable } from '../database/operation/station/table.js'
 import { OrganizationBusCompanyTable } from '../database/organization/bus_company/table.js'
@@ -19,6 +20,7 @@ import { OperationTripScheduleTable } from '../database/operation/trip-schedule/
 import { OperationTripStopTemplateTable } from '../database/operation/trip-stop-template/table.js'
 import { OperationTripPriceTemplateTable } from '../database/operation/trip_price_template/table.js'
 import { OrganizationCompanyDriverTable } from '../database/organization/company_driver/table.js'
+import { OrganizationBusCompanyReviewTable } from '../database/organization/bus_company_review/table.js'
 import { ChatBoxTable } from '../database/chat/box/table.js'
 import { ChatMessageTable } from '../database/chat/message/table.js'
 
@@ -34,6 +36,7 @@ export interface Database {
     'booking.coupon': BookingCouponTable
     'booking.ticket': BookingTicketTable
     'booking.seat_segment': BookingSeatSegmentTable
+    'booking.promotion_new': BookingPromotionNewsTable
     'operation.trip': OperationTripTable
     'operation.station': OperationStationTable
     'organization.bus_company': OrganizationBusCompanyTable
@@ -44,6 +47,7 @@ export interface Database {
     'operation.trip_stop_template': OperationTripStopTemplateTable
     'operation.trip_price_template': OperationTripPriceTemplateTable
     'organization.company_driver': OrganizationCompanyDriverTable
+    'organization.bus_company_review': OrganizationBusCompanyReviewTable
     'chat.box': ChatBoxTable
     'chat.message': ChatMessageTable
 }
