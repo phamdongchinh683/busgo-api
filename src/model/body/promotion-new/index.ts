@@ -20,3 +20,11 @@ export const PromotionNewsListResponse = z.object({
 })
 
 export type PromotionNewsListResponse = z.infer<typeof PromotionNewsListResponse>
+
+export const PromotionNewsCreateResponse = z.object({
+    item: PromotionNewsBody.extend({
+        id: BookingPromotionNewsId,
+    }),
+})
+
+export type PromotionNewsCreateResponse = z.infer<typeof PromotionNewsCreateResponse>
