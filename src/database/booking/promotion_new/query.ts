@@ -9,9 +9,7 @@ export async function findAll(query: PromotionNewsListQuery) {
         .where(eb => {
             const cond = []
             if (date) {
-                cond.push(
-                    eb.or([eb('pn.startDate', '<=', date), eb('pn.startDate', 'is', null)])
-                )
+                cond.push(eb.or([eb('pn.startDate', '<=', date), eb('pn.startDate', 'is', null)]))
             }
             if (next) {
                 cond.push(eb('pn.id', '<', next))

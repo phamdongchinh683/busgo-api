@@ -6,7 +6,7 @@ import { utils } from '../../utils/index.js'
 import { BookingPromotionNewsId } from '../../database/booking/promotion_new/type.js'
 
 export async function createOne(createdBy: AuthUserId, body: PromotionNewsBody) {
-   const result = await dal.booking.promotionNews.cmd.createOne({
+    const result = await dal.booking.promotionNews.cmd.createOne({
         ...body,
         createdBy,
     })

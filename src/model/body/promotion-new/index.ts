@@ -13,9 +13,11 @@ export const PromotionNewsBody = z.object({
 export type PromotionNewsBody = z.infer<typeof PromotionNewsBody>
 
 export const PromotionNewsListResponse = z.object({
-    items: z.array(PromotionNewsBody.extend({
-        id: BookingPromotionNewsId,
-    })),
+    items: z.array(
+        PromotionNewsBody.extend({
+            id: BookingPromotionNewsId,
+        })
+    ),
     next: BookingPromotionNewsId.nullable(),
 })
 
