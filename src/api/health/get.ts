@@ -1,5 +1,6 @@
 import { api, endpoint, tags } from '../../app/api.js'
 import { z } from 'zod'
+import { MessageResponse } from '../../model/common.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -8,7 +9,7 @@ api.route({
     config: {
         rateLimit: {
             max: 2,
-            timeWindow: '1m',
+            timeWindow: '10p',
         },
     },
     handler: async request => {
@@ -19,9 +20,7 @@ api.route({
 
     schema: {
         response: {
-            200: z.object({
-                message: z.string(),
-            }),
+            200: MessageResponse
         },
         tags: tags(__filename),
     },
