@@ -51,3 +51,4 @@ export const normalizeMonthlySeries = (
 export const isOutsideCancelableWindow = (params: { departureDate: Date; now: Date }) => {
     return dayjs(params.departureDate).diff(dayjs(params.now), 'hour', true) <= 24
 }
+export const coolDownTime12Hours = 12 * 60 * 60 * 1000

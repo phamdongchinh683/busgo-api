@@ -5,7 +5,7 @@ import {
     AuthStaffProfileId,
     AuthStaffProfileRole,
 } from '../../../database/auth/staff_profile/type.js'
-import { Email, Phone } from '../../common.js'
+import { Email, Otp, Phone, UserInfo } from '../../common.js'
 
 export const ProfileUpdateBody = z.object({
     fullName: z.string().optional(),
@@ -19,6 +19,28 @@ export const ProfileUpdateBody = z.object({
 })
 
 export type ProfileUpdateBody = z.infer<typeof ProfileUpdateBody>
+
+export const ProfileUpdateContactBody = z.discriminatedUnion('field', [
+    z.object({
+        field: z.literal('email'),
+        value: Email,
+        otp: Otp,
+    }),
+    z.object({
+        field: z.literal('phone'),
+        value: Phone,
+        otp: Otp,
+    }),
+])
+
+export type ProfileUpdateContactBody = z.infer<typeof ProfileUpdateContactBody>
+
+export const ProfileUpdateContactResponse = z.object({
+    message: z.string(),
+    token: z.string(),
+    user: UserInfo,
+})
+export type ProfileUpdateContactResponse = z.infer<typeof ProfileUpdateContactResponse>
 
 export const ProfileResponse = z
     .object({

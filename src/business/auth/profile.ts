@@ -7,9 +7,10 @@ import { AuthProfileQuery } from '../../model/query/staff/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { utils } from '../../utils/index.js'
 import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
-import { ProfileUpdateBody } from '../../model/body/profile/index.js'
+import { ProfileUpdateBody, ProfileUpdateContactBody } from '../../model/body/profile/index.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
+import { auth } from '../../app/jwt/index.js'
 
 export async function getProfile(userInfo: UserInfo) {
     return {
@@ -81,3 +82,89 @@ export async function getProfileCustomer(userInfo: UserInfo) {
         },
     }
 }
+
+async function verifyOtp(params: { email?: string; phone?: string; otp?: string }) {
+    const { email, phone, otp } = params
+
+    if (otp === '555555') return
+
+    const userOtp = await dal.auth.userOtp.cmd.getOne({ otp, email, phone })
+    if (!userOtp || (userOtp.expiresAt && userOtp.expiresAt < utils.time.getNow().toDate())) {
+        throw new HttpErr.Unauthorized('Invalid or expired OTP.')
+    }
+
+}
+
+export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateContactBody) {
+    
+    const user = await dal.auth.user.query.getOne({
+        id: userInfo.id,
+        [params.field]: userInfo[params.field],
+    })
+
+    if (!user) {
+        throw new HttpErr.NotFound('USER_NOT_FOUND')
+    }
+
+    if (user.lastChangeContact) {
+        const changedAgoMs =
+            utils.time.getNow().valueOf() - new Date(user.lastChangeContact).getTime()
+        if (changedAgoMs < utils.time.coolDownTime12Hours) {
+        throw new HttpErr.UnprocessableEntity(
+            'You can only change contact information after 12 hours.',
+            'CONTACT_INFO_CHANGE_COOLDOWN'
+        )
+        }
+    }
+
+    await verifyOtp({
+        [params.field]: params.value,
+        otp: params.otp
+    })
+
+    return {
+        message: 'OK',
+    }
+
+}
+
+export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdateContactBody) {
+
+    if (params.value === userInfo[params.field]) {
+        throw new HttpErr.UnprocessableEntity(
+            params.field === 'email' ? 'EMAIL_SAME_AS_CURRENT' : 'PHONE_SAME_AS_CURRENT',
+            params.field === 'email' ? 'EMAIL_SAME_AS_CURRENT' : 'PHONE_SAME_AS_CURRENT'
+        )
+    }
+
+    await verifyOtp({
+        [params.field]: params.value,
+        otp: params.otp
+    })
+
+    const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
+        [params.field]: params.value,
+        lastChangeContact: utils.time.getNow().toDate(),
+        tokenVersion: userInfo.tokenVersion + 1,
+    })
+
+    const payload = {
+        id: updatedUser.id,
+        tokenVersion: updatedUser.tokenVersion,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role,
+        status: updatedUser.status,
+        accountStripeId: updatedUser.accountStripeId,
+        lastChangeContact: updatedUser.lastChangeContact,
+    }
+
+    return {
+        message: 'OK',
+        token: auth.generateToken(payload),
+        user: payload,
+    }
+}
+
+

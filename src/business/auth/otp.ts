@@ -28,6 +28,12 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
 
+    if(process.env.NODE_ENV !== 'production') {
+        return {
+            message: 'OK',
+        }
+    }
+
     await service.email.sender.send({
         to: to,
         subject: 'Bus Go OTP Code',
@@ -48,6 +54,12 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
         field: 'phone',
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
+    
+    if(process.env.NODE_ENV !== 'production') {
+        return {
+            message: 'OK',
+        }
+    }
 
     await service.infobip.sender.send({
         to: to,

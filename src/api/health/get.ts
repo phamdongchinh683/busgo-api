@@ -20,7 +20,7 @@ api.route({
 
     schema: {
         response: {
-            200: MessageResponse
+            200: MessageResponse,
         },
         tags: tags(__filename),
     },

@@ -37,9 +37,7 @@ export async function getOne(userId: AuthUserId, trx?: Transaction<Database>) {
         .selectFrom('auth.staff_profile')
         .innerJoin('auth.user', 'auth.staff_profile.userId', 'auth.user.id')
         .selectAll()
-        .select([
-            'auth.user.accountStripeId',
-        ])
+        .select(['auth.user.accountStripeId'])
         .where('userId', '=', userId)
         .executeTakeFirst()
 }

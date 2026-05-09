@@ -146,6 +146,7 @@ export function getOne(params: {
             'u.status',
             'u.tokenVersion',
             'u.accountStripeId',
+            'u.lastChangeContact',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
         ])
