@@ -17,7 +17,8 @@ export async function findAllMessagesByBoxId(
         .where(eb => {
             const cond = []
             cond.push(eb('m.boxId', '=', boxId))
-            if (next) cond.push(eb('m.id', '>', next))
+            // Cursor paging phải khớp thứ tự sort: mới nhất trước → trang sau dùng id nhỏ hơn tin cuối cùng của trang trước
+            if (next) cond.push(eb('m.id', '<', next))
             if (message) cond.push(eb('m.body', '=', message))
             return eb.and(cond)
         })
@@ -30,7 +31,7 @@ export async function findAllMessagesByBoxId(
             'u.email as email',
             'm.createdAt',
         ])
-        .orderBy('m.createdAt', 'desc')
+        .orderBy('m.id', 'desc')
         .limit(limit + 1)
         .execute()
 }
