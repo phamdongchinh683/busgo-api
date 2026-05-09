@@ -1,9 +1,11 @@
 import { dal } from '../../database/index.js'
 import { ChatBoxId } from '../../database/chat/box/type.js'
+import { ChatMessageId } from '../../database/chat/message/type.js'
 import { ChatMessageQuery } from '../../model/query/chat/index.js'
 import { utils } from '../../utils/index.js'
 import { UserInfo } from '../../model/common.js'
 import { ws } from '../../app/index.js'
+import { HttpErr } from '../../app/index.js'
 export async function sendMessage(
     params: {
         userInfo: UserInfo
@@ -66,5 +68,39 @@ export async function getMessages(
     return {
         messages: data,
         next: next,
+    }
+}
+
+export async function recallMessage(params: {
+    userInfo: UserInfo
+    boxId: ChatBoxId
+    messageId: ChatMessageId
+}) {
+    
+    const result = await dal.chat.message.cmd.updateOne({
+        id: params.messageId,
+        boxId: params.boxId,
+        senderId: params.userInfo.id,
+        body: 'Tin nhan da thu hoi',
+    })
+
+    const receiverId =
+        result.box.receiverId === params.userInfo.id ? result.box.senderId : result.box.receiverId
+
+    ws.emitEvent({
+        targetId: String(result.box.id),
+        event: 'message:recalled',
+        data: {
+            boxId: String(result.box.id),
+            messageId: String(result.message.id),
+            body: result.message.body,
+            senderId: result.message.senderId,
+            receiverId: receiverId,
+            updatedAt: result.message.updatedAt,
+        },
+    })
+
+    return {
+        message: 'OK',
     }
 }

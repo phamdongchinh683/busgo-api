@@ -1,7 +1,11 @@
 import _ from 'lodash'
-import { sql } from 'kysely'
+import { sql, Transaction } from 'kysely'
 import { db } from '../../../datasource/db.js'
-import { ChatMessageTableInsert } from './table.js'
+import { AuthUserId } from '../../auth/user/type.js'
+import { ChatBoxId } from '../box/type.js'
+import { ChatMessageId } from './type.js'
+import { ChatMessageTableInsert, ChatMessageTableUpdate } from './table.js'
+import { Database } from '../../../datasource/type.js'
 
 export async function insertOne(params: ChatMessageTableInsert) {
     const data = _.omitBy(params, v => _.isNil(v)) as ChatMessageTableInsert
@@ -38,4 +42,34 @@ export async function insertOne(params: ChatMessageTableInsert) {
     })
 
     return result
+}
+
+export async function updateOne(params: {
+    id: ChatMessageId
+    boxId: ChatBoxId
+    senderId: AuthUserId
+    body: string
+}) { 
+    return db.transaction().execute(async trx => {
+        const message = await trx
+            .updateTable('chat.message')
+            .set({
+                body: params.body,
+                senderId: params.senderId,
+            })
+            .where('id', '=', params.id)
+            .returningAll()
+            .executeTakeFirstOrThrow()
+
+        const box = await trx
+            .updateTable('chat.box')
+            .set({
+                lastMessage: params.body,
+            })
+            .where('id', '=', params.boxId)
+            .returningAll()
+            .executeTakeFirstOrThrow()
+
+        return { message, box }
+    })
 }
