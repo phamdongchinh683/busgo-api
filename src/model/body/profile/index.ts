@@ -22,11 +22,19 @@ export type ProfileUpdateBody = z.infer<typeof ProfileUpdateBody>
 
 export const ProfileResponse = z
     .object({
-        user: ProfileUpdateBody.nullable(),
+        user: ProfileUpdateBody.extend({
+            accountStripeId: z.string().nullable(),
+        }).nullable(),
     })
     .optional()
 
 export type ProfileResponse = z.infer<typeof ProfileResponse>
+
+export const ProfileResponseUser = z.object({
+    user: ProfileUpdateBody,
+})
+
+export type ProfileResponseUser = z.infer<typeof ProfileResponseUser>
 
 export const StaffRoleResponse = z.object({
     user: ProfileUpdateBody,

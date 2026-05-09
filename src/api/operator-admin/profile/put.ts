@@ -2,7 +2,7 @@ import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { auth } from '../../../app/jwt/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
-import { ProfileResponse, ProfileUpdateBody } from '../../../model/body/profile/index.js'
+import { ProfileResponseUser, ProfileUpdateBody } from '../../../model/body/profile/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -16,7 +16,7 @@ api.route({
 
     schema: {
         body: ProfileUpdateBody,
-        response: { 200: ProfileResponse },
+        response: { 200: ProfileResponseUser },
         tags: tags(__filename),
         security: bearer,
     },

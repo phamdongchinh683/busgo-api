@@ -35,7 +35,11 @@ export async function updateOne(
 export async function getOne(userId: AuthUserId, trx?: Transaction<Database>) {
     return (trx ?? db)
         .selectFrom('auth.staff_profile')
+        .innerJoin('auth.user', 'auth.staff_profile.userId', 'auth.user.id')
         .selectAll()
+        .select([
+            'auth.user.accountStripeId',
+        ])
         .where('userId', '=', userId)
         .executeTakeFirst()
 }
