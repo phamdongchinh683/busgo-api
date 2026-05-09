@@ -4,16 +4,12 @@ import { bus } from '../../../../../business/index.js'
 import { ChatMessageBody } from '../../../../../model/body/chat/index.js'
 import { MessageResponse } from '../../../../../model/common.js'
 import { ChatBoxIdParam } from '../../../../../model/params/chat/index.js'
-import { AuthUserRole } from '../../../../../database/auth/user/type.js'
 const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [
-            AuthUserRole.enum.operator,
-            AuthUserRole.enum.super_admin,
-        ])
+        const userInfo = await auth.requiredAuthenticate(request.headers)
         return bus.chat.message.sendMessage(
             {
                 userInfo: userInfo,
