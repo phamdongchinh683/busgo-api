@@ -1,215 +1,195 @@
 # Ticketing System API
 
-Production-focused backend API for a multi-tenant bus ticketing platform.
+Backend API for a multi-tenant bus ticketing platform, built with Fastify, TypeScript, PostgreSQL, and Kysely.
 
-## Overview
+## What This Service Handles
 
-This service provides:
+- Authentication, authorization, and account lifecycle
+- Company/staff management for operator organizations
+- Route, station, trip schedule, and trip pricing operations
+- Customer booking, ticketing, and payment flows
+- Promotion/review modules and public listing endpoints
+- Real-time/chat related APIs and notification support
 
-- Authentication and role-based authorization (`super_admin`, `admin`, `driver`, `customer`)
-- Company and staff management for bus operators
-- Route, station, trip schedule, and price template management
-- Customer booking and ticket lifecycle
-- Payment integration (VNPay) and payment tracking
-- Notification and device token handling (FCM-ready)
-- Background jobs (cron) for asynchronous system tasks
+## Tech Stack
 
-Core stack:
+- Runtime: `Node.js`, `TypeScript`, `Fastify`
+- Validation & schemas: `zod`, `fastify-type-provider-zod`
+- Database: `PostgreSQL`, `kysely`
+- Auth: JWT (`fast-jwt`)
+- Integrations: Stripe, VNPay, Firebase, Cloudinary, Infobip
+- Tooling: ESLint, Prettier, Docker
 
-- `Fastify` + `TypeScript`
-- `PostgreSQL` + `Kysely`
-- `Zod` validation
-- `JWT` authentication
-- Dockerized production runtime
+## Architecture Overview
 
-## Folder Structure (Explained)
+- `src/api`: HTTP route handlers (auto-discovered by file path)
+- `src/business`: application use-cases and orchestration logic
+- `src/database`: query/command DAL modules
+- `src/model`: zod request/response/query/params schemas
+- `src/service`: third-party integration adapters
+- `src/datasource`: DB config, typed schema map, migrations
+- `src/app`: bootstrap, plugins, auth guards, common app concerns
 
-### Root
+Route registration is convention-based:
+- File path determines method and URL.
+- Example: `src/api/customer/ticket/:id/get.ts` -> `GET /customer/ticket/:id`
 
-- `README.md`: Project documentation
-- `package.json`: Scripts and dependencies
-- `kysely.config.ts`: Migration CLI configuration
-- `Dockerfile.prod`: Multi-stage production image build
-- `docker-compose.prod.yml`: Production-like container orchestration (`api`, `job`, `db`)
-- `tsconfig.json`, `.eslintrc.json`, `.prettierrc.json`: TypeScript and quality tooling
+## Authorization Model
 
-### `src/`
+### User roles (`auth.user.role`)
 
-- `src/api/`: HTTP endpoints grouped by domain and role
-  - `auth/`: sign-in, logout, password, notifications, device token
-  - `super-admin/`: top-level administration and dashboards
-  - `company-admin*`: company-level operations (operator, support, accountant)
-  - `driver/`: driver trip and passenger actions
-  - `customer/`: booking/ticket/coupon/customer flows
-  - `payment/`: payment APIs and callbacks
-- `src/app/`: Fastify bootstrap, route loading, JWT guard, shared errors/plugins
-- `src/business/`: business use-cases and application orchestration
-- `src/database/`: database access layer (query/command modules per bounded context)
-- `src/datasource/`:
-  - `db.ts`: Kysely + PostgreSQL connection setup
-  - `migrations/`: schema evolution history
-  - `type.ts`: typed database map for Kysely
-- `src/model/`: Zod models for request body, query, params, and shared response shapes
-- `src/service/`: third-party integrations (email, cloudinary, VNPay, firebase)
-- `src/job/` and `src/cron/`: scheduled/background execution entry points
-- `src/utils/`: common helpers (time, password, random, etc.)
+- `operator`
+- `driver`
+- `customer`
+- `super_admin`
+
+### Staff profile roles (`auth.staff_profile.role`)
+
+- `company_admin`
+- `dispatcher`
+- `support`
 
 ## Prerequisites
 
-- Node.js `>= 18` (Node 22 recommended to match Dockerfile)
-- Yarn `4.x` (Corepack-enabled)
-- PostgreSQL `15+` (local or containerized)
-- Docker + Docker Compose (recommended)
+- Node.js `>= 18` (Node 22 recommended)
+- Yarn `4.x` (via Corepack)
+- PostgreSQL `15+`
+- Docker + Docker Compose (recommended for local DB)
 
-## Environment Configuration
+## Environment Variables
 
-Create `.env` in project root:
+Create `.env` in project root.
+
+### Required
 
 ```env
-# Runtime
 NODE_ENV=development
 APP_ENV=local
 HOST=0.0.0.0
 PORT=3000
-
-# Security
-JWT_SECRET=replace-with-strong-secret
-
-# Database
 DB_URL=postgres://bus-ticketing-system:your_password@localhost:5433/bus-ticketing-system
+JWT_SECRET=replace-with-strong-secret
+```
 
-# Optional integrations
+### Common Optional Integrations
+
+```env
+# CORS
+CORS_ORIGIN=http://localhost:3000
+
+# Stripe
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_REFRESH_URL=
+STRIPE_REDIRECT_URL=
+SYSTEM_DOMAIN=
+
+# VNPay
 VNPAY_TMN_CODE=
 VNPAY_SECRET=
 VNPAY_URL=
 VNPAY_RETURN_URL=
+
+# Firebase
+FIREBASE_PROJECT_ID=
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+
+# Messaging/Email/Upload
+INFOBIP_API_KEY=
+RESEND_API_KEY=
+MAIL_FROM=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
+CLOUDINARY_CLOUD_NAME=
 ```
 
 Notes:
+- Database SSL behavior depends on `APP_ENV` in `src/datasource/db.ts`.
+- Keep all secrets out of source control.
 
-- `src/datasource/db.ts` disables SSL only when `APP_ENV=local`.
-- For non-local environments, SSL is enabled with `rejectUnauthorized: false`.
+## Local Development
 
-## Database Setup
+### 1) Install dependencies
 
-### Option A: Use Existing `docker-compose.prod.yml` (quick local bootstrap)
+```bash
+yarn install
+```
+
+### 2) Start PostgreSQL (Docker)
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d db
 ```
 
-Then run migrations:
+### 3) Run migrations
 
 ```bash
 yarn migrate
 ```
 
-### Option B: Use External PostgreSQL
-
-1. Create database + user manually.
-2. Set `DB_URL`.
-3. Run:
-
-```bash
-yarn migrate
-```
-
-### Migration Commands
-
-- `yarn migrate`: apply pending migrations
-- `yarn migration:create <name>`: create migration file
-- `yarn migration:down`: rollback last migration
-
-## Run the Project
-
-### Development
-
-Terminal 1:
+### 4) Start API
 
 ```bash
 yarn dev
 ```
 
-Terminal 2 (background jobs):
-
-```bash
-yarn cron-dev
-```
-
-Swagger docs:
-
+Swagger UI:
 - [http://localhost:3000/swagger/docs](http://localhost:3000/swagger/docs)
 
-### Production (without Docker)
+## Available Scripts
+
+- `yarn dev`: run API in development mode
+- `yarn build`: compile TypeScript to `dist`
+- `yarn start`: build + start production build
+- `yarn format`: format source files
+- `yarn format:check`: check formatting
+- `yarn migrate`: apply pending migrations
+- `yarn migration:create`: create a migration file
+- `yarn migration:down`: rollback latest migration
+
+## Database Migrations
+
+- Migration files live in `src/datasource/migrations`.
+- Always create migration for schema or enum changes.
+- Recommended sequence:
+  1. Generate/create migration.
+  2. Apply via `yarn migrate`.
+  3. Verify app boot and key endpoints.
+  4. Commit migration with related code updates.
+
+## Deployment Notes
+
+### Docker image
 
 ```bash
-yarn build
-yarn start
+docker build -t <registry>/ticketing-system-api:latest -f Dockerfile.prod .
 ```
 
-Run cron worker in separate process:
-
-```bash
-yarn cron-start
-```
-
-## Deployment
-
-## 1) Build Image
-
-```bash
-docker build -t <your-registry>/ticketing-system-api:latest -f Dockerfile.prod .
-```
-
-## 2) Configure Runtime Secrets
-
-- Create `.env` on target host
-- Ensure `JWT_SECRET` and `DB_URL` point to production values
-- Do not commit credentials into source control
-
-## 3) Deploy with Compose
+### Compose deployment
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d
 ```
 
-This starts:
+### Post-deploy checklist
 
-- `api`: HTTP API service
-- `job`: cron/background worker
-- `db`: PostgreSQL 15
+- `GET /health` returns success
+- `GET /swagger/docs/json` is reachable
+- Migration status is up to date
+- Logs show no startup/auth/database errors
 
-## 4) Post-deploy Checks
+## Security Recommendations
 
-- `GET /swagger/docs/json` returns OpenAPI spec
-- Health-check critical endpoints
-- Verify migration state and background job logs
-
-## Scripts
-
-- `yarn dev`: run API in dev mode
-- `yarn cron-dev`: run cron worker in dev mode
-- `yarn build`: compile TypeScript
-- `yarn start`: start compiled API
-- `yarn cron-start`: start compiled cron worker
-- `yarn format`: format source
-- `yarn format:check`: validate formatting
-- `yarn migrate`: run migrations
-- `yarn migration:create`: create migration
-- `yarn migration:down`: rollback migration
-
-## Professional Operational Notes
-
-- Keep `api` and `job` as separate processes/containers in production.
-- Use strong secrets and external secret management for production.
-- Restrict DB exposure; do not publicly expose `5432/5433` unless necessary.
-- Add centralized logging/monitoring for Fastify + cron tasks.
-- Back up PostgreSQL regularly before running destructive migrations.
+- Rotate `JWT_SECRET` and external provider keys regularly.
+- Do not keep production credentials in `docker-compose` files.
+- Restrict database network access and run backups before destructive migrations.
+- Add centralized logs/metrics for API error and latency tracking.
 
 ## Troubleshooting
 
-- **DB connection fails**: verify `DB_URL`, DB container status, and exposed port.
-- **Migration errors**: ensure `kysely.config.ts` and `src/datasource/migrations` are present.
-- **Auth failures**: verify JWT secret parity across all runtime services (`api`, `job`).
-- **Swagger not loading**: check app startup logs and `PORT`/`HOST` configuration.
+- **Cannot connect to DB**: verify `DB_URL`, DB container status, and mapped port.
+- **Migration fails**: inspect latest migration file and schema drift.
+- **401/403 errors**: validate JWT secret and role mapping.
+- **Swagger missing**: confirm app started with valid `HOST` and `PORT`.
 

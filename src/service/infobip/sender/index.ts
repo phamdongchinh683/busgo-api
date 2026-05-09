@@ -14,7 +14,7 @@ export async function send(params: { to: Phone; message: string }) {
         body: JSON.stringify({
             messages: [
                 {
-                    sender: 'Bus System',
+                    sender: 'Bus Go',
                     destinations: [{ to: to }],
                     content: {
                         text: message,
