@@ -81,7 +81,7 @@ export async function recallMessage(params: {
         id: params.messageId,
         boxId: params.boxId,
         senderId: params.userInfo.id,
-        body: 'Tin nhan da thu hoi',
+        body: 'Tin nhắn này đã bị thu hồi',
     })
 
     const receiverId =
