@@ -71,7 +71,7 @@ export async function createPaymentIntentWithCommission(params: {
 
     const usdAmount = Math.round((amount / 26000) * 100)
 
-    const applicationFee = Math.round((usdAmount * 7) / 100)
+    const applicationFee = Math.round((usdAmount * 15) / 100)
 
     return stripe.paymentIntents.create({
         amount: usdAmount,
