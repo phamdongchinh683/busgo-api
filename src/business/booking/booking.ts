@@ -2,7 +2,6 @@ import { dal } from '../../database/index.js'
 import { BookingRequest } from '../../model/body/booking/index.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { BookingType } from '../../database/booking/booking/type.js'
-import { PeriodFilter } from '../../model/common.js'
 import { PeriodBookingQuery } from '../../model/query/booking/index.js'
 
 export async function initBooking(params: BookingRequest, userId: AuthUserId) {

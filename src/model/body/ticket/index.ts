@@ -31,9 +31,9 @@ export const TicketsResponse = z.object({
     tickets: z.array(
         TicketBody.extend({
             bookingId: BookingId,
-            departureDate: z.date(),
-            tripId: OperationTripId,
-            tripStatus: OperationTripStatus,
+            departureDate: z.date().nullable(),
+            tripId: OperationTripId.nullable(),
+            tripStatus: OperationTripStatus.nullable(),
         })
     ),
     next: BookingTicketId.nullable(),
