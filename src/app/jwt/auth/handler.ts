@@ -6,7 +6,7 @@ import { db } from '../../../datasource/db.js'
 
 const sign = createSigner({
     algorithm: 'HS256',
-    expiresIn: `1h`,
+    expiresIn: `30days`,
     key: process.env.JWT_SECRET,
 })
 const verify = createVerifier({ key: process.env.JWT_SECRET })
