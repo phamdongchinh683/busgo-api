@@ -9,7 +9,7 @@ api.route({
     config: {
         rateLimit: {
             max: 2,
-            timeWindow: '10p',
+            timeWindow: '10m',
         },
     },
     handler: async request => {
