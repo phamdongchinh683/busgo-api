@@ -19,7 +19,7 @@ export async function send(params: { to: Email; subject: string; text?: string; 
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            from: `"Bus Go" <${from}>`,
+            from: `"BusGo" <${from}>`,
             to: [params.to],
             subject: params.subject,
             text: params.text,
@@ -42,7 +42,7 @@ export async function sendMany(params: {
             'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-            from: `"Bus Go" <${from}>`,
+            from: `"BusGo" <${from}>`,
             to: params.to,
             subject: params.subject,
             text: params.text,
