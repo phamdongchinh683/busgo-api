@@ -51,7 +51,7 @@ pipeline {
         stage("Deploy") {
             steps {
                  sh '''
-                        docker-compose -f docker-compose.prod.yml up -d --scale lambda-ws=2
+                        docker-compose -f docker-compose.prod.yml up -d
                  '''
             }
         }
