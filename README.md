@@ -218,6 +218,7 @@ Keep production credentials in environment files or your secret manager. Do not 
 ## Troubleshooting
 
 - **Database connection errors**: verify `DB_URL`, container health, and the exposed PostgreSQL port.
+- **Migration fails with `password authentication failed for user "busgo"`**: make sure the Jenkins or VPS `.env` uses the same `DB_PASSWORD` as the Postgres service, and point `DB_URL` at the database that migration actually reaches. For Docker Compose deployments, use `postgresql://busgo:<password>@db:5432/busgo?sslmode=disable` inside the stack. If a Postgres volume was created with an old password, recreate the volume or run `ALTER USER busgo WITH PASSWORD '<password>';` before retrying `yarn migrate`.
 - **Migration failures**: inspect the latest migration and compare it with the live schema.
 - **401 or 403 responses**: confirm `JWT_SECRET`, token expiry, and role checks for the target route.
 - **Swagger unavailable**: confirm the process is listening on the configured `HOST` and `PORT`.

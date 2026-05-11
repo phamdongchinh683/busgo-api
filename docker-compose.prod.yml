@@ -17,10 +17,12 @@ services:
     container_name: postgres
     restart: always
     mem_limit: 768m
+    env_file:
+      - .env
     environment:
       POSTGRES_DB: busgo
       POSTGRES_USER: busgo
-      POSTGRES_PASSWORD: Chinh123021312412
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - db_data:/var/lib/postgresql/data
     networks:

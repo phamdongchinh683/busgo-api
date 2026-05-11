@@ -43,7 +43,8 @@ pipeline {
         stage("Test Migrate") {
             steps {
                 sh '''
-                    docker-compose -f docker-compose.prod.yml run --rm api yarn migrate
+                    docker compose -f docker-compose.prod.yml up -d db
+                    docker compose -f docker-compose.prod.yml run --rm api yarn migrate
                 '''
             }
         }
@@ -51,7 +52,7 @@ pipeline {
         stage("Deploy") {
             steps {
                  sh '''
-                        docker-compose -f docker-compose.prod.yml up -d
+                        docker compose -f docker-compose.prod.yml up -d
                  '''
             }
         }
