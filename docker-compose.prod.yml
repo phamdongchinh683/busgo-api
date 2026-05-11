@@ -18,8 +18,8 @@ services:
     restart: always
     mem_limit: 768m
     environment:
-      POSTGRES_DB: bus-ticketing-system
-      POSTGRES_USER: bus-ticketing-system
+      POSTGRES_DB: busgo
+      POSTGRES_USER: busgo
       POSTGRES_PASSWORD: Chinh123021312412
     volumes:
       - db_data:/var/lib/postgresql/data

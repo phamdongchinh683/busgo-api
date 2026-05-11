@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 export const GoogleTokenInfo = z.object({
     aud: z.string(),
@@ -9,6 +9,5 @@ export const GoogleTokenInfo = z.object({
     family_name: z.string().optional(),
     given_name: z.string().optional(),
     sub: z.string(),
-  });
-  export type GoogleTokenInfo = z.infer<typeof GoogleTokenInfo>;
-  
+})
+export type GoogleTokenInfo = z.infer<typeof GoogleTokenInfo>

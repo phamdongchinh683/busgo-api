@@ -1,5 +1,5 @@
 {
-  "name": "backend-fastify-setting",
+  "name": "busgo-backend",
   "type": "module",
   "packageManager": "yarn@4.11.0",
   "scripts": {
@@ -12,12 +12,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
     "migration:create": "kysely migrate:make",
     "migration:down": "kysely migrate:down",
-    "migrate": "kysely migrate:latest",
-    "lambda:ws": "tsx src/lambda/lambda-ws.ts",
-    "start:lambda:ws": "node dist/lambda/lambda-ws.js"
+    "migrate": "kysely migrate:latest"
   },
   "dependencies": {
-    "@aws-sdk/client-sqs": "^3.1045.0",
     "@fastify/compress": "^8.0.0",
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
