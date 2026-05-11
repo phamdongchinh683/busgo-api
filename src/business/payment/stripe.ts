@@ -109,10 +109,10 @@ export async function setDefault(userInfo: UserInfo, paymentMethodId: string) {
             trx
         )
 
-        await dal.payment.customerPaymentMethod.cmd.upsertOne(
+        await dal.payment.customerPaymentMethod.cmd.updateOne(
             {
                 userId: userInfo.id,
-                stripeCustomerId: userInfo.accountStripeId ?? '',
+                accountStripeId: userInfo.accountStripeId ?? '',
                 stripePaymentMethodId: paymentMethodId,
                 isDefault: true,
             },

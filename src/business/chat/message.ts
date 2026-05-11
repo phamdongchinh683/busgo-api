@@ -50,21 +50,21 @@ export async function sendMessage(
         },
     })
 
-        // await service.queue.chat.pushChatMessage({
-        //     action: 'message:new',
-        //     data: {
-        //         boxId: String(result.box.id),
-        //         messageId: String(result.row.id),
-        //         senderId: result.row.senderId,
-        //         receiverId,
-        //         senderName: userInfo.fullName,
-        //         body: result.row.body,
-        //         createdAt:
-        //             result.row.createdAt instanceof Date
-        //                 ? result.row.createdAt.toISOString()
-        //                 : result.row.createdAt,
-        //     },
-        // })
+    // await service.queue.chat.pushChatMessage({
+    //     action: 'message:new',
+    //     data: {
+    //         boxId: String(result.box.id),
+    //         messageId: String(result.row.id),
+    //         senderId: result.row.senderId,
+    //         receiverId,
+    //         senderName: userInfo.fullName,
+    //         body: result.row.body,
+    //         createdAt:
+    //             result.row.createdAt instanceof Date
+    //                 ? result.row.createdAt.toISOString()
+    //                 : result.row.createdAt,
+    //     },
+    // })
     return { message: 'OK' }
 }
 
@@ -91,7 +91,6 @@ export async function recallMessage(params: {
     boxId: ChatBoxId
     messageId: ChatMessageId
 }) {
-    
     const result = await dal.chat.message.cmd.updateOne({
         id: params.messageId,
         boxId: params.boxId,

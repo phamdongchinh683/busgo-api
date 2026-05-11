@@ -69,9 +69,14 @@ export async function createPaymentIntentWithCommission(params: {
 }) {
     const { amount, stripeCustomerId, companyAdminStripeId, transactionCode } = params
 
-    const usdAmount = Math.round((amount / 26000) * 100)
+    const EXCHANGE_RATE_VND_PER_USD = 26000n
+    const COMMISSION_PERCENT = 15n
 
-    const applicationFee = Math.round((usdAmount * 15) / 100)
+    const usdAmount = Number(
+        (BigInt(amount) * 100n + EXCHANGE_RATE_VND_PER_USD / 2n) / EXCHANGE_RATE_VND_PER_USD
+    )
+
+    const applicationFee = Number((BigInt(usdAmount) * COMMISSION_PERCENT + 50n) / 100n)
 
     return stripe.paymentIntents.create({
         amount: usdAmount,
@@ -83,6 +88,11 @@ export async function createPaymentIntentWithCommission(params: {
         },
         metadata: {
             transactionCode,
+            originalVndAmount: String(amount),
+            exchangeRateVndPerUsd: String(EXCHANGE_RATE_VND_PER_USD),
+            usdAmountCents: String(usdAmount),
+            commissionPercent: String(COMMISSION_PERCENT),
+            applicationFeeCents: String(applicationFee),
         },
     })
 }

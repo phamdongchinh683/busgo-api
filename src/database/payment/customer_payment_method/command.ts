@@ -61,3 +61,25 @@ export async function deleteOne(params: {
         })
         .executeTakeFirstOrThrow()
 }
+
+export async function updateOne(
+    params: {
+        userId: AuthUserId
+        stripePaymentMethodId: string
+        accountStripeId: string
+        isDefault: boolean
+    },
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
+        .updateTable('payment.customer_payment_method')
+        .set({ isDefault: params.isDefault })
+        .where(eb => {
+            const cond = []
+            cond.push(eb('userId', '=', params.userId))
+            cond.push(eb('stripePaymentMethodId', '=', params.stripePaymentMethodId))
+            cond.push(eb('stripeCustomerId', '=', params.accountStripeId))
+            return eb.and(cond)
+        })
+        .executeTakeFirstOrThrow()
+}
