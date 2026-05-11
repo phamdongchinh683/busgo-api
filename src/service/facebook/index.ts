@@ -38,7 +38,6 @@ async function debugToken(p: { token: string }): Promise<FacebookDebugTokenResp>
     const url = `${baseUrl}?${searchParams.toString()}`
     const response = await fetch(url)
     const data = await response.json()
-    console.log('facebook.debug_token', JSON.stringify(data), response.status)
     const result = FacebookDebugTokenResp.safeParse(data)
     if (!result.success)
         throw new HttpErr.UnprocessableEntity(
@@ -57,7 +56,6 @@ async function getMe(p: { token: string }): Promise<FacebookGetMeResp> {
     const url = `https://graph.facebook.com/v24.0/me?${searchParams.toString()}`
     const response = await fetch(url)
     const data = await response.json()
-    console.log('facebook.me', JSON.stringify(data), response.status)
     const result = FacebookGetMeResp.safeParse(data)
     if (!result.success)
         throw new HttpErr.UnprocessableEntity(

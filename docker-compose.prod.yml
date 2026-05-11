@@ -3,7 +3,7 @@ services:
     image: phamdongchinh683/backend-fastify:latest
     container_name: api
     restart: always
-    mem_limit: 256m
+    mem_limit: 512m
     env_file:
       - .env
     ports:

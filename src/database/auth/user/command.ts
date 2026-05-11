@@ -1,6 +1,10 @@
 import { AuthUserTableInsert, AuthUserTableUpdate } from './table.js'
 import { dal } from '../../index.js'
 import { HttpErr } from '../../../app/index.js'
+import {
+    forgetTokenVersion,
+    rememberTokenVersion,
+} from '../../../app/jwt/auth/token-version-cache.js'
 import { DatabaseError } from 'pg'
 import { generateToken } from '../../../app/jwt/auth/handler.js'
 import { db } from '../../../datasource/db.js'
@@ -305,12 +309,18 @@ export async function updateOne(
     params: AuthUserTableUpdate,
     trx?: Transaction<Database>
 ) {
-    return (trx ?? db)
+    const user = await (trx ?? db)
         .updateTable('auth.user')
         .set(params)
         .where('id', '=', userId)
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    if (params.tokenVersion !== undefined) {
+        rememberTokenVersion(userId, user.tokenVersion)
+    }
+
+    return user
 }
 
 export async function updatePassword(params: {
@@ -336,7 +346,7 @@ export async function updatePassword(params: {
 }
 
 export async function incrementTokenVersion(userId: AuthUserId, trx?: Transaction<Database>) {
-    return (trx ?? db)
+    const user = await (trx ?? db)
         .updateTable('auth.user')
         .set({
             tokenVersion: sql<number>`token_version + 1`,
@@ -344,14 +354,22 @@ export async function incrementTokenVersion(userId: AuthUserId, trx?: Transactio
         .where('id', '=', userId)
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    rememberTokenVersion(userId, user.tokenVersion)
+
+    return user
 }
 
 export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>) {
-    return (trx ?? db)
+    const user = await (trx ?? db)
         .deleteFrom('auth.user')
         .where('id', '=', userId)
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    forgetTokenVersion(userId)
+
+    return user
 }
 
 export async function insertDriver(

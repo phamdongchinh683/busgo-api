@@ -204,7 +204,7 @@ const start = async () => {
             openapi: {
                 info: {
                     title: 'API',
-                    description: 'API documentation for the BusGo',
+                    description: 'API documentation for the Bus Go',
                     version: '1.0.0',
                 },
                 components: {
