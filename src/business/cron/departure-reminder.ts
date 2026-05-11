@@ -9,7 +9,7 @@ import { db } from '../../datasource/db.js'
 
 export async function departureReminder() {
     const now = utils.time.getNow()
-    const windowStart = now.toDate()
+    const windowStart = now.startOf('day').toDate()
     const windowEnd = now.endOf('day').toDate()
 
     const formatter = new Intl.DateTimeFormat('vi-VN', {
