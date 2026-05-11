@@ -1,7 +1,8 @@
 import { z } from "zod";
 
 export const GoogleTokenInfo = z.object({
-    azp: z.string(),
+    aud: z.string(),
+    azp: z.string().optional(),
     email: z.string(),
     email_verified: z.string(),
     exp: z.string(),
