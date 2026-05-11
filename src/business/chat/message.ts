@@ -5,7 +5,46 @@ import { ChatMessageQuery } from '../../model/query/chat/index.js'
 import { utils } from '../../utils/index.js'
 import { UserInfo } from '../../model/common.js'
 import { ws } from '../../app/index.js'
-import { HttpErr } from '../../app/index.js'
+import { service } from '../../service/index.js'
+
+function emitChatSocketDirect(params: {
+    boxId: string
+    receiverId: string | number
+    senderName: string
+    body: string
+    senderId: number
+    createdAt: Date
+    unreadReceiverCount: number
+    unreadSenderCount: number
+}) {
+    ws.emitEvent({
+        targetId: params.boxId,
+        event: 'message:new',
+        data: {
+            boxId: params.boxId,
+            senderName: params.senderName,
+            body: params.body,
+            senderId: params.senderId,
+            receiverId:
+                typeof params.receiverId === 'number'
+                    ? params.receiverId
+                    : Number(params.receiverId),
+            createdAt: params.createdAt,
+        },
+    })
+
+    ws.emitEvent({
+        targetId: String(params.receiverId),
+        event: 'chat:unread:count',
+        data: {
+            boxId: params.boxId,
+            lastMessage: params.body,
+            unreadReceiverCount: params.unreadReceiverCount,
+            unreadSenderCount: params.unreadSenderCount,
+        },
+    })
+}
+
 export async function sendMessage(
     params: {
         userInfo: UserInfo
@@ -26,28 +65,25 @@ export async function sendMessage(
     const receiverId =
         result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId
 
-    ws.emitEvent({
-        targetId: String(result.box.id),
-        event: 'message:new',
-        data: {
-            boxId: String(result.box.id),
-            senderName: userInfo.fullName,
-            body: result.row.body,
-            senderId: result.row.senderId,
-            receiverId: receiverId,
-            createdAt: result.row.createdAt,
-        },
-    })
+    const queueData = {
+        boxId: String(result.box.id),
+        messageId: String(result.row.id),
+        senderId: result.row.senderId,
+        receiverId,
+        senderName: userInfo.fullName,
+        body: result.row.body,
+        createdAt:
+            result.row.createdAt instanceof Date
+                ? result.row.createdAt.toISOString()
+                : result.row.createdAt,
+        lastMessage: result.row.body,
+        unreadReceiverCount: result.box.unreadReceiverCount,
+        unreadSenderCount: result.box.unreadSenderCount,
+    }
 
-    ws.emitEvent({
-        targetId: String(receiverId),
-        event: 'chat:unread:count',
-        data: {
-            boxId: String(result.box.id),
-            lastMessage: result.row.body,
-            unreadReceiverCount: result.box.unreadReceiverCount,
-            unreadSenderCount: result.box.unreadSenderCount,
-        },
+    await service.queue.chat.pushChatMessage({
+        action: 'message:new',
+        data: queueData,
     })
 
     return { message: 'OK' }
@@ -76,7 +112,6 @@ export async function recallMessage(params: {
     boxId: ChatBoxId
     messageId: ChatMessageId
 }) {
-    
     const result = await dal.chat.message.cmd.updateOne({
         id: params.messageId,
         boxId: params.boxId,

@@ -28,7 +28,7 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
 
-    if(process.env.NODE_ENV !== 'production') {
+    if (process.env.NODE_ENV !== 'production') {
         return {
             message: 'OK',
         }
@@ -54,8 +54,8 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
         field: 'phone',
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
-    
-    if(process.env.NODE_ENV !== 'production') {
+
+    if (process.env.NODE_ENV !== 'production') {
         return {
             message: 'OK',
         }

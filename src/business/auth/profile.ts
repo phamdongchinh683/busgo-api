@@ -92,11 +92,9 @@ async function verifyOtp(params: { email?: string; phone?: string; otp?: string 
     if (!userOtp || (userOtp.expiresAt && userOtp.expiresAt < utils.time.getNow().toDate())) {
         throw new HttpErr.Unauthorized('Invalid or expired OTP.')
     }
-
 }
 
 export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateContactBody) {
-    
     const user = await dal.auth.user.query.getOne({
         id: userInfo.id,
         [params.field]: userInfo[params.field],
@@ -110,26 +108,24 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
         const changedAgoMs =
             utils.time.getNow().valueOf() - new Date(user.lastChangeContact).getTime()
         if (changedAgoMs < utils.time.coolDownTime12Hours) {
-        throw new HttpErr.UnprocessableEntity(
-            'You can only change contact information after 12 hours.',
-            'CONTACT_INFO_CHANGE_COOLDOWN'
-        )
+            throw new HttpErr.UnprocessableEntity(
+                'You can only change contact information after 12 hours.',
+                'CONTACT_INFO_CHANGE_COOLDOWN'
+            )
         }
     }
 
     await verifyOtp({
         [params.field]: params.value,
-        otp: params.otp
+        otp: params.otp,
     })
 
     return {
         message: 'OK',
     }
-
 }
 
 export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdateContactBody) {
-
     if (params.value === userInfo[params.field]) {
         throw new HttpErr.UnprocessableEntity(
             params.field === 'email' ? 'EMAIL_SAME_AS_CURRENT' : 'PHONE_SAME_AS_CURRENT',
@@ -139,7 +135,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
 
     await verifyOtp({
         [params.field]: params.value,
-        otp: params.otp
+        otp: params.otp,
     })
 
     const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
@@ -166,5 +162,3 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         user: payload,
     }
 }
-
-

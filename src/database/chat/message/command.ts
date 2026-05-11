@@ -49,7 +49,7 @@ export async function updateOne(params: {
     boxId: ChatBoxId
     senderId: AuthUserId
     body: string
-}) { 
+}) {
     return db.transaction().execute(async trx => {
         const message = await trx
             .updateTable('chat.message')

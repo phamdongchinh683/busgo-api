@@ -12,9 +12,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [
-            AuthUserRole.enum.customer,
-        ])
+        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
         return bus.auth.profile.updateContactInfo(userInfo, request.body)
     },
 
