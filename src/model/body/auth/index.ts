@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { ContactInfo, Email, Otp, Phone, UserInfo } from '../../common.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
+import { AuthUserId, AuthUserRole, AuthUserStatus } from '../../../database/auth/user/type.js'
 
 const regPassword = `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@\\$%&!\\*\\?\\^_])(?!.*\\s).+$`
 const message =
@@ -86,3 +86,10 @@ export const AuthOtpBody = z.discriminatedUnion('field', [
 ])
 
 export type AuthOtpBody = z.infer<typeof AuthOtpBody>
+
+export const AuthGoogleBody = z.object({
+    idToken: z.string(),
+    role: z.enum([AuthUserRole.enum.customer, AuthUserRole.enum.driver]).default(AuthUserRole.enum.customer),
+})
+
+export type AuthGoogleBody = z.infer<typeof AuthGoogleBody>

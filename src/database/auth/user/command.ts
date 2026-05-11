@@ -436,3 +436,15 @@ export async function verify(params: {
             .executeTakeFirstOrThrow()
     })
 }
+
+export async function authUpsertByEmail(params: {
+    data: AuthUserTableInsert
+}) {
+    return db.insertInto('auth.user')
+        .values(params.data)
+        .onConflict(oc => oc.column('email').doUpdateSet(eb => ({
+            email: params.data.email,
+        })))
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
