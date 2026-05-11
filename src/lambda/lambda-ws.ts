@@ -12,6 +12,29 @@ type SQSEvent = {
     }>
 }
 
+const waitSec = Math.min(20, Math.max(0, Number(process.env.SQS_WAIT_TIME_SECONDS ?? 20)))
+const visibilitySec = Math.min(43200, Math.max(0, Number(process.env.SQS_VISIBILITY_TIMEOUT ?? 60)))
+const idleSleepMs = Math.max(0, Number(process.env.SQS_IDLE_SLEEP_MS ?? 0))
+const errorBackoffMs = Math.max(1000, Number(process.env.SQS_ERROR_BACKOFF_MS ?? 3000))
+const startupJitterMsMax = Math.max(0, Number(process.env.SQS_STARTUP_JITTER_MS ?? 3000))
+const maxRunSeconds = Math.max(0, Number(process.env.WORKER_MAX_RUN_SECONDS ?? 0))
+const maxRunJitterSeconds = Math.max(0, Number(process.env.WORKER_MAX_RUN_JITTER_SECONDS ?? 300))
+
+let stopping = false
+
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function setupShutdownHooks() {
+    const onShutdown = (signal: NodeJS.Signals) => {
+        stopping = true
+        console.log(`[lambda-ws] received ${signal}, shutting down loop...`)
+    }
+    process.once('SIGINT', onShutdown)
+    process.once('SIGTERM', onShutdown)
+}
+
 
 async function connectSocket() {
     const socket = io(process.env.SOCKET_SERVER_URL ?? '', {
@@ -105,34 +128,64 @@ export const handler = async (event: SQSEvent) => {
 export async function runLoop() {
     const sqs = connectSqs()
     const queueUrlValue = queueUrl('chat-messages')
+    setupShutdownHooks()
+    const startupDelayMs =
+        startupJitterMsMax > 0 ? Math.floor(Math.random() * (startupJitterMsMax + 1)) : 0
+    if (startupDelayMs > 0) {
+        console.log('[lambda-ws] startup jitter delay', { startupDelayMs })
+        await sleep(startupDelayMs)
+    }
 
-    for (;;) {
-        const out = await sqs.send(
-            new ReceiveMessageCommand({
-                QueueUrl: queueUrlValue,
-                MaxNumberOfMessages: 10,
-                WaitTimeSeconds: 20,
-                VisibilityTimeout: 60,
-            })
-        )
+    const recycleDeadlineMs =
+        maxRunSeconds > 0
+            ? Date.now() + (maxRunSeconds + Math.floor(Math.random() * (maxRunJitterSeconds + 1))) * 1000
+            : 0
 
-        const messages = out.Messages ?? []
-        for (const m of messages) {
-            if (!m.Body || !m.ReceiptHandle) continue
 
-            try {
-                await processRecords([{ body: m.Body }])
-                await sqs.send(
-                    new DeleteMessageCommand({
-                        QueueUrl: queueUrlValue,
-                        ReceiptHandle: m.ReceiptHandle,
-                    })
-                )
-            } catch (err) {
-                console.error('[lambda-ws] handle failed, message will retry:', err)
+
+    while (!stopping) {
+        if (recycleDeadlineMs > 0 && Date.now() >= recycleDeadlineMs) {
+            console.log('[lambda-ws] recycle deadline reached, exiting for rolling restart')
+            break
+        }
+
+        try {
+            const out = await sqs.send(
+                new ReceiveMessageCommand({
+                    QueueUrl: queueUrlValue,
+                    MaxNumberOfMessages: 10,
+                    WaitTimeSeconds: waitSec,
+                    VisibilityTimeout: visibilitySec,
+                })
+            )
+
+            const messages = out.Messages ?? []
+            if (messages.length === 0 && idleSleepMs > 0) {
+                await sleep(idleSleepMs)
+                continue
             }
+
+            for (const m of messages) {
+                if (!m.Body || !m.ReceiptHandle) continue
+
+                try {
+                    await processRecords([{ body: m.Body }])
+                    await sqs.send(
+                        new DeleteMessageCommand({
+                            QueueUrl: queueUrlValue,
+                            ReceiptHandle: m.ReceiptHandle,
+                        })
+                    )
+                } catch (err) {
+                    console.error('[lambda-ws] handle failed, message will retry:', err)
+                }
+            }
+        } catch (err) {
+            console.error(err)
+            await sleep(errorBackoffMs)
         }
     }
+    console.log('[lambda-ws] loop stopped')
 }
 
 if (process.argv[1]?.includes('lambda-ws')) {
