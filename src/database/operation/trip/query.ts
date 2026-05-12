@@ -82,7 +82,6 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
         .where(eb => {
             const cond = []
             cond.push(eb('t.driverId', '=', userId))
-            cond.push(eb('t.status', '=', OperationTripStatus.enum.scheduled))
             if (!date) {
                 cond.push(eb('t.departureDate', '=', now))
             } else {
