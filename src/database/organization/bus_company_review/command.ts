@@ -32,8 +32,8 @@ export async function insertOne(params: OrganizationBusCompanyReviewTableInsert)
             .updateTable('organization.bus_company as bc')
             .from(agg.as('agg'))
             .set({
-                reviewCount: sql`agg."reviewCount"`,
-                reviewAvgStars: sql`agg."reviewAvgStars"`,
+                reviewCount: sql`agg.review_count`,
+                reviewAvgStars: sql`agg.review_avg_stars`,
             })
             .where('bc.id', '=', review.companyId)
             .executeTakeFirst()
