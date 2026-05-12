@@ -2,6 +2,7 @@ import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { auth } from '../../../app/jwt/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
+import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 
 import { DriverListResponse } from '../../../model/body/driver/index.js'
 import { DriverQuery } from '../../../model/query/driver/index.js'
@@ -12,7 +13,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.operator])
+        const userInfo = await auth.requireStaffProfileRole(request.headers, [AuthUserRole.enum.operator], [AuthStaffProfileRole.enum.company_admin])
         return bus.auth.driver.getDrivers(request.query, userInfo.companyId)
     },
 
