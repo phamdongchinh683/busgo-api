@@ -9,7 +9,7 @@ export type Email = z.infer<typeof Email>
 export const Phone = z
     .string()
     .trim()
-    .regex(/^\d{10,11}$/, 'Phone must contain only digits and be 10-13 characters long')
+    .regex(/^\d{10,13}$/, 'Phone must contain only digits and be 10-13 characters long')
 export type Phone = z.infer<typeof Phone>
 
 export const ContactInfo = z.object({
