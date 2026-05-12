@@ -72,7 +72,7 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
 }
 
 export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUserId) {
-    const { limit, next, date, orderBy } = params
+    const { limit, next, date, orderBy, status } = params
     const now = utils.time.getNow().toDate()
     return db
         .selectFrom('operation.trip as t')
@@ -87,6 +87,9 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
                 cond.push(eb('t.departureDate', '=', now))
             } else {
                 cond.push(eb('t.departureDate', '=', date))
+            }
+            if (status) {
+                cond.push(eb('t.status', '=', status))
             }
             if (next) {
                 cond.push(eb('t.id', '>', next))

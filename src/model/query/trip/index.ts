@@ -32,6 +32,7 @@ export type TripQuery = z.infer<typeof TripQuery>
 export const DriverTripQuery = z.object({
     limit: z.coerce.number().optional().default(10),
     date: z.coerce.date().optional(),
+    status: OperationTripStatus.optional(),
     next: OperationTripId.nullable().optional(),
     orderBy: OrderBy,
 })
