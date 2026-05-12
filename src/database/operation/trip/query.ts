@@ -98,6 +98,7 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
             't.id',
             'v.plateNumber',
             'v.type',
+            't.status',
             'v.totalSeats',
             'r.fromLocation',
             'r.toLocation',

@@ -125,6 +125,7 @@ export const DriverTripBody = z.object({
             plateNumber: z.string(),
             departureTime: z.string(),
             departureDate: z.coerce.date(),
+            status: OperationTripStatus,
         })
     ),
     next: OperationTripId.nullable(),
