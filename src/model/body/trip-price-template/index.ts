@@ -22,7 +22,9 @@ export const TripPriceTemplateItem = TripPriceTemplateBody.extend({
 export type TripPriceTemplateItem = z.infer<typeof TripPriceTemplateItem>
 
 export const TripPriceTemplateResponse = z.object({
-    tripPriceTemplate: TripPriceTemplateItem,
+    tripPriceTemplate: TripPriceTemplateItem.extend({
+        id: OperationTripPriceTemplateId,
+    }),
 })
 
 export type TripPriceTemplateResponse = z.infer<typeof TripPriceTemplateResponse>

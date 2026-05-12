@@ -9,6 +9,7 @@ export async function getStoppingPointByScheduleId(id: OperationTripScheduleId) 
         .innerJoin('operation.station as s', 'ts.stationId', 's.id')
         .where('ts.scheduleId', '=', id)
         .select([
+            'ts.id',
             'ts.stopOrder',
             'ts.stationId',
             's.address',

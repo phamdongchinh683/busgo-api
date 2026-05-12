@@ -22,6 +22,7 @@ export const TripStopTemplateResponse = z.object({
         TripStopTemplateBody.extend({
             address: z.string(),
             city: z.string(),
+            id: OperationTripStopTemplateId,
         }).omit({ companyId: true, routeId: true })
     ),
 })
