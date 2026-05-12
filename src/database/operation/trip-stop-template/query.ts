@@ -2,12 +2,25 @@ import { db } from '../../../datasource/db.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { OperationTripStopTemplateId } from './type.js'
 import { OperationTripStopTemplateTableUpdate } from './table.js'
+import { OperationRouteId } from '../route/type.js'
 
-export async function getStoppingPointByScheduleId(id: OperationTripScheduleId) {
+export async function getStoppingPointByScheduleId(params : {
+    scheduleId: OperationTripScheduleId
+    routeId?: OperationRouteId
+}) {
+    const { scheduleId, routeId, } = params
     return db
         .selectFrom('operation.trip_stop_template as ts')
         .innerJoin('operation.station as s', 'ts.stationId', 's.id')
-        .where('ts.scheduleId', '=', id)
+        .innerJoin('operation.route as r', 'ts.routeId', 'r.id')
+        .where(eb => {
+            const cond = []
+            cond.push(eb('ts.scheduleId', '=', scheduleId))
+            if (routeId) {
+                cond.push(eb('r.id', '=', routeId))
+            }
+            return eb.and(cond)
+        })
         .select([
             'ts.id',
             'ts.stopOrder',

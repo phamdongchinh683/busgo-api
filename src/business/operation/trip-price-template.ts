@@ -28,6 +28,7 @@ export async function getTripPriceTemplates(params: {
     const result = await dal.operation.tripPriceTemplate.query.findAllByCompanyId({
         q: params.q,
         companyId: params.user.companyId,
+        routeId: params.q.routeId,
     })
     const { data, next } = utils.common.paginateByCursor(result, params.q.limit)
 

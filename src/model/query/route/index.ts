@@ -7,3 +7,9 @@ export const RouteFilter = z.object({
 })
 
 export type RouteFilter = z.infer<typeof RouteFilter>
+
+export const OperationRouteQuery = z.object({
+    routeId: OperationRouteId.optional(),
+})
+
+export type OperationRouteQuery = z.infer<typeof OperationRouteQuery>

@@ -6,10 +6,14 @@ import {
 } from '../../database/operation/trip-stop-template/table.js'
 import { OperationTripStopTemplateId } from '../../database/operation/trip-stop-template/type.js'
 import { UserInfo } from '../../model/common.js'
+import { OperationRouteId } from '../../database/operation/route/type.js'
 
-export async function getStoppingPoints(id: OperationTripScheduleId) {
+export async function getStoppingPoints(params: {
+    scheduleId: OperationTripScheduleId
+    routeId?: OperationRouteId
+}) {
     return {
-        stoppingPoints: await dal.operation.tripStopTemplate.query.getStoppingPointByScheduleId(id),
+        stoppingPoints: await dal.operation.tripStopTemplate.query.getStoppingPointByScheduleId(params),
     }
 }
 

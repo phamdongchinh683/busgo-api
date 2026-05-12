@@ -3,12 +3,14 @@ import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js
 import { TripPriceTemplateFilter } from '../../../model/query/trip-price-template/index.js'
 import { OperationTripPriceTemplateId } from './type.js'
 import { OperationTripPriceTemplateTableUpdate } from './table.js'
+import { OperationRouteId } from '../route/type.js'
 
 export async function findAllByCompanyId(params: {
     q: TripPriceTemplateFilter
     companyId: OrganizationBusCompanyId
+    routeId?: OperationRouteId
 }) {
-    const { q, companyId } = params
+    const { q, companyId, routeId } = params
     return db
         .selectFrom('operation.trip_price_template as tpt')
         .innerJoin('operation.route as r', 'tpt.routeId', 'r.id')
@@ -20,6 +22,9 @@ export async function findAllByCompanyId(params: {
             cond.push(eb('tpt.companyId', '=', companyId))
             if (q.next) {
                 cond.push(eb('tpt.id', '>', q.next))
+            }
+            if (routeId) {
+                cond.push(eb('r.id', '=', routeId))
             }
             return eb.and(cond)
         })
