@@ -5,8 +5,18 @@ import timezone from 'dayjs/plugin/timezone.js'
 dayjs.extend(utc)
 dayjs.extend(timezone)
 
+const APP_TIMEZONE = 'Asia/Ho_Chi_Minh'
+
 export const getNow = () => {
-    return dayjs().tz('Asia/Ho_Chi_Minh')
+    return dayjs().tz(APP_TIMEZONE)
+}
+
+export const getTodayCalendarDateString = () => {
+    return getNow().format('YYYY-MM-DD')
+}
+
+export const formatCalendarDate = (date: Date, pattern = 'DD/MM/YYYY') => {
+    return dayjs.utc(date).format(pattern)
 }
 
 export const getNext = (params: { milliseconds: number }) => {

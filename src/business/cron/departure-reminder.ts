@@ -3,24 +3,17 @@ import { BookingStatus } from '../../database/booking/booking/type.js'
 import { BookingTicketStatus } from '../../database/booking/ticket/type.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripStatus } from '../../database/operation/trip/type.js'
-import { service } from '../../service/index.js'
 import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
 import { db } from '../../datasource/db.js'
 
 export async function departureReminder() {
-    const now = utils.time.getNow()
-    const windowStart = now.startOf('day').toDate()
-    const windowEnd = now.endOf('day').toDate()
-
-    const formatter = new Intl.DateTimeFormat('vi-VN', {
-        timeZone: 'Asia/Ho_Chi_Minh',
-        hour12: false,
-    })
+    const today = utils.time.getTodayCalendarDateString()
 
     const candidates = await db
         .selectFrom('booking.booking as b')
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .innerJoin('operation.trip_schedule as ts', 'ts.id', 'trip.scheduleId')
         .innerJoin('auth.user as u', 'u.id', 'b.userId')
         .select([
             'u.id as userId',
@@ -30,6 +23,7 @@ export async function departureReminder() {
             'b.code as bookingCode',
             'trip.id as tripId',
             'trip.departureDate as departureDate',
+            'ts.departureTime as departureTime',
         ])
         .where(eb => {
             const isPaidBooking = eb.and([
@@ -53,8 +47,7 @@ export async function departureReminder() {
             return eb.or([isPaidBooking, isCashPendingBooking])
         })
         .where('trip.status', '=', OperationTripStatus.enum.scheduled)
-        .where('trip.departureDate', '>=', windowStart)
-        .where('trip.departureDate', '<', windowEnd)
+        .where(sql<boolean>`trip.departure_date = ${today}::date`)
         .where(eb => {
             const alreadyNotified = eb.exists(
                 eb
@@ -78,6 +71,7 @@ export async function departureReminder() {
             'b.code',
             'trip.id',
             'trip.departureDate',
+            'ts.departureTime',
         ])
         .limit(100)
         .execute()
@@ -91,11 +85,13 @@ export async function departureReminder() {
         .insertInto('auth.notification')
         .values(
             candidates.map(item => {
-                const departureDisplay = formatter.format(new Date(item.departureDate))
+                const departureDateDisplay = utils.time.formatCalendarDate(
+                    new Date(item.departureDate)
+                )
                 return {
                     userId: item.userId as never,
                     title: 'Trip departure today',
-                    body: `Your trip departs at ${departureDisplay}.`,
+                    body: `Your trip departs at ${item.departureTime} on ${departureDateDisplay}.`,
                     isRead: false,
                     data: `departure-reminder:${item.bookingId}:${item.tripId}`,
                 }
