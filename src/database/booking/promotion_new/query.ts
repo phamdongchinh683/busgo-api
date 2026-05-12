@@ -3,20 +3,26 @@ import { PromotionNewsListQuery } from '../../../model/query/promotion-new/index
 
 export async function findAll(query: PromotionNewsListQuery) {
     const { limit, next, status } = query
-    const qb = db
-        .selectFrom('booking.promotion_new as pn')
-        .selectAll()
-        .where(eb => {
-            const cond = []
-            if (next) {
-                cond.push(eb('pn.id', '<', next))
-            }
-            if (status !== undefined) {
-                cond.push(eb('pn.isActive', '=', status === 'true'))
-            }
-            return eb.and(cond)
-        })
-        .orderBy('pn.id', 'desc')
 
-    return qb.limit(limit + 1).execute()
+    let qb = db
+        .selectFrom('booking.promotion_new as pn')
+        .select([
+            'pn.id',
+            'pn.title',
+            'pn.content',
+            'pn.imageUrl',
+            'pn.isActive',
+            'pn.startDate',
+            'pn.endDate',
+        ])
+
+    if (status !== undefined) {
+        qb = qb.where('pn.isActive', '=', status === 'true')
+    }
+
+    if (next) {
+        qb = qb.where('pn.id', '<', next)
+    }
+
+    return qb.orderBy('pn.id', 'desc').limit(limit + 1).execute()
 }

@@ -6,8 +6,8 @@ export const PromotionNewsBody = z.object({
     content: z.string().trim().min(1),
     imageUrl: z.string().url().optional().nullable(),
     isActive: z.boolean().optional().default(true),
-    startDate: z.coerce.date().optional().nullable(),
-    endDate: z.coerce.date().optional().nullable(),
+    startDate: z.string().min(5).max(5).optional().nullable(),
+    endDate: z.string().min(5).max(5).optional().nullable(),
 })
 
 export type PromotionNewsBody = z.infer<typeof PromotionNewsBody>

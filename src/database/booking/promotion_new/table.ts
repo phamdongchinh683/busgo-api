@@ -9,8 +9,8 @@ export interface BookingPromotionNewsTable extends Timestamps {
     content: string
     imageUrl: string | null
     isActive: boolean
-    startDate: Date | null
-    endDate: Date | null
+    startDate: string | null
+    endDate: string | null
     createdBy: AuthUserId | null
 }
 
