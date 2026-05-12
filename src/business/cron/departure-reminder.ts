@@ -103,14 +103,14 @@ export async function departureReminder() {
         )
         .execute()
 
-    if (candidates.length > 0) {
-        console.log('send email to customers')
-        await service.email.sender.sendMany({
-            to: candidates.map(item => item.email),
-            subject: 'Reminder: Trip departs today',
-            html: service.email.template.departureReminderTemplate(),
-        })
-    }
+    // if (candidates.length > 0) {
+    //     console.log('send email to customers')
+    //     await service.email.sender.sendMany({
+    //         to: candidates.map(item => item.email),
+    //         subject: 'Reminder: Trip departs today',
+    //         html: service.email.template.departureReminderTemplate(),
+    //     })
+    // }
     return {
         message: 'OK',
     }
