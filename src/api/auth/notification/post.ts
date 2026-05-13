@@ -9,7 +9,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = await auth.requiredAuthenticate(request.headers)
+        await auth.requiredAuthenticate(request.headers)
         const { title, body, userId } = request.body
         return bus.auth.notification.createNotification({ title, body, userId })
     },

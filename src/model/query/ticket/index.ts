@@ -3,7 +3,6 @@ import z from 'zod'
 import { BookingType } from '../../../database/booking/booking/type.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
 import { Phone } from '../../common.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 
 export const TicketFilter = z.object({
     limit: z.coerce.number().optional().default(10),

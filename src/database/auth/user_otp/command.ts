@@ -1,5 +1,5 @@
 import { db } from '../../../datasource/db.js'
-import { Otp, Phone } from '../../../model/common.js'
+import { Otp } from '../../../model/common.js'
 import { AuthUserOtpTableInsert } from './table.js'
 
 export async function upsertOne(params: AuthUserOtpTableInsert & { field: 'email' | 'phone' }) {

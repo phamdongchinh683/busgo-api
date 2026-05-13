@@ -24,5 +24,8 @@ export async function findAll(query: PromotionNewsListQuery) {
         qb = qb.where('pn.id', '<', next)
     }
 
-    return qb.orderBy('pn.id', 'desc').limit(limit + 1).execute()
+    return qb
+        .orderBy('pn.id', 'desc')
+        .limit(limit + 1)
+        .execute()
 }

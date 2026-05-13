@@ -1,13 +1,4 @@
 import ExcelJS from 'exceljs'
-
-/** ExcelJS `row.values = [...]` uses a special offset when index 0 exists; set cells explicitly. */
-function setRowCells(row: ExcelJS.Row, values: readonly (string | number | undefined)[]) {
-    values.forEach((v, i) => {
-        if (v !== undefined) {
-            row.getCell(i + 1).value = v
-        }
-    })
-}
 import type {
     CompanyRevenueMonthlyRow,
     CompanyRevenueYearlyRow,
@@ -49,19 +40,17 @@ export async function buildCompanyRevenueYearlySheet(
     sheet.getCell(1, 1).value = revenueTitleLine(meta, 'yearly')
     sheet.getCell(1, 1).font = { bold: true, size: 12 }
 
-    setRowCells(sheet.getRow(2), ['Company name', 'Total'])
-    sheet.getRow(2).font = { bold: true }
+    const headerRow = sheet.addRow(['Company name', 'Total'])
+    headerRow.font = { bold: true }
     sheet.getColumn(1).width = 42
     sheet.getColumn(2).width = 18
 
-    let r = 3
     for (const row of rows) {
-        setRowCells(sheet.getRow(r), [row.companyName, row.total])
-        r++
+        sheet.addRow([row.companyName, row.total])
     }
 
-    setRowCells(sheet.getRow(r), ['Total', rows.reduce((acc, x) => acc + x.total, 0)])
-    sheet.getRow(r).font = { bold: true }
+    const footer = sheet.addRow(['Total', rows.reduce((acc, x) => acc + x.total, 0)])
+    footer.font = { bold: true }
 
     const buf = await workbook.xlsx.writeBuffer()
     return Buffer.from(buf)
@@ -82,18 +71,16 @@ export async function buildCompanyRevenueMonthlySheet(
     sheet.getCell(1, 1).font = { bold: true, size: 12 }
 
     const header = ['Company name', 'Total', ...MONTH_LABELS] as const
-    setRowCells(sheet.getRow(2), header)
-    sheet.getRow(2).font = { bold: true }
+    const headerRow = sheet.addRow([...header])
+    headerRow.font = { bold: true }
     sheet.getColumn(1).width = 40
     sheet.getColumn(2).width = 14
     for (let c = 3; c <= colCount; c++) {
         sheet.getColumn(c).width = 11
     }
 
-    let r = 3
     for (const row of rows) {
-        setRowCells(sheet.getRow(r), [row.companyName, row.yearTotal, ...row.months])
-        r++
+        sheet.addRow([row.companyName, row.yearTotal, ...row.months])
     }
 
     const monthTotals = Array(12).fill(0)
@@ -103,8 +90,8 @@ export async function buildCompanyRevenueMonthlySheet(
         })
     }
     const grand = rows.reduce((acc, x) => acc + x.yearTotal, 0)
-    setRowCells(sheet.getRow(r), ['Total', grand, ...monthTotals])
-    sheet.getRow(r).font = { bold: true }
+    const footer = sheet.addRow(['Total', grand, ...monthTotals])
+    footer.font = { bold: true }
 
     const buf = await workbook.xlsx.writeBuffer()
     return Buffer.from(buf)

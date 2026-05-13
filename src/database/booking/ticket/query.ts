@@ -1,5 +1,4 @@
 import { db } from '../../../datasource/db.js'
-import { sql } from 'kysely'
 import { AuthUserId } from '../../auth/user/type.js'
 import { OperationTripId, OperationTripStatus } from '../../operation/trip/type.js'
 import {

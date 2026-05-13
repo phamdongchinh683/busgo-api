@@ -1,5 +1,4 @@
 import { db } from '../../../datasource/db.js'
-import { AuthStaffProfileTableSelect, AuthStaffProfileTableUpdate } from './table.js'
 import { AuthUserId } from '../user/type.js'
 import { AuthProfileQuery } from '../../../model/query/staff/index.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'

@@ -1,8 +1,7 @@
 import _ from 'lodash'
-import { Kysely, sql } from 'kysely'
+import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { OrganizationBusCompanyReviewTableInsert } from './table.js'
-import { OrganizationBusCompanyId } from '../bus_company/type.js'
 
 export async function insertOne(params: OrganizationBusCompanyReviewTableInsert) {
     const data = _.omitBy(params, v => _.isNil(v)) as OrganizationBusCompanyReviewTableInsert

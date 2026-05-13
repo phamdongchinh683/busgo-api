@@ -3,7 +3,7 @@ import { Database } from '../../../datasource/type.js'
 import { Transaction } from 'kysely'
 import { AuthUserDeviceTableInsert } from './table.js'
 import { AuthUserDeviceId } from './type.js'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from '../user/type.js'
+import { AuthUserId, AuthUserRole } from '../user/type.js'
 
 export async function insertOne(params: AuthUserDeviceTableInsert, trx?: Transaction<Database>) {
     return (trx ?? db)

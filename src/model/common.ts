@@ -3,7 +3,18 @@ import { AuthUserId, AuthUserRole, AuthUserStatus } from '../database/auth/user/
 import { AuthStaffProfileRole } from '../database/auth/staff_profile/type.js'
 import { OrganizationBusCompanyId } from '../database/organization/bus_company/type.js'
 
-export const Email = z.email()
+function emailDomain(email: string): string {
+    const i = email.lastIndexOf('@')
+    if (i < 0) return ''
+    return email.slice(i + 1).toLowerCase()
+}
+
+const EXAMPLE_EMAIL_DOMAIN = /^(?:.+\.)?example\.(?:com|org|net)$/i
+
+export const Email = z.email().refine(v => !EXAMPLE_EMAIL_DOMAIN.test(emailDomain(v)), {
+    message: 'Email must not use example.com, example.org, or example.net',
+})
+
 export type Email = z.infer<typeof Email>
 
 export const Phone = z

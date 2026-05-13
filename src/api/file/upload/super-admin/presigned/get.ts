@@ -16,7 +16,7 @@ api.route({
         },
     },
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
 
         const { folder, id } = request.query
         return service.cloudinary.presigned.presignedUpload(folder, id)

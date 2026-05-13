@@ -1,11 +1,10 @@
 import _ from 'lodash'
-import { sql, Transaction } from 'kysely'
+import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { ChatBoxId } from '../box/type.js'
 import { ChatMessageId } from './type.js'
-import { ChatMessageTableInsert, ChatMessageTableUpdate } from './table.js'
-import { Database } from '../../../datasource/type.js'
+import { ChatMessageTableInsert } from './table.js'
 
 export async function insertOne(params: ChatMessageTableInsert) {
     const data = _.omitBy(params, v => _.isNil(v)) as ChatMessageTableInsert

@@ -4,11 +4,11 @@ import { OperationTripStopTemplateId } from './type.js'
 import { OperationTripStopTemplateTableUpdate } from './table.js'
 import { OperationRouteId } from '../route/type.js'
 
-export async function getStoppingPointByScheduleId(params : {
+export async function getStoppingPointByScheduleId(params: {
     scheduleId: OperationTripScheduleId
     routeId?: OperationRouteId
 }) {
-    const { scheduleId, routeId, } = params
+    const { scheduleId, routeId } = params
     return db
         .selectFrom('operation.trip_stop_template as ts')
         .innerJoin('operation.station as s', 'ts.stationId', 's.id')

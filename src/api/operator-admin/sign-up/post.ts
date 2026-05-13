@@ -4,7 +4,6 @@ import {
     AuthCompanyAdminSignUpBody,
     AuthCompanyAdminSignUpResponse,
 } from '../../../model/body/auth/index.js'
-import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 
 const __filename = new URL('', import.meta.url).pathname
 

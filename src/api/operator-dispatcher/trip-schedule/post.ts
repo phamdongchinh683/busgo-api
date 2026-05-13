@@ -3,7 +3,6 @@ import { bus } from '../../../business/index.js'
 import { auth } from '../../../app/jwt/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
-import { TripScheduleIdParam } from '../../../model/params/trip-schedule/index.js'
 import {
     TripScheduleBody,
     TripScheduleUpdateResponse,

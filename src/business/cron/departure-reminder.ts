@@ -89,24 +89,15 @@ export async function departureReminder() {
                     new Date(item.departureDate)
                 )
                 return {
-                    userId: item.userId as never,
-                    title: 'Trip departure today',
-                    body: `Your trip departs at ${item.departureTime} on ${departureDateDisplay}.`,
+                    userId: item.userId,
+                    title: 'Chuyến đi của bạn sắp khởi hành hôm nay',
+                    body: `Chuyến đi của bạn sẽ khởi hành vào lúc ${item.departureTime} ngày ${departureDateDisplay}.`,
                     isRead: false,
-                    data: `departure-reminder:${item.bookingId}:${item.tripId}`,
                 }
             })
         )
         .execute()
 
-    // if (candidates.length > 0) {
-    //     console.log('send email to customers')
-    //     await service.email.sender.sendMany({
-    //         to: candidates.map(item => item.email),
-    //         subject: 'Reminder: Trip departs today',
-    //         html: service.email.template.departureReminderTemplate(),
-    //     })
-    // }
     return {
         message: 'OK',
     }

@@ -10,7 +10,7 @@ import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import _ from 'lodash'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
-import { utils } from '../../../utils/index.js'
+
 export async function getManyByFilter(params: TripFilter) {
     return dal.operation.trip.query.findAllByFilter(params)
 }

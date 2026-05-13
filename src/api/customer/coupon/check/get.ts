@@ -2,7 +2,7 @@ import { api, endpoint, bearer, tags } from '../../../../app/api.js'
 import { auth } from '../../../../app/jwt/index.js'
 import { bus } from '../../../../business/index.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { CouponApplyResponse, CouponResponse } from '../../../../model/body/coupon/index.js'
+import { CouponApplyResponse } from '../../../../model/body/coupon/index.js'
 import { CouponCheckCodeQuery } from '../../../../model/query/coupon/index.js'
 
 const __filename = new URL('', import.meta.url).pathname

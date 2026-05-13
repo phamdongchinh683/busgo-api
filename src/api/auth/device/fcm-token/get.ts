@@ -1,7 +1,7 @@
 import { api, bearer, endpoint, tags } from '../../../../app/api.js'
 import { auth } from '../../../../app/jwt/index.js'
 import { bus } from '../../../../business/index.js'
-import { DeviceResponse, DevicesResponse } from '../../../../model/body/device/index.js'
+import { DevicesResponse } from '../../../../model/body/device/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 

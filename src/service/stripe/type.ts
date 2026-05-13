@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PaymentCustomerPaymentMethodId } from '../../database/payment/customer_payment_method/type.js'
+
 export const StripeStatusReponse = z.object({
     chargesEnabled: z.boolean(),
     payoutsEnabled: z.boolean(),

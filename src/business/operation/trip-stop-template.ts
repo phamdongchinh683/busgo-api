@@ -13,7 +13,8 @@ export async function getStoppingPoints(params: {
     routeId?: OperationRouteId
 }) {
     return {
-        stoppingPoints: await dal.operation.tripStopTemplate.query.getStoppingPointByScheduleId(params),
+        stoppingPoints:
+            await dal.operation.tripStopTemplate.query.getStoppingPointByScheduleId(params),
     }
 }
 

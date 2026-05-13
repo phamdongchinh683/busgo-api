@@ -5,7 +5,7 @@ import { AuthUserRole } from '../../../../database/auth/user/type.js'
 import { CouponBody } from '../../../../model/query/coupon/index.js'
 import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { CouponIdParam } from '../../../../model/params/coupon/index.js'
-import { CouponCreateResponse, CouponResponse } from '../../../../model/body/coupon/index.js'
+import { CouponCreateResponse } from '../../../../model/body/coupon/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 

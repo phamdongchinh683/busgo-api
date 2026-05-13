@@ -5,7 +5,7 @@ import { ChatMessageQuery } from '../../model/query/chat/index.js'
 import { utils } from '../../utils/index.js'
 import { UserInfo } from '../../model/common.js'
 import { ws } from '../../app/index.js'
-import * as service from '../../service/module.js'
+
 export async function sendMessage(
     params: {
         userInfo: UserInfo

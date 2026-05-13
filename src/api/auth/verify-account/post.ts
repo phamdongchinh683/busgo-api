@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const { id, status } = request.body
         return bus.auth.superAdmin.verifyAccount({
             id,

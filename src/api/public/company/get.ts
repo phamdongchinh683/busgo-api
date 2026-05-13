@@ -1,4 +1,4 @@
-import { api, endpoint, tags, bearer } from '../../../app/api.js'
+import { api, endpoint, tags } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { BusCompanyListResponse } from '../../../model/body/bus-company/index.js'
 import { BusCompanyListQuery } from '../../../model/query/bus-company/index.js'

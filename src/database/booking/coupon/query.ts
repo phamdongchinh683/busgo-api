@@ -1,4 +1,4 @@
-import { Expression, sql, SqlBool } from 'kysely'
+import { Expression, SqlBool } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import {
     CouponCheckCodeQuery,

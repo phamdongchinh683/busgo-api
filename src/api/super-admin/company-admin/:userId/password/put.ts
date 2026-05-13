@@ -6,8 +6,6 @@ import { UserIdParam } from '../../../../../model/params/user/index.js'
 import {
     UserNewPasswordBody,
     UserNewPasswordResponse,
-    UserResponse,
-    UserUpdateBody,
 } from '../../../../../model/body/user/index.js'
 
 const __filename = new URL('', import.meta.url).pathname

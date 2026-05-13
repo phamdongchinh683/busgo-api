@@ -13,7 +13,11 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireStaffProfileRole(request.headers, [AuthUserRole.enum.operator], [AuthStaffProfileRole.enum.company_admin])
+        const userInfo = await auth.requireStaffProfileRole(
+            request.headers,
+            [AuthUserRole.enum.operator],
+            [AuthStaffProfileRole.enum.company_admin]
+        )
         return bus.auth.driver.getDrivers(request.query, userInfo.companyId)
     },
 

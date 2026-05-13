@@ -1,4 +1,4 @@
-import { ColumnType, GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
+import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import { AuthUserId } from '../user/type.js'
 import { AuthNotificationId } from './type.js'
