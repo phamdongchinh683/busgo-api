@@ -22,6 +22,8 @@ RUN yarn workspaces focus --production || yarn install --immutable
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
+COPY kysely.config.ts ./
+COPY src ./src
 
 EXPOSE 3000
 
