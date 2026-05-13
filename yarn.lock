@@ -424,7 +424,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@fastify/static@npm:^8.0.0, @fastify/static@npm:^8.3.0":
+"@fastify/static@npm:^8.0.0":
   version: 8.3.0
   resolution: "@fastify/static@npm:8.3.0"
   dependencies:
@@ -1258,7 +1258,6 @@ __metadata:
     "@fastify/cors": "npm:^11.2.0"
     "@fastify/helmet": "npm:^13.0.2"
     "@fastify/rate-limit": "npm:^10.3.0"
-    "@fastify/static": "npm:^8.3.0"
     "@fastify/swagger": "npm:^9.6.1"
     "@fastify/swagger-ui": "npm:^5.2.3"
     "@types/lodash": "npm:^4"
@@ -1279,9 +1278,8 @@ __metadata:
     fastify-type-provider-zod: "npm:^6.1.0"
     kysely: "npm:^0.28.16"
     kysely-ctl: "npm:^0.20.0"
-    lodash: "npm:^4.17.21"
+    lodash: "npm:^4.18.1"
     nodemon: "npm:^3.1.11"
-    openapi-types: "npm:^12.1.3"
     pg: "npm:^8.16.3"
     prettier: "npm:^3.7.4"
     qs: "npm:^6.14.0"
@@ -3559,10 +3557,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lodash@npm:^4.17.21":
-  version: 4.17.21
-  resolution: "lodash@npm:4.17.21"
-  checksum: 10c0/d8cbea072bb08655bb4c989da418994b073a608dffa608b09ac04b43a791b12aeae7cd7ad919aa4c925f33b48490b5cfe6c1f71d827956071dae2e7bb3a6b74c
+"lodash@npm:^4.18.1":
+  version: 4.18.1
+  resolution: "lodash@npm:4.18.1"
+  checksum: 10c0/757228fc68805c59789e82185135cf85f05d0b2d3d54631d680ca79ec21944ec8314d4533639a14b8bcfbd97a517e78960933041a5af17ecb693ec6eecb99a27
   languageName: node
   linkType: hard
 
