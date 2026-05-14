@@ -15,13 +15,11 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
 
     if (!info.email) throw new HttpErr.UnprocessableEntity('Email not found', 'EMAIL_NOT_FOUND')
 
-    const email = info.email
-
     await dal.auth.user.cmd.authUpsertByEmail({
         data: {
-            email,
+            email: info.email,
             username: 'google_' + utils.random.generateRandomNumber(6).toString(),
-            password: utils.password.hashPassword(email),
+            password: utils.password.hashPassword(info.email),
             fullName: [info.given_name, info.family_name].filter(Boolean).join(' ').trim(),
             phone: utils.random.generateRandomNumber(10).toString(),
             role: AuthUserRole.enum.customer,
@@ -29,7 +27,8 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
         },
     })
 
-    const user = await dal.auth.user.query.getOne({ email })
+    const user = await dal.auth.user.query.getOne({ email: info.email })
+
     if (!user) {
         throw new HttpErr.NotFound('User not found after Google sign-in')
     }

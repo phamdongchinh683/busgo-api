@@ -31,13 +31,11 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
             'EMAIL_NOT_FOUND'
         )
 
-    const email = userData.email
-
     await dal.auth.user.cmd.authUpsertByEmail({
         data: {
-            email,
+            email: userData.email,
             username: 'facebook_' + utils.random.generateRandomNumber(6).toString(),
-            password: utils.password.hashPassword(email),
+            password: utils.password.hashPassword(userData.email),
             fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
             phone: utils.random.generateRandomNumber(10).toString(),
             role: AuthUserRole.enum.customer,
@@ -45,7 +43,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
         },
     })
 
-    const user = await dal.auth.user.query.getOne({ email })
+    const user = await dal.auth.user.query.getOne({ email: userData.email })
     if (!user) {
         throw new HttpErr.NotFound('User not found after Facebook sign-in')
     }
