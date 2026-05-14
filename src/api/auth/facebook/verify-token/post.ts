@@ -1,7 +1,6 @@
 import { api, endpoint, tags } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { AuthFacebookBody, AuthResponse } from '../../../../model/body/auth/index.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -11,7 +10,6 @@ api.route({
     handler: async request => {
         return bus.auth.facebook.verifyToken({
             payload: request.body,
-            role: AuthUserRole.enum.customer,
         })
     },
     schema: {

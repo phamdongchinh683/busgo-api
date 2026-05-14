@@ -17,18 +17,8 @@ interface FacebookUserData {
 
 const decoder = createDecoder()
 
-interface FacebookUserData {
-    email?: null | string
-    facebookId?: null | string
-    firstName?: null | string
-    lastName?: null | string
-}
-
-export async function verifyToken(params: {
-    payload: AuthFacebookBody
-    role: AuthUserRole
-}): Promise<AuthResponse> {
-    const { payload, role } = params
+export async function verifyToken(params: { payload: AuthFacebookBody }): Promise<AuthResponse> {
+    const { payload } = params
     const userData = await getFacebookUserData({ payload })
     if (!userData.facebookId)
         throw new HttpErr.UnprocessableEntity(
@@ -41,20 +31,31 @@ export async function verifyToken(params: {
             'EMAIL_NOT_FOUND'
         )
 
-    const user = await dal.auth.user.cmd.authUpsertByEmail({
+    const email = userData.email
+
+    await dal.auth.user.cmd.authUpsertByEmail({
         data: {
-            email: userData.email,
+            email,
             username: 'facebook_' + utils.random.generateRandomNumber(6).toString(),
-            password: utils.password.hashPassword(userData.email),
+            password: utils.password.hashPassword(email),
             fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
             phone: utils.random.generateRandomNumber(10).toString(),
-            role,
+            role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
         },
     })
 
+    const user = await dal.auth.user.query.getOne({ email })
+    if (!user) {
+        throw new HttpErr.NotFound('User not found after Facebook sign-in')
+    }
+
     return {
-        token: auth.generateToken(user),
+        message: 'OK',
+        token: auth.generateToken({
+            ...user,
+            tokenVersion: user.tokenVersion,
+        }),
         user,
     }
 }
