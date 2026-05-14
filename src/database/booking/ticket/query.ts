@@ -133,6 +133,7 @@ export async function findPassengersByDriverAndTripId(
             'u.fullName as fullName',
             'seat.seatNumber',
             'b.status',
+            't.status as ticketStatus',
             'fs.address as pickup',
             'ts.address as dropoff',
         ])
