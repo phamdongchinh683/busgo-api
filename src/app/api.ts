@@ -182,15 +182,7 @@ async function apiRouter(app: FastifyInstance) {
 
     await walk(apiDir)
 
-    const registeredRoutes: Array<{ method: string; url: string; file: string }> = []
-
-    await Promise.all(
-        files.map(async file => {
-            const { method, url } = endpoint(file)
-            await import(pathToFileURL(file).href)
-            registeredRoutes.push({ method, url, file: relative(apiDir, file) })
-        })
-    )
+    await Promise.all(files.map(file => import(pathToFileURL(file).href)))
 }
 
 const start = async () => {

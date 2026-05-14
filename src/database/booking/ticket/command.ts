@@ -75,9 +75,10 @@ export async function cancelTicketTransaction(id: BookingTicketId) {
             trx
         )
 
-        for (const t of tickets) {
-            await dal.booking.seatSegment.cmd.deleteByTicketId(t.id, trx)
-        }
+        await dal.booking.seatSegment.cmd.deleteByTicketIds(
+            tickets.map(t => t.id),
+            trx
+        )
 
         await dal.booking.booking.cmd.updateBookingStatus(
             ticket.bookingId,

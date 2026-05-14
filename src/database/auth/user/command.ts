@@ -76,22 +76,20 @@ export async function signUpCompanyAdmin(
                 trx
             )
 
-            await Promise.all([
-                dal.auth.staffProfile.cmd.upsertOne(
-                    {
-                        userId: newUser.id,
-                        role: staffRole,
-                        status: AuthUserStatus.enum.inactive,
-                        staffCode: utils.random.generateRandomNumber(6).toString(),
-                        position: '',
-                        department: '',
-                        identityNumber: '',
-                        hireDate: utils.time.getNow().toDate(),
-                        companyId: params.companyId,
-                    },
-                    trx
-                ),
-            ])
+            await dal.auth.staffProfile.cmd.upsertOne(
+                {
+                    userId: newUser.id,
+                    role: staffRole,
+                    status: AuthUserStatus.enum.inactive,
+                    staffCode: utils.random.generateRandomNumber(6).toString(),
+                    position: '',
+                    department: '',
+                    identityNumber: '',
+                    hireDate: utils.time.getNow().toDate(),
+                    companyId: params.companyId,
+                },
+                trx
+            )
 
             return newUser
         } catch (error) {

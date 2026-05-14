@@ -26,8 +26,18 @@ export async function insertManySeatSegmentsTransaction(
     return trx.insertInto('booking.seat_segment').values(params).execute()
 }
 
+export async function deleteByTicketIds(ticketIds: BookingTicketId[], trx?: Transaction<Database>) {
+    if (ticketIds.length === 0) {
+        return
+    }
+    return (trx ?? db)
+        .deleteFrom('booking.seat_segment')
+        .where('ticketId', 'in', ticketIds)
+        .execute()
+}
+
 export async function deleteByTicketId(ticketId: BookingTicketId, trx?: Transaction<Database>) {
-    return (trx ?? db).deleteFrom('booking.seat_segment').where('ticketId', '=', ticketId).execute()
+    return deleteByTicketIds([ticketId], trx)
 }
 
 export async function checkSeatConflict(

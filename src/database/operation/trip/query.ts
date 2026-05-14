@@ -54,18 +54,6 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
             'r.durationMinutes',
             't.status',
         ])
-        .groupBy([
-            't.id',
-            'bc.name',
-            'bc.logoUrl',
-            'v.plateNumber',
-            'v.type',
-            'v.totalSeats',
-            'r.fromLocation',
-            'r.toLocation',
-            'r.distanceKm',
-            'r.durationMinutes',
-        ])
         .orderBy('t.id', orderBy)
         .limit(limit + 1)
         .execute()

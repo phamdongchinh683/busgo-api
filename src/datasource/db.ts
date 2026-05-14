@@ -42,13 +42,16 @@ export const db = new Kysely<Database>({
                 params: event.query.parameters,
                 sql: event.query.sql,
             })
-        } else {
-            console.log('Query executed : ', {
-                durationMs: event.queryDurationMillis,
-                params: event.query.parameters,
-                sql: event.query.sql,
-            })
+            return
         }
+        if (process.env.APP_ENV === 'production') {
+            return
+        }
+        console.log('Query executed : ', {
+            durationMs: event.queryDurationMillis,
+            params: event.query.parameters,
+            sql: event.query.sql,
+        })
     },
     plugins: [new CamelCasePlugin(), new DeduplicateJoinsPlugin()],
 })
