@@ -18,6 +18,7 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: DOCKER_HUB_CREDS, usernameVariable: 'DOCKER_HUB_USERNAME', passwordVariable: 'DOCKER_HUB_PASSWORD')]) {
                     sh '''
+                        export DOCKER_BUILDKIT=1
                         docker login -u ${DOCKER_HUB_USERNAME} -p ${DOCKER_HUB_PASSWORD}
                         docker build -t ${IMAGE_NAME}:latest -f Dockerfile.prod .
                         docker push ${IMAGE_NAME}:latest
@@ -33,8 +34,6 @@ pipeline {
                 jq -r '. | to_entries[] | .key + "=" + "\\""
                     + (.value | tostring | gsub("\\n"; "\\\\n"))
                     + "\\""' "$ENV_FILE" > .env
-
-                cat .env
             '''
         }
     }

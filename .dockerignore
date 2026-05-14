@@ -1,0 +1,22 @@
+# Dependencies & build output (reinstalled / rebuilt in image)
+node_modules
+dist
+
+# Git & IDE
+.git
+.github
+.cursor
+.vscode
+.idea
+
+# Env & secrets (injected at deploy, not baked into image)
+.env
+.env.*
+
+# Docs & misc
+*.md
+Jenkinsfile
+
+# Logs & OS
+*.log
+.DS_Store
