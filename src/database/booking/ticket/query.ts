@@ -108,7 +108,7 @@ export async function findPassengersByDriverAndTripId(
             const cond = []
             cond.push(eb('trip.id', '=', tripId))
             cond.push(eb('trip.driverId', '=', driverId))
-            cond.push(eb('b.status', '=', BookingStatus.enum.paid))
+            cond.push(eb('b.status', 'in', [BookingStatus.enum.paid, BookingStatus.enum.pending]))
             cond.push(
                 eb('t.status', 'in', [
                     BookingTicketStatus.enum.paid,
