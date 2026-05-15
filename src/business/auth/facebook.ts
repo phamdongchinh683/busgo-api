@@ -44,8 +44,9 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
     })
 
     const user = await dal.auth.user.query.getOne({ email: userData.email })
-    if (!user) {
-        throw new HttpErr.NotFound('User not found after Facebook sign-in')
+
+    if (!user || user.role === AuthUserRole.enum.super_admin || user.status !== AuthUserStatus.enum.active) {
+        throw new HttpErr.NotFound('User not found or not active')
     }
 
     return {

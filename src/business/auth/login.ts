@@ -30,7 +30,7 @@ export async function byUsernameEmailOrPhone(params: AuthSignInBody, role?: Auth
         throw new HttpErr.Unauthorized('Incorrect password.')
     }
 
-    if (role && user.role !== role) {
+    if (role && user.role !== role && user.role == AuthUserRole.enum.super_admin) {
         throw new HttpErr.NotFound(
             'USER_NOT_FOUND',
             {
