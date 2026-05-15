@@ -27,6 +27,8 @@ export type BusCompanyListResponse = z.infer<typeof BusCompanyListResponse>
 export const BusCompanyResponse = z.object({
     company: BusCompanyBody.extend({
         id: OrganizationBusCompanyId,
+        reviewCount: z.number().int().min(0),
+        reviewAvgStars: z.number().min(0).max(5),
     }),
 })
 export type BusCompanyResponse = z.infer<typeof BusCompanyResponse>
