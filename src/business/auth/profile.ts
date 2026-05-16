@@ -141,6 +141,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
     const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
         [params.field]: params.value,
         lastChangeContact: utils.time.getNow().toDate(),
+        isPhoneVerified: params.field === 'phone' ? true : undefined,
         tokenVersion: userInfo.tokenVersion + 1,
     })
 

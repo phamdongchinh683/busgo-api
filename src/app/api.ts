@@ -25,8 +25,7 @@ const rootDir = path.join(__dirname, '..')
 const apiDir = path.join(rootDir, 'api')
 
 const isProduction = process.env.APP_ENV === 'production'
-const enableHttpDebugLogs =
-    process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
+const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 
 const api = Fastify({
     trustProxy: true,
@@ -120,8 +119,7 @@ api.addHook('onSend', async (request, reply, payload) => {
     if (reply.hasHeader('cache-control')) return payload
 
     const pathname = request.url.split('?')[0] ?? ''
-    const isSwaggerPath =
-        pathname.includes('/swagger') || pathname.startsWith('/docs')
+    const isSwaggerPath = pathname.includes('/swagger') || pathname.startsWith('/docs')
 
     if (isSwaggerPath) return payload
 
@@ -177,10 +175,7 @@ async function apiRouter(_app: FastifyInstance) {
                     return
                 }
 
-                if (
-                    statInfo.isFile() &&
-                    allowedExtensions.includes(path.extname(fullPath))
-                ) {
+                if (statInfo.isFile() && allowedExtensions.includes(path.extname(fullPath))) {
                     files.push(fullPath)
                 }
             })
@@ -234,9 +229,7 @@ const start = async () => {
         api.get('/swagger/json', async (_request, reply) => {
             reply.header(
                 'Cache-Control',
-                isProduction
-                    ? 'public, max-age=300, stale-while-revalidate=600'
-                    : 'no-store'
+                isProduction ? 'public, max-age=300, stale-while-revalidate=600' : 'no-store'
             )
 
             return api.swagger()

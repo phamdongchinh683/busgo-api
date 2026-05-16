@@ -22,6 +22,7 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
             password: utils.password.hashPassword(info.email),
             fullName: [info.given_name, info.family_name].filter(Boolean).join(' ').trim(),
             phone: null,
+            isPhoneVerified: false,
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
         },

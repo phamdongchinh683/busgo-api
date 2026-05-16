@@ -38,6 +38,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
             password: utils.password.hashPassword(userData.email),
             fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
             phone: null,
+            isPhoneVerified: false,
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
         },
