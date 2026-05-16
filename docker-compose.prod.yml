@@ -1,6 +1,6 @@
 services:
   api:
-    image: phamdongchinh683/backend-fastify:latest
+    image: phamdongchinh683/busgo-api:${IMAGE_TAG:-latest}
     container_name: api
     restart: always
     mem_limit: 512m
