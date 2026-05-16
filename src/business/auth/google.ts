@@ -21,7 +21,7 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
             username: 'google_' + utils.random.generateRandomNumber(6).toString(),
             password: utils.password.hashPassword(info.email),
             fullName: [info.given_name, info.family_name].filter(Boolean).join(' ').trim(),
-            phone: utils.random.generateRandomNumber(10).toString(),
+            phone: null,
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
         },

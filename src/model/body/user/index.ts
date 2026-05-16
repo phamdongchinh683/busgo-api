@@ -8,7 +8,7 @@ export const UserBody = z.object({
     username: z.string(),
     fullName: z.string().min(7),
     email: Email,
-    phone: Phone,
+    phone: Phone.nullable(),
     status: AuthUserStatus,
     password: AuthPassword,
     role: AuthUserRole,
@@ -67,7 +67,7 @@ export const UserListQuery = z.object({
     role: AuthUserRole.optional(),
     companyId: OrganizationBusCompanyId.optional(),
     email: Email.optional(),
-    phone: Phone.optional(),
+    phone: Phone.nullable().optional(),
     limit: z.coerce.number().min(1).optional().default(10),
     next: AuthUserId.optional(),
 })

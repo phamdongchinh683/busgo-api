@@ -70,7 +70,7 @@ export const StaffListResponse = z.object({
             id: AuthStaffProfileId,
             fullName: z.string(),
             email: Email,
-            phone: Phone,
+            phone: Phone.nullable(),
             userId: AuthUserId,
             role: AuthStaffProfileRole,
             status: AuthUserStatus,
@@ -85,7 +85,7 @@ export const ProfileAccountResponse = z.object({
     user: z.object({
         fullName: z.string(),
         email: Email,
-        phone: Phone,
+        phone: Phone.nullable(),
         status: AuthUserStatus,
         accountStripeId: z.string().nullable(),
     }),

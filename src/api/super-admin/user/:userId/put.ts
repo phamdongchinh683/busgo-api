@@ -1,7 +1,7 @@
 import { api, endpoint, bearer, tags } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { UserBody, UserResponseMessage } from '../../../../model/body/user/index.js'
+import { UserResponseMessage, UserUpdateBody } from '../../../../model/body/user/index.js'
 import { UserIdParam } from '../../../../model/params/user/index.js'
 import { auth } from '../../../../app/jwt/index.js'
 
@@ -17,7 +17,7 @@ api.route({
 
     schema: {
         params: UserIdParam,
-        body: UserBody.partial().omit({ password: true }),
+        body: UserUpdateBody,
         response: { 200: UserResponseMessage.omit({ message: true }) },
         tags: tags(__filename),
         security: bearer,

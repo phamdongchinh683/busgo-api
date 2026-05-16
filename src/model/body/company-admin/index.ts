@@ -3,6 +3,7 @@ import { AuthCompanyAdminSignUpBody } from '../auth/index.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
+import { Email, Phone } from '../../common.js'
 
 export const CompanyAdminCreateBody = AuthCompanyAdminSignUpBody.extend({
     companyId: OrganizationBusCompanyId,
@@ -19,8 +20,8 @@ export const CompanyAdminItemSchema = z.object({
     id: AuthUserId,
     username: z.string(),
     fullName: z.string(),
-    email: z.string(),
-    phone: z.string(),
+    email: Email,
+    phone: Phone.nullable(),
     status: AuthUserStatus,
     role: AuthStaffProfileRole,
     companyId: OrganizationBusCompanyId.nullable(),

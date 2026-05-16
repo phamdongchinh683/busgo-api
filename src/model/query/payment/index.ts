@@ -1,7 +1,7 @@
 import z from 'zod'
 import { BookingId } from '../../../database/booking/booking/type.js'
 import { PaymentId, PaymentMethod, PaymentStatus } from '../../../database/payment/payment/type.js'
-import { PeriodFilter } from '../../common.js'
+import { PeriodFilter, Phone } from '../../common.js'
 
 export const PaymentIdParam = z.object({
     id: PaymentId,
@@ -67,7 +67,7 @@ export type PaymentResponse = z.infer<typeof PaymentResponse>
 export const PaymentListResponse = z.object({
     payments: z.array(
         PaymentResponse.extend({
-            phone: z.string(),
+            phone: Phone.nullable(),
         })
     ),
     next: PaymentId.nullable(),

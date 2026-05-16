@@ -138,7 +138,7 @@ export const TripPassengerResponse = z.object({
         z.object({
             id: BookingTicketId,
             fullName: z.string(),
-            phoneNumber: z.string(),
+            phoneNumber: z.string().nullable(),
             seatNumber: z.string().nullable(),
             status: BookingStatus,
             ticketStatus: BookingTicketStatus,

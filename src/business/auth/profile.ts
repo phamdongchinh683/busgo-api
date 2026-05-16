@@ -63,7 +63,7 @@ export async function getProfileCustomer(userInfo: UserInfo) {
     if (!accountStripeId) {
         const account = await service.stripe.client.createCustomer({
             email: user.email,
-            phone: user.phone,
+            phone: user.phone ?? '',
             name: user.fullName,
             metadata: {
                 userId: userInfo.id.toString(),

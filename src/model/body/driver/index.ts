@@ -6,7 +6,7 @@ export const DriverResponse = z.object({
     id: AuthUserId,
     fullName: z.string(),
     email: Email,
-    phone: Phone,
+    phone: Phone.nullable(),
     role: AuthUserRole,
     status: AuthUserStatus,
 })

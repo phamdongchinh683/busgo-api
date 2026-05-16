@@ -37,7 +37,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
             username: 'facebook_' + utils.random.generateRandomNumber(6).toString(),
             password: utils.password.hashPassword(userData.email),
             fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
-            phone: utils.random.generateRandomNumber(10).toString(),
+            phone: null,
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
         },
