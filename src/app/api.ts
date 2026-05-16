@@ -23,8 +23,10 @@ const __dirname = dirname(__filename)
 
 const rootDir = path.join(__dirname, '..')
 const apiDir = path.join(rootDir, 'api')
+
 const isProduction = process.env.APP_ENV === 'production'
-const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
+const enableHttpDebugLogs =
+    process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 
 const api = Fastify({
     trustProxy: true,
@@ -37,7 +39,10 @@ api.setValidatorCompiler(validatorCompiler)
 api.setSerializerCompiler(serializerCompiler)
 
 const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
-type RawWithStripeBody = import('http').IncomingMessage & { rawBody?: Buffer }
+
+type RawWithStripeBody = import('http').IncomingMessage & {
+    rawBody?: Buffer
+}
 
 api.addContentTypeParser(
     'application/json',
@@ -45,12 +50,14 @@ api.addContentTypeParser(
     (request: FastifyRequest, body: Buffer, done) => {
         try {
             const pathname = request.url.split('?')[0] ?? ''
+
             if (
                 pathname === STRIPE_WEBHOOK_PATH ||
                 pathname.startsWith(`${STRIPE_WEBHOOK_PATH}/`)
             ) {
                 ;(request.raw as RawWithStripeBody).rawBody = body
             }
+
             const json = JSON.parse(body.toString('utf8')) as unknown
             done(null, json)
         } catch (err) {
@@ -74,21 +81,20 @@ api.addContentTypeParser(
     }
 )
 
-api.addHook('preHandler', async (request, reply) => {
+api.addHook('preHandler', async request => {
     if (
         enableHttpDebugLogs &&
         !request.url.includes('swagger') &&
         !request.url.startsWith('/docs')
     ) {
-        const preHandler = {
-            method: request.method,
-            url: request.url,
-            params: request.params,
-            query: request.query,
-            body: request.body,
-            headers: request.headers,
-        }
-        request.log.info({ preHandler })
+        request.log.info({
+            preHandler: {
+                method: request.method,
+                url: request.url,
+                params: request.params,
+                query: request.query,
+            },
+        })
     }
 })
 
@@ -106,6 +112,7 @@ api.addHook('preSerialization', async (request, reply, response) => {
             },
         })
     }
+
     return response
 })
 
@@ -113,13 +120,15 @@ api.addHook('onSend', async (request, reply, payload) => {
     if (reply.hasHeader('cache-control')) return payload
 
     const pathname = request.url.split('?')[0] ?? ''
-    const isSwaggerPath = pathname.includes('/swagger') || pathname.startsWith('/docs')
+    const isSwaggerPath =
+        pathname.includes('/swagger') || pathname.startsWith('/docs')
+
     if (isSwaggerPath) return payload
 
     if (request.method === 'GET' && pathname.startsWith('/public/')) {
         reply.header(
             'Cache-Control',
-            `public, max-age=60, s-maxage=300, stale-while-revalidate=120`
+            'public, max-age=60, s-maxage=300, stale-while-revalidate=120'
         )
         return payload
     }
@@ -151,19 +160,24 @@ export const tags = (filename: string): string[] => [
     relative(__dirname, filename).replace('../api/', '').split(sep)[0],
 ]
 
-async function apiRouter(app: FastifyInstance) {
+async function apiRouter(_app: FastifyInstance) {
     const files: string[] = []
     const allowedExtensions = ['.ts', '.js']
 
     const walk = async (dir: string): Promise<void> => {
         const entries = await readdir(dir)
+
         await Promise.all(
             entries.map(async entry => {
                 const fullPath = path.join(dir, entry)
                 const statInfo = await stat(fullPath)
+
                 if (statInfo.isDirectory()) {
                     await walk(fullPath)
-                } else if (
+                    return
+                }
+
+                if (
                     statInfo.isFile() &&
                     allowedExtensions.includes(path.extname(fullPath))
                 ) {
@@ -175,7 +189,9 @@ async function apiRouter(app: FastifyInstance) {
 
     await walk(apiDir)
 
-    await Promise.all(files.map(file => import(pathToFileURL(file).href)))
+    for (const file of files) {
+        await import(pathToFileURL(file).href)
+    }
 }
 
 const start = async () => {
@@ -186,11 +202,9 @@ const start = async () => {
         await api.register(corsPlugin)
         await api.register(errorHandlerPlugin)
 
-        const publicDir = path.join(rootDir, '..', 'public')
-
         if (!isProduction) {
             await api.register(fastifyStatic, {
-                root: publicDir,
+                root: path.join(rootDir, '..', 'public'),
                 prefix: '/',
             })
         }
@@ -217,7 +231,16 @@ const start = async () => {
 
         await apiRouter(api)
 
-        api.get('/swagger/json', async () => api.swagger())
+        api.get('/swagger/json', async (_request, reply) => {
+            reply.header(
+                'Cache-Control',
+                isProduction
+                    ? 'public, max-age=300, stale-while-revalidate=600'
+                    : 'no-store'
+            )
+
+            return api.swagger()
+        })
 
         if (!isProduction) {
             api.get('/swagger/docs', async (_request, reply) => {
@@ -236,9 +259,10 @@ const start = async () => {
         await api.listen({ host, port: +port })
 
         console.log({
-            swagger: `http://${host}:${port}/swagger/docs`,
+            swagger: isProduction
+                ? `http://${host}:${port}/swagger/json`
+                : `http://${host}:${port}/swagger/docs`,
         })
-
     } catch (err) {
         api.log.error(err)
         process.exit(1)
