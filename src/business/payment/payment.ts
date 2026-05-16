@@ -206,6 +206,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
     }
 
     const companyAdmin = await dal.auth.user.query.getCompanyStripeAccountId(companyRow.companyId)
+
     if (!companyAdmin?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
             'Company has not linked Stripe account',

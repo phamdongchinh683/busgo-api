@@ -204,7 +204,13 @@ export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {
         .selectFrom('auth.user as u')
         .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
         .select(['u.accountStripeId'])
-        .where('sp.companyId', '=', companyId)
-        .where('sp.role', '=', AuthStaffProfileRole.enum.company_admin)
-        .executeTakeFirst()
+        .where(eb => {
+            const cond = []
+            cond.push(eb('u.accountStripeId', 'is not', null))
+            cond.push(eb('u.status', '=', 'active'))
+            cond.push(eb('sp.companyId', '=', companyId))
+            cond.push(eb('sp.role', '=', AuthStaffProfileRole.enum.company_admin))
+            return eb.and(cond)
+        })
+        .executeTakeFirstOrThrow()
 }

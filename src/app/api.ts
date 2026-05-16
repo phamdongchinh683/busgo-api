@@ -238,6 +238,7 @@ const start = async () => {
         console.log({
             swagger: `http://${host}:${port}/swagger/docs`,
         })
+
     } catch (err) {
         api.log.error(err)
         process.exit(1)
