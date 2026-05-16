@@ -9,6 +9,7 @@ export const DriverResponse = z.object({
     phone: Phone.nullable(),
     role: AuthUserRole,
     status: AuthUserStatus,
+    totalCompletedTrips: z.number().nullable(),
 })
 
 export type DriverResponse = z.infer<typeof DriverResponse>

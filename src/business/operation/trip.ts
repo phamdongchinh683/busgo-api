@@ -85,3 +85,11 @@ export async function cleanupTrips() {
         message: 'OK',
     }
 }
+
+export async function updateTripStatusAndCount(params: {
+    id: OperationTripId
+    status: OperationTripStatus
+    userId: AuthUserId
+}) {
+    return dal.operation.trip.cmd.updateTripAndUpCount(params)
+}

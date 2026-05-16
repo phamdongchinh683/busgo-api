@@ -93,3 +93,25 @@ export async function deleteTripsBeforeToday() {
         .returning('t.id')
         .executeTakeFirstOrThrow()
 }
+
+export async function updateTripAndUpCount(params: {
+    id: OperationTripId
+    status: OperationTripStatus
+    userId: AuthUserId
+}) {
+    return db.transaction().execute(async trx => {
+        const trip = await updateStatus(params, trx)
+
+        if (params.status === OperationTripStatus.enum.completed) {
+            await db
+                .updateTable('organization.company_driver')
+                .set({
+                    totalCompletedTrips: sql`total_completed_trips + 1`,
+                })
+                .where('userId', '=', params.userId)
+                .execute()
+        }
+
+        return trip
+    })
+}
