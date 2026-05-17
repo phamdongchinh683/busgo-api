@@ -33,6 +33,7 @@ services:
     restart: always
     environment:
     - DOZZLE_BASE=/logs
+    - DOZZLE_FILTER=name=api
     ports:
       - "127.0.0.1:3006:8080"
     volumes:
