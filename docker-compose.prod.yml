@@ -3,7 +3,7 @@ services:
     image: phamdongchinh683/busgo-api:${IMAGE_TAG:-latest}
     container_name: api
     restart: always
-    mem_limit: 512m
+    mem_limit: 1024m
     env_file:
       - .env
     ports:
@@ -16,7 +16,7 @@ services:
     image: postgres:15
     container_name: postgres
     restart: always
-    mem_limit: 768m
+    mem_limit: 1536m
     environment:
       POSTGRES_DB: busgo
       POSTGRES_USER: busgo
@@ -31,6 +31,7 @@ services:
     image: amir20/dozzle:latest
     container_name: dozzle
     restart: always
+    mem_limit: 128m
     environment:
     - DOZZLE_BASE=/logs
     - DOZZLE_FILTER=name=api
@@ -43,6 +44,7 @@ services:
     image: netdata/netdata:stable
     container_name: netdata
     restart: always
+    mem_limit: 256m
     pid: host
     network_mode: host
     cap_add:
