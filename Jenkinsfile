@@ -14,6 +14,7 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 cleanWs()
@@ -24,7 +25,7 @@ pipeline {
             }
         }
 
-        stage('Load Production Environment') {
+        stage('Load Environment') {
             steps {
                 withCredentials([file(credentialsId: 'env', variable: 'ENV_FILE')]) {
                     sh '''
@@ -38,7 +39,36 @@ pipeline {
             }
         }
 
-        stage('Pull Image') {
+        stage('Ensure Core Services') {
+            steps {
+                sh '''
+                    set -e
+
+                    docker-compose -f docker-compose.prod.yml up -d db dozzle netdata
+                '''
+            }
+        }
+
+        stage('Wait PostgreSQL') {
+            steps {
+                sh '''
+                    set -e
+
+                    for i in $(seq 1 30); do
+                        if docker exec postgres pg_isready -U busgo -d busgo > /dev/null 2>&1; then
+                            exit 0
+                        fi
+
+                        sleep 2
+                    done
+
+                    echo "PostgreSQL is not ready"
+                    exit 1
+                '''
+            }
+        }
+
+        stage('Pull API Image') {
             steps {
                 sh '''
                     set -e
@@ -48,35 +78,62 @@ pipeline {
             }
         }
 
-        stage('Migrate') {
+        stage('Run Migration') {
             steps {
                 sh '''
                     set -e
 
-                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml run --rm api yarn migrate
+                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml run --rm --no-deps api yarn migrate
                 '''
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy API') {
             steps {
                 sh '''
                     set -e
 
-                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml up -d api dozzle netdata
+                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml up -d --no-deps api
+                '''
+            }
+        }
 
-                    docker image prune -f
+        stage('Cleanup') {
+            steps {
+                sh '''
+                    set -e
+
+                    docker image prune -af > /dev/null 2>&1 || true
+                    docker container prune -f > /dev/null 2>&1 || true
+                    docker builder prune -af > /dev/null 2>&1 || true
                 '''
             }
         }
     }
 
     post {
+        failure {
+            sh '''
+                docker ps || true
+
+                echo "===== API LOGS ====="
+                docker logs --tail=50 api 2>/dev/null || true
+
+                echo "===== POSTGRES LOGS ====="
+                docker logs --tail=50 postgres 2>/dev/null || true
+            '''
+        }
+
         always {
             sh '''
                 rm -f .env
             '''
+
             cleanWs()
+        }
+
+        success {
+            echo 'Deploy completed successfully.'
         }
     }
 }
