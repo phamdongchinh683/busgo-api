@@ -63,7 +63,7 @@ pipeline {
                 sh '''
                     set -e
 
-                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml up -d api
+                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml up -d api dozzle netdata
 
                     docker image prune -f
                 '''
