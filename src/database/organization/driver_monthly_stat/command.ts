@@ -37,7 +37,7 @@ export async function upsertDriverMonthlyStat(
                         : sql`"organization"."driver_monthly_stat"."cancelled_trip_count"`,
             })
         )
-        .execute()
+        .executeTakeFirstOrThrow()
 }
 
 export async function upsertOne(
