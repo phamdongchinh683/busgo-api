@@ -23,7 +23,7 @@ import { OrganizationCompanyDriverTable } from '../database/organization/company
 import { OrganizationBusCompanyReviewTable } from '../database/organization/bus_company_review/table.js'
 import { ChatBoxTable } from '../database/chat/box/table.js'
 import { ChatMessageTable } from '../database/chat/message/table.js'
-
+import { OrganizationDriverMonthlyStatTable } from '../database/organization/driver_monthly_stat/table.js'
 export interface Database {
     'auth.user': AuthUserTable
     'auth.user_device': AuthUserDeviceTable
@@ -50,4 +50,5 @@ export interface Database {
     'organization.bus_company_review': OrganizationBusCompanyReviewTable
     'chat.box': ChatBoxTable
     'chat.message': ChatMessageTable
+    'organization.driver_monthly_stat': OrganizationDriverMonthlyStatTable
 }

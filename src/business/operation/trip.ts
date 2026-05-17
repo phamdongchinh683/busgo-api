@@ -7,6 +7,7 @@ import { PassengerTicketFilter } from '../../model/query/ticket/index.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripScheduleId } from '../../database/operation/trip-schedule/type.js'
 import { OperationTripTableUpdate } from '../../database/operation/trip/table.js'
+import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 
 export async function getTrips(query: TripFilter) {
     const trips = await dal.operation.trip.cmd.getManyByFilter(query)
@@ -89,6 +90,7 @@ export async function cleanupTrips() {
 export async function updateTripStatusAndCount(params: {
     id: OperationTripId
     status: OperationTripStatus
+    companyId: OrganizationBusCompanyId
     userId: AuthUserId
 }) {
     return dal.operation.trip.cmd.updateTripAndUpCount(params)

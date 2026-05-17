@@ -9,7 +9,6 @@ export const DriverResponse = z.object({
     phone: Phone.nullable(),
     role: AuthUserRole,
     status: AuthUserStatus,
-    totalCompletedTrips: z.number().nullable(),
 })
 
 export type DriverResponse = z.infer<typeof DriverResponse>
@@ -20,3 +19,13 @@ export const DriverListResponse = z.object({
 })
 
 export type DriverListResponse = z.infer<typeof DriverListResponse>
+
+export const DriverStatResponse = z.object({
+    current: z.object({
+        year: z.number(),
+        month: z.number(),
+        completedTripCount: z.number(),
+        cancelledTripCount: z.number(),
+    }),
+})
+export type DriverStatResponse = z.infer<typeof DriverStatResponse>

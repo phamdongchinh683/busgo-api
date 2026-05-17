@@ -54,15 +54,7 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
             if (companyId) cond.push(eb('cd.companyId', '=', companyId))
             return eb.and(cond)
         })
-        .select([
-            'u.id',
-            'u.fullName',
-            'u.email',
-            'u.phone',
-            'u.role',
-            'u.status',
-            'cd.totalCompletedTrips',
-        ])
+        .select(['u.id', 'u.fullName', 'u.email', 'u.phone', 'u.role', 'u.status'])
         .limit(limit + 1)
         .orderBy('u.id', 'asc')
         .execute()

@@ -391,6 +391,17 @@ export async function insertDriver(
                 trx
             )
 
+            await dal.organization.driverMonthlyStat.cmd.upsertOne(
+                {
+                    driverId: user.id,
+                    year: utils.time.getNow().year(),
+                    month: utils.time.getNow().month() + 1,
+                    completedTripCount: 0,
+                    cancelledTripCount: 0,
+                },
+                trx
+            )
+
             return {
                 message: 'Yêu cầu tạo tài khoản cho tài xế đã được gửi đến quản trị viên công ty',
             }

@@ -5,62 +5,80 @@ import { utils } from '../../utils/index.js'
 import { db } from '../../datasource/db.js'
 
 export async function expireBooking() {
+    const now = utils.time.getNow().toDate()
+
     return db.transaction().execute(async trx => {
         const expiredBookings = await trx
             .selectFrom('booking.booking as b')
             .select('b.id')
-            .where(eb => {
-                const cond = []
-                cond.push(eb('b.status', '=', BookingStatus.enum.pending))
-                cond.push(eb('b.expiredAt', '<', utils.time.getNow().toDate()))
-                return eb.and(cond)
-            })
+            .where('b.status', '=', BookingStatus.enum.pending)
+            .where('b.expiredAt', '<', now)
             .limit(200)
             .execute()
 
-        if (expiredBookings.length === 0)
+        if (expiredBookings.length === 0) {
             return {
                 message: 'OK',
+                expiredBookingCount: 0,
+                cancelledTicketCount: 0,
             }
+        }
 
         const bookingIds = expiredBookings.map(b => b.id)
 
-        await trx
+        const updatedBookings = await trx
             .updateTable('booking.booking as b')
-            .set({ status: BookingStatus.enum.expired })
+            .set({
+                status: BookingStatus.enum.expired,
+            })
             .where('b.id', 'in', bookingIds)
-            .executeTakeFirstOrThrow()
+            .where('b.status', '=', BookingStatus.enum.pending)
+            .where('b.expiredAt', '<', now)
+            .returning('b.id')
+            .execute()
+
+        const updatedBookingIds = updatedBookings.map(b => b.id)
+
+        if (updatedBookingIds.length === 0) {
+            return {
+                message: 'OK',
+                expiredBookingCount: 0,
+                cancelledTicketCount: 0,
+            }
+        }
 
         await trx
             .updateTable('payment.payment as pp')
-            .set({ status: PaymentStatus.enum.failed })
-            .where('pp.bookingId', 'in', bookingIds)
-            .where('pp.status', '=', PaymentStatus.enum.pending)
-            .executeTakeFirst()
-
-        const tickets = await trx
-            .updateTable('booking.ticket as t')
-            .set({ status: BookingTicketStatus.enum.cancelled })
-            .where(eb => {
-                const cond = []
-                cond.push(eb('t.bookingId', 'in', bookingIds))
-                cond.push(eb('t.status', '!=', BookingTicketStatus.enum.checked_in))
-                return eb.and(cond)
+            .set({
+                status: PaymentStatus.enum.failed,
             })
-            .returning('id')
+            .where('pp.bookingId', 'in', updatedBookingIds)
+            .where('pp.status', '=', PaymentStatus.enum.pending)
             .execute()
 
-        const ticketIds = tickets.map(t => t.id)
+        const cancelledTickets = await trx
+            .updateTable('booking.ticket as t')
+            .set({
+                status: BookingTicketStatus.enum.cancelled,
+            })
+            .where('t.bookingId', 'in', updatedBookingIds)
+            .where('t.status', '!=', BookingTicketStatus.enum.checked_in)
+            .returning('t.id')
+            .execute()
+
+        const ticketIds = cancelledTickets.map(t => t.id)
 
         if (ticketIds.length > 0) {
             await trx
                 .deleteFrom('booking.seat_segment as ss')
                 .where('ss.ticketId', 'in', ticketIds)
-                .executeTakeFirstOrThrow()
+                .execute()
+        }
+
+        return {
+            message: 'OK',
+            expiredBookingCount: updatedBookingIds.length,
+            cancelledTicketCount: ticketIds.length,
         }
     })
-
-    return {
-        message: 'OK',
-    }
 }

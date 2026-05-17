@@ -10,6 +10,7 @@ import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import _ from 'lodash'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export async function getManyByFilter(params: TripFilter) {
     return dal.operation.trip.query.findAllByFilter(params)
@@ -102,14 +103,22 @@ export async function updateTripAndUpCount(params: {
     return db.transaction().execute(async trx => {
         const trip = await updateStatus(params, trx)
 
-        if (params.status === OperationTripStatus.enum.completed) {
-            await db
-                .updateTable('organization.company_driver')
-                .set({
-                    totalCompletedTrips: sql`total_completed_trips + 1`,
-                })
-                .where('userId', '=', params.userId)
-                .execute()
+        if (
+            params.status === OperationTripStatus.enum.completed ||
+            params.status === OperationTripStatus.enum.cancelled
+        ) {
+            await dal.organization.driverMonthlyStat.cmd.upsertDriverMonthlyStat(
+                {
+                    driverId: params.userId,
+                    year: trip.departureDate.getFullYear(),
+                    month: trip.departureDate.getMonth() + 1,
+                    type:
+                        params.status === OperationTripStatus.enum.completed
+                            ? 'completed'
+                            : 'cancelled',
+                },
+                trx
+            )
         }
 
         return trip

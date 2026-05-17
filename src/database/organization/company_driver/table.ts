@@ -1,4 +1,4 @@
-import { ColumnType, GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
+import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import { OrganizationCompanyDriverId } from './type.js'
 import { AuthUserId } from '../../auth/user/type.js'
@@ -8,7 +8,6 @@ export interface OrganizationCompanyDriverTable extends Timestamps {
     id: GeneratedAlways<OrganizationCompanyDriverId>
     userId: AuthUserId
     companyId: OrganizationBusCompanyId
-    totalCompletedTrips: ColumnType<number, number | undefined, never>
 }
 
 export type OrganizationCompanyDriverTableInsert = Insertable<OrganizationCompanyDriverTable>
