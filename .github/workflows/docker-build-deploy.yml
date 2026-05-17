@@ -1,4 +1,4 @@
-name: Build and Push Docker Image
+name: BusGo API CI/CD
 
 on:
   push:
@@ -7,22 +7,23 @@ on:
 
 jobs:
   docker:
+    name: Build & Deploy
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Login to Docker Hub
+      - name: Authenticate Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up Docker Buildx
+      - name: Initialize Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push image
+      - name: Build & Push Production Image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -31,7 +32,10 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/busgo-api:${{ github.sha }}
             ${{ secrets.DOCKERHUB_USERNAME }}/busgo-api:latest
-      - name: Trigger Jenkins deploy
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trigger Jenkins Deployment
         run: |
           CRUMB=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             "${{ secrets.JENKINS_URL }}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
