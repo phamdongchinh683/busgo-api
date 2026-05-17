@@ -133,7 +133,7 @@ pipeline {
         }
 
         success {
-            echo 'Deploy completed successfully.'
+            echo 'Deploy completed.'
         }
     }
 }
