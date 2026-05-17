@@ -1,5 +1,4 @@
 import { AuthUserId } from '../../auth/user/type.js'
-import { OrganizationBusCompanyId } from '../bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { db } from '../../../datasource/db.js'
 
@@ -24,4 +23,19 @@ export async function getDriverStats(params: {
         })
         .selectAll()
         .executeTakeFirst()
+}
+
+export async function getStatsByDriverId(id: AuthUserId) {
+    const now = utils.time.getNow()
+
+    return db
+        .selectFrom('organization.driver_monthly_stat')
+        .where(eb => {
+            const cond = []
+            cond.push(eb('driverId', '=', id))
+            cond.push(eb('year', '=', now.year()))
+            return eb.and(cond)
+        })
+        .selectAll()
+        .execute()
 }

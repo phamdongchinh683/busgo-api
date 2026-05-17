@@ -1,6 +1,7 @@
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { utils } from '../../utils/index.js'
+import { DriverMonthlyStatsQuery } from '../../model/query/driver-monthly-stat/index.js'
 
 export async function getDriverStat(params: {
     driverId: AuthUserId
@@ -17,5 +18,11 @@ export async function getDriverStat(params: {
             completedTripCount: 0,
             cancelledTripCount: 0,
         }),
+    }
+}
+
+export async function getDriverDetail(id: AuthUserId) {
+    return {
+        stats: await dal.organization.driverMonthlyStat.query.getStatsByDriverId(id),
     }
 }

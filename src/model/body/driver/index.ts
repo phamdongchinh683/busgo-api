@@ -34,3 +34,16 @@ export const DriverStatResponse = z.object({
     }),
 })
 export type DriverStatResponse = z.infer<typeof DriverStatResponse>
+
+export const DriverStatsResponse = z.object({
+    stats: z.array(
+        z.object({
+            year: z.number(),
+            month: z.number(),
+            completedTripCount: z.number(),
+            cancelledTripCount: z.number(),
+        })
+    ),
+})
+
+export type DriverStatsResponse = z.infer<typeof DriverStatsResponse>

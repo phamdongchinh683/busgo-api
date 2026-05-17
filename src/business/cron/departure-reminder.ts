@@ -48,6 +48,12 @@ export async function departureReminder() {
         })
         .where('trip.status', '=', OperationTripStatus.enum.scheduled)
         .where(sql<boolean>`trip.departure_date = ${today}::date`)
+        .where(
+            sql<boolean>`
+    (trip.departure_date::timestamp + ts.departure_time::time)
+    >= (${utils.time.getNow().toDate()}::timestamp + interval '2 hours')
+`
+        )
         .where(eb => {
             const alreadyNotified = eb.exists(
                 eb
@@ -92,6 +98,7 @@ export async function departureReminder() {
                     userId: item.userId,
                     title: 'Chuyến đi của bạn sắp khởi hành hôm nay',
                     body: `Chuyến đi của bạn sẽ khởi hành vào lúc ${item.departureTime} ngày ${departureDateDisplay}.`,
+                    data: `departure-reminder:${item.bookingId}:${item.tripId}`,
                     isRead: false,
                 }
             })
