@@ -28,13 +28,13 @@ export async function upsertDriverMonthlyStat(
             oc.columns(['driverId', 'year', 'month']).doUpdateSet({
                 completedTripCount:
                     type === 'completed'
-                        ? sql`"organization"."driver_monthly_stat"."completedTripCount" + 1`
-                        : sql`"organization"."driver_monthly_stat"."completedTripCount"`,
+                        ? sql`"organization"."driver_monthly_stat"."completed_trip_count" + 1`
+                        : sql`"organization"."driver_monthly_stat"."completed_trip_count"`,
 
                 cancelledTripCount:
                     type === 'cancelled'
-                        ? sql`"organization"."driver_monthly_stat"."cancelledTripCount" + 1`
-                        : sql`"organization"."driver_monthly_stat"."cancelledTripCount"`,
+                        ? sql`"organization"."driver_monthly_stat"."cancelled_trip_count" + 1`
+                        : sql`"organization"."driver_monthly_stat"."cancelled_trip_count"`,
             })
         )
         .execute()
