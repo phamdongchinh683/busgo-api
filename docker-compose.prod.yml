@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     networks:
       - internal-net
     depends_on:
@@ -27,8 +27,39 @@ services:
       - internal-net
     ports:
       - "5433:5432"
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    restart: always
+    ports:
+      - "127.0.0.1:3006:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  netdata:
+    image: netdata/netdata:stable
+    container_name: netdata
+    restart: always
+    pid: host
+    network_mode: host
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdata_config:/etc/netdata
+      - netdata_lib:/var/lib/netdata
+      - netdata_cache:/var/cache/netdata
+      - /:/host/root:ro,rslave
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
 volumes:
   db_data:
+  netdata_config:
+  netdata_lib:
+  netdata_cache:
+
 
 networks:
   internal-net:
