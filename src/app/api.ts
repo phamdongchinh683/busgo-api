@@ -1,5 +1,6 @@
-import Fastify, { type FastifyInstance, type FastifyRequest } from 'fastify'
+import Fastify, { type FastifyRequest } from 'fastify'
 import swagger from '@fastify/swagger'
+import fastifyStatic from '@fastify/static'
 import {
     jsonSchemaTransform,
     serializerCompiler,
@@ -7,27 +8,37 @@ import {
     type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
 import qs from 'qs'
-import { readdir, stat } from 'fs/promises'
+import { readdir } from 'fs/promises'
 import path, { dirname, parse, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
+import 'dotenv/config'
+
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
 import { helmetPlugin } from './plugins/helmet.js'
-import 'dotenv/config'
-import fastifyStatic from '@fastify/static'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
 const rootDir = path.join(__dirname, '..')
 const apiDir = path.join(rootDir, 'api')
+const publicDir = path.resolve(process.cwd(), 'public')
 
 const isProduction = process.env.APP_ENV === 'production'
 const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
+const isTsRuntime = process.argv[1]?.endsWith('.ts') ?? false
 
-const api = Fastify({
+const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
+
+let swaggerDocument: unknown = null
+
+type RawWithStripeBody = import('http').IncomingMessage & {
+    rawBody?: Buffer
+}
+
+export const api = Fastify({
     trustProxy: true,
     logger: {
         level: isProduction ? 'info' : 'debug',
@@ -37,10 +48,13 @@ const api = Fastify({
 api.setValidatorCompiler(validatorCompiler)
 api.setSerializerCompiler(serializerCompiler)
 
-const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
+function getPathname(url: string) {
+    const index = url.indexOf('?')
+    return index === -1 ? url : url.slice(0, index)
+}
 
-type RawWithStripeBody = import('http').IncomingMessage & {
-    rawBody?: Buffer
+function isSwaggerPath(pathname: string) {
+    return pathname.startsWith('/swagger')
 }
 
 api.addContentTypeParser(
@@ -48,7 +62,7 @@ api.addContentTypeParser(
     { parseAs: 'buffer' },
     (request: FastifyRequest, body: Buffer, done) => {
         try {
-            const pathname = request.url.split('?')[0] ?? ''
+            const pathname = getPathname(request.url)
 
             if (
                 pathname === STRIPE_WEBHOOK_PATH ||
@@ -57,8 +71,7 @@ api.addContentTypeParser(
                 ;(request.raw as RawWithStripeBody).rawBody = body
             }
 
-            const json = JSON.parse(body.toString('utf8')) as unknown
-            done(null, json)
+            done(null, JSON.parse(body.toString('utf8')) as unknown)
         } catch (err) {
             ;(err as { statusCode?: number }).statusCode = 400
             done(err as Error, undefined)
@@ -71,8 +84,7 @@ api.addContentTypeParser(
     { parseAs: 'string' },
     (_request: FastifyRequest, body: string, done) => {
         try {
-            const parsed = qs.parse(body)
-            done(null, parsed)
+            done(null, qs.parse(body))
         } catch (err) {
             ;(err as { statusCode?: number }).statusCode = 400
             done(err as Error, undefined)
@@ -81,47 +93,27 @@ api.addContentTypeParser(
 )
 
 api.addHook('preHandler', async request => {
-    if (
-        enableHttpDebugLogs &&
-        !request.url.includes('swagger') &&
-        !request.url.startsWith('/docs')
-    ) {
-        request.log.info({
-            preHandler: {
-                method: request.method,
-                url: request.url,
-                params: request.params,
-                query: request.query,
-            },
-        })
-    }
-})
+    if (!enableHttpDebugLogs) return
 
-api.addHook('preSerialization', async (request, reply, response) => {
-    if (
-        enableHttpDebugLogs &&
-        !request.url.includes('swagger') &&
-        !request.url.startsWith('/docs')
-    ) {
-        request.log.info({
-            preSerialization: {
-                method: request.method,
-                url: request.url,
-                statusCode: reply.statusCode,
-            },
-        })
-    }
+    const pathname = getPathname(request.url)
+    if (isSwaggerPath(pathname)) return
 
-    return response
+    request.log.info({
+        preHandler: {
+            method: request.method,
+            url: request.url,
+            params: request.params,
+            query: request.query,
+        },
+    })
 })
 
 api.addHook('onSend', async (request, reply, payload) => {
     if (reply.hasHeader('cache-control')) return payload
 
-    const pathname = request.url.split('?')[0] ?? ''
-    const isSwaggerPath = pathname.includes('/swagger') || pathname.startsWith('/docs')
+    const pathname = getPathname(request.url)
 
-    if (isSwaggerPath) return payload
+    if (isSwaggerPath(pathname)) return payload
 
     if (request.method === 'GET' && pathname.startsWith('/public/')) {
         reply.header(
@@ -140,42 +132,44 @@ export const bearer = [{ bearerAuth: [] }]
 export const endpoint = (filename: string): { method: string; url: string } => {
     const method = parse(filename).name.toUpperCase()
     const normalizedPath = filename.replace(/\.(ts|js)$/, '')
+
     let url = dirname(relative(apiDir, normalizedPath))
 
     url = url.replace(/^\/+/, '') || '/'
     url = url === '/' ? '' : url
-
     url = url.replace(/\[([^\]]+)\]/g, ':$1')
 
     if (url && !url.startsWith('/')) {
         url = '/' + url
     }
 
-    return { method, url: url || '/' }
+    return {
+        method,
+        url: url || '/',
+    }
 }
 
-export const tags = (filename: string): string[] => [
-    relative(__dirname, filename).replace('../api/', '').split(sep)[0],
-]
+export const tags = (filename: string): string[] => {
+    return [relative(__dirname, filename).replace('../api/', '').split(sep)[0]]
+}
 
-async function apiRouter(_app: FastifyInstance) {
+async function apiRouter() {
     const files: string[] = []
-    const allowedExtensions = ['.ts', '.js']
+    const allowedExtensions = new Set(isTsRuntime ? ['.ts'] : ['.js'])
 
     const walk = async (dir: string): Promise<void> => {
-        const entries = await readdir(dir)
+        const entries = await readdir(dir, { withFileTypes: true })
 
         await Promise.all(
             entries.map(async entry => {
-                const fullPath = path.join(dir, entry)
-                const statInfo = await stat(fullPath)
+                const fullPath = path.join(dir, entry.name)
 
-                if (statInfo.isDirectory()) {
+                if (entry.isDirectory()) {
                     await walk(fullPath)
                     return
                 }
 
-                if (statInfo.isFile() && allowedExtensions.includes(path.extname(fullPath))) {
+                if (entry.isFile() && allowedExtensions.has(path.extname(entry.name))) {
                     files.push(fullPath)
                 }
             })
@@ -184,87 +178,93 @@ async function apiRouter(_app: FastifyInstance) {
 
     await walk(apiDir)
 
-    for (const file of files) {
-        await import(pathToFileURL(file).href)
-    }
+    await Promise.all(files.map(file => import(pathToFileURL(file).href)))
 }
 
-const start = async () => {
-    try {
-        await api.register(rateLimitPlugin)
-        await api.register(compressPlugin)
-        await api.register(helmetPlugin)
-        await api.register(corsPlugin)
-        await api.register(errorHandlerPlugin)
+async function registerPlugins() {
+    await api.register(rateLimitPlugin)
+    await api.register(compressPlugin)
+    await api.register(helmetPlugin)
+    await api.register(corsPlugin)
+    await api.register(errorHandlerPlugin)
+}
 
-        if (!isProduction) {
-            await api.register(fastifyStatic, {
-                root: path.join(rootDir, '..', 'public'),
-                prefix: '/',
-            })
-        }
-
-        await api.register(swagger, {
-            openapi: {
-                info: {
-                    title: 'BusGo API',
-                    description: 'API documentation for the BusGo',
-                    version: '1.0.0',
-                },
-                components: {
-                    securitySchemes: {
-                        bearerAuth: {
-                            type: 'http',
-                            scheme: 'bearer',
-                            bearerFormat: 'JWT',
-                        },
+async function registerSwagger() {
+    await api.register(swagger, {
+        openapi: {
+            info: {
+                title: 'BusGo API',
+                description: 'API documentation for BusGo',
+                version: '1.0.0',
+            },
+            components: {
+                securitySchemes: {
+                    bearerAuth: {
+                        type: 'http',
+                        scheme: 'bearer',
+                        bearerFormat: 'JWT',
                     },
                 },
             },
-            transform: jsonSchemaTransform,
-        })
+        },
+        transform: jsonSchemaTransform,
+    })
 
-        await apiRouter(api)
+    api.get('/swagger/json', async (_request, reply) => {
+        reply.header(
+            'Cache-Control',
+            isProduction ? 'public, max-age=300, stale-while-revalidate=600' : 'no-store'
+        )
 
-        api.get('/swagger/json', async (_request, reply) => {
-            reply.header(
-                'Cache-Control',
-                isProduction ? 'public, max-age=300, stale-while-revalidate=600' : 'no-store'
-            )
+        return swaggerDocument ?? api.swagger()
+    })
+}
 
-            return api.swagger()
-        })
+async function registerDevStatic() {
+    if (isProduction) return
 
-        if (!isProduction) {
-            api.get('/swagger/docs', async (_request, reply) => {
-                return reply.sendFile('swagger-dev.html')
-            })
-        }
+    await api.register(fastifyStatic, {
+        root: publicDir,
+        prefix: '/public/',
+    })
 
-        await api.ready()
+    api.get('/swagger/docs', async (_request, reply) => {
+        return reply.sendFile('swagger-dev.html')
+    })
+}
 
+async function start() {
+    try {
         const port = process.env.PORT
         const host = process.env.HOST
 
         if (!port) throw new Error('env PORT not found')
         if (!host) throw new Error('env HOST not found')
 
-        await api.listen({ host, port: +port })
+        await registerPlugins()
+        await registerDevStatic()
+        await registerSwagger()
+        await apiRouter()
+
+        await api.ready()
+
+        swaggerDocument = api.swagger()
+
+        await api.listen({
+            host,
+            port: Number(port),
+        })
+
+        const url = `http://${host}:${port}`
 
         console.log({
-            swagger: isProduction
-                ? `http://${host}:${port}/swagger/json`
-                : `http://${host}:${port}/swagger/docs`,
+            swagger: isProduction ? `${url}/swagger/json` : `${url}/swagger/docs`,
         })
+        
     } catch (err) {
         api.log.error(err)
         process.exit(1)
     }
 }
 
-start().catch(err => {
-    console.log(err)
-    process.exit(1)
-})
-
-export { api }
+start()
