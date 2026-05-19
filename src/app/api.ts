@@ -260,7 +260,6 @@ async function start() {
         console.log({
             swagger: isProduction ? `${url}/swagger/json` : `${url}/swagger/docs`,
         })
-        
     } catch (err) {
         api.log.error(err)
         process.exit(1)
