@@ -1,200 +1,318 @@
-# BusGo Backend API
+# BusGo API
 
-REST API for the BusGo intercity bus ticketing platform (Fastify, TypeScript, PostgreSQL). Routes are registered from the **folder layout** under `src/api`; `business` and `database` layers separate use cases from data access.
+BusGo API is the backend service for an intercity bus ticketing and operations
+platform. It provides REST endpoints for customer booking, driver workflows,
+operator administration, dispatcher operations, support tooling, payments,
+notifications, chat, file uploads, and internal scheduled jobs.
 
-## Table of contents
+The service is built with Fastify 5, TypeScript, Zod, Kysely, and PostgreSQL.
+Routes are registered automatically from the folder structure under `src/api`,
+while business logic and data access are kept in separate layers.
 
-1. [Requirements](#requirements)
-2. [Quick start (local)](#quick-start-local)
-3. [Environment variables](#environment-variables)
-4. [Project layout](#project-layout)
-5. [Authorization (summary)](#authorization-summary)
-6. [Scripts](#scripts)
-7. [Database migrations](#database-migrations)
-8. [Docker and deployment](#docker-and-deployment)
-9. [API docs (Swagger)](#api-docs-swagger)
-10. [Security and operations](#security-and-operations)
-11. [Troubleshooting](#troubleshooting)
+## Contents
 
----
+- [Requirements](#requirements)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Project Structure](#project-structure)
+- [API Design](#api-design)
+- [Authentication and Authorization](#authentication-and-authorization)
+- [Database Migrations](#database-migrations)
+- [Scripts](#scripts)
+- [Docker and Deployment](#docker-and-deployment)
+- [Swagger](#swagger)
+- [Operations Notes](#operations-notes)
+- [Troubleshooting](#troubleshooting)
 
 ## Requirements
 
-| Component | Notes |
-|-----------|--------|
-| Node.js | **22** (matches `Dockerfile.prod`) |
-| Yarn | **4.x** — enable Corepack: `corepack enable` |
-| PostgreSQL | 15+ (compose file in this repo uses `postgres:15`) |
-| Docker (optional) | Local DB or production-style image builds |
+| Tool | Version / Notes |
+| --- | --- |
+| Node.js | 22.x, aligned with `Dockerfile.prod` |
+| Yarn | 4.x via Corepack |
+| PostgreSQL | 15+ |
+| Docker | Optional for local PostgreSQL and production-style deployment |
 
----
-
-## Quick start (local)
+Enable Corepack before installing dependencies:
 
 ```bash
 corepack enable
+```
+
+## Getting Started
+
+Install dependencies:
+
+```bash
 yarn install
 ```
 
-**1. PostgreSQL (Docker)**
+Start PostgreSQL using the production compose file:
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d db
 ```
 
-**2. `.env` file** in the project root (see [Environment variables](#environment-variables)). Minimum for local:
+Create a `.env` file in the project root. A minimal local configuration looks
+like this:
 
-- `APP_ENV=local` — disables TLS to Postgres in `src/datasource/db.ts`.
-- `DB_URL` — points at your Postgres instance (with the default compose file in this repo: user `busgo`, host port **5433**).
+```env
+APP_ENV=local
+NODE_ENV=development
+HOST=0.0.0.0
+PORT=3000
+DB_URL=postgres://busgo:<password>@localhost:5433/busgo
+JWT_SECRET=<replace-with-a-strong-secret>
+```
 
-**3. Migrations**
+Run migrations:
 
 ```bash
 yarn migrate
 ```
 
-**4. Dev server**
+Start the development server:
 
 ```bash
 yarn dev
 ```
 
-- API: `http://localhost:<PORT>` (often `3000`).
-- Health: `GET /health`
-- Swagger UI: `/swagger/docs` (see [API docs (Swagger)](#api-docs-swagger)).
+Useful local URLs:
 
----
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /health` | Health check |
+| `/swagger/docs` | Swagger UI in non-production environments |
+| `/swagger/json` | OpenAPI JSON document |
 
-## Environment variables
+## Configuration
 
-Create `.env` in the repository root. **Do not commit secrets.**
+The application loads environment variables from `.env` through `dotenv`.
+Secrets should never be committed to the repository.
 
-### Application and HTTP
+### Core
 
-| Variable | Purpose |
-|----------|---------|
-| `NODE_ENV` | `development` or `production` |
-| `APP_ENV` | `local` — DB TLS off; `production` — suppresses successful SQL query logging in Kysely (see `src/datasource/db.ts`) |
-| `HOST`, `PORT` | Server bind address and port |
-| `DB_URL` | PostgreSQL connection string |
-| `JWT_SECRET` | Sign and verify JWTs |
-| `CORS_ORIGIN` | Allowed CORS origin |
-| `ENABLE_HTTP_DEBUG_LOGS` | When `true` and not production, lightweight request logging (see `src/app/api.ts`) |
+| Variable | Description |
+| --- | --- |
+| `APP_ENV` | Use `local` to disable PostgreSQL SSL; use `production` for production behavior |
+| `NODE_ENV` | Runtime mode, usually `development` or `production` |
+| `HOST` | Fastify bind host |
+| `PORT` | Fastify bind port |
+| `DB_URL` | PostgreSQL connection string used by Kysely |
+| `JWT_SECRET` | Secret used to sign and verify JWT tokens |
+| `CORS_ORIGIN` | Optional comma-separated list of allowed origins; defaults to `*` |
+| `ENABLE_HTTP_DEBUG_LOGS` | Set to `true` to log lightweight request details outside production |
 
-### Payments and platform
+### Integrations
 
-`STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_REFRESH_URL`, `STRIPE_REDIRECT_URL`, `SYSTEM_DOMAIN`, `VNPAY_*`, and related keys.
+| Area | Variables |
+| --- | --- |
+| Stripe | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_REDIRECT_URL`, `STRIPE_REFRESH_URL`, `SYSTEM_DOMAIN` |
+| VNPay | `VNPAY_TMN_CODE`, `VNPAY_SECRET`, `VNPAY_URL`, `VNPAY_RETURN_URL` |
+| Cloudinary | `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`, `CLOUDINARY_CLOUD_NAME` |
+| Firebase | `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`, `FIREBASE_PROJECT_ID` |
+| Email and SMS | `RESEND_API_KEY`, `MAIL_FROM`, `INFOBIP_API_KEY` |
+| Social login | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET` |
+| Internal socket | `SOCKET_SERVER_URL`, `INTERNAL_SOCKET_TOKEN` |
+| Scheduled jobs | `CRON_SECRET` |
+| Queue scaffold | `AWS_REGION`, `AWS_ENDPOINT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_LOCAL_ACCOUNT_ID` |
 
-### Messaging, uploads, and social login
+`GOOGLE_CLIENT_ID` supports multiple client IDs separated by commas.
 
-`FIREBASE_*`, `INFOBIP_API_KEY`, `RESEND_*`, `CLOUDINARY_*`, `GOOGLE_CLIENT_ID`, `FACEBOOK_*`, `SOCKET_SERVER_URL`, `INTERNAL_SOCKET_TOKEN`, `CRON_SECRET`, and others as required by your deployment.
+## Project Structure
 
-**Notes:**
+| Path | Responsibility |
+| --- | --- |
+| `src/app` | Fastify bootstrap, plugins, JWT handling, cron secret verification |
+| `src/api` | Route modules. Directory path maps to URL and filename maps to HTTP method |
+| `src/business` | Use cases and application orchestration |
+| `src/database` | Kysely commands, queries, repositories, and table definitions |
+| `src/datasource` | Kysely database instance, generated database types, and migrations |
+| `src/model` | Zod schemas for request bodies, params, queries, and responses |
+| `src/service` | Third-party service adapters such as Stripe, VNPay, Firebase, Cloudinary, email, and social providers |
+| `src/utils` | Shared utility functions |
+| `public` | Static assets used outside production, including the local Swagger UI shell |
 
-- `GOOGLE_CLIENT_ID` may list multiple client IDs separated by commas.
-- Facebook Login in the browser typically requires an HTTPS origin.
+## API Design
 
----
+Routes are discovered from files in `src/api`.
 
-## Project layout
+Examples:
 
-| Path | Role |
-|------|------|
-| `src/api` | Route definitions; filename drives HTTP method and URL |
-| `src/business` | Use cases and orchestration |
-| `src/database` | Kysely queries and commands by domain |
-| `src/model` | Zod schemas for bodies, queries, params, and responses |
-| `src/service` | Third-party integration adapters |
-| `src/datasource` | `db` instance, typings, migrations |
-| `src/app` | Fastify bootstrap, plugins, JWT |
+| File | Registered route |
+| --- | --- |
+| `src/api/health/get.ts` | `GET /health` |
+| `src/api/customer/ticket/:id/get.ts` | `GET /customer/ticket/:id` |
+| `src/api/auth/google/verify-token/post.ts` | `POST /auth/google/verify-token` |
 
-**URL convention:** e.g. `src/api/customer/ticket/:id/get.ts` → `GET /customer/ticket/:id`.
+Main route groups:
 
----
+| Prefix | Scope |
+| --- | --- |
+| `/auth` | Sign in, social login, OTP, password, device tokens, notifications |
+| `/customer` | Customer profile, booking, tickets, coupons, trip schedules, payment methods |
+| `/driver` | Driver trips, passengers, route details, check-in, driver statistics |
+| `/operator-admin` | Company administration, staff, vehicles, seats, payments, Stripe Connect, revenue |
+| `/operator-dispatcher` | Stations, routes, trip schedules, trip templates, vehicles, drivers |
+| `/operator-support` | Support-facing coupons and tickets |
+| `/super-admin` | Platform administration, users, companies, promotions, dashboards, balances |
+| `/payment` | Payment method and VNPay IPN endpoints |
+| `/stripe` | Stripe Connect and webhook endpoints |
+| `/chat` | Chat boxes, messages, unread counters |
+| `/file` | Presigned upload endpoints |
+| `/public` | Public company and promotion data |
+| `/job` | Internal scheduled jobs protected by `x-cron-secret` |
 
-## Authorization (summary)
+## Authentication and Authorization
 
-**`auth.user.role`:** `operator`, `driver`, `customer`, `super_admin`
+Authenticated routes expect a bearer token:
 
-**`auth.staff_profile.role`:** `company_admin`, `dispatcher`, `support`
+```http
+Authorization: Bearer <token>
+```
 
-For social login flows, the effective role is determined by the **route**, not by picking an arbitrary role in the request body.
+JWTs are signed with `JWT_SECRET` and expire after 30 days. Logout increments
+the user's token version, which invalidates previously issued tokens.
 
----
+User roles:
+
+| Role | Description |
+| --- | --- |
+| `customer` | Passenger-facing account |
+| `driver` | Driver account |
+| `operator` | Bus company staff account |
+| `super_admin` | Platform administrator |
+
+Operator staff profile roles:
+
+| Staff role | Description |
+| --- | --- |
+| `company_admin` | Company owner or administrator |
+| `dispatcher` | Operations dispatcher |
+| `support` | Customer support operator |
+
+Some endpoints only check the main user role. Operator endpoints may also check
+the staff profile role with `requireStaffProfileRole`.
+
+## Database Migrations
+
+Migrations live in `src/datasource/migrations` and are managed by
+`kysely-ctl` through `kysely.config.ts`.
+
+Apply all pending migrations:
+
+```bash
+yarn migrate
+```
+
+Create a migration:
+
+```bash
+yarn migration:create <migration-name>
+```
+
+Roll back one migration step:
+
+```bash
+yarn migration:down
+```
+
+Recommended workflow:
+
+1. Add the migration and related TypeScript changes together.
+2. Run the migration against a database that matches the target environment.
+3. Verify affected API flows before deploying.
+4. Back up production data before destructive migrations.
 
 ## Scripts
 
 | Command | Description |
-|---------|-------------|
-| `yarn dev` | Nodemon + `tsx`, watches `src` |
-| `yarn build` | `yarn clean` + `tsc` → `dist/` |
-| `yarn start` | `prestart` runs build, then `node dist/app/api.js` |
-| `yarn migrate` | Apply latest migrations (Kysely) |
-| `yarn migration:create` | Create a new migration file |
-| `yarn migration:down` | Roll back one migration step |
-| `yarn format` / `yarn format:check` | Prettier |
+| --- | --- |
+| `yarn dev` | Start the API with `nodemon` and `tsx` |
+| `yarn build` | Clean and compile TypeScript into `dist` |
+| `yarn start` | Build, then start `dist/app/api.js` |
+| `yarn migrate` | Apply latest Kysely migrations |
+| `yarn migration:create` | Create a new Kysely migration |
+| `yarn migration:down` | Roll back one Kysely migration |
+| `yarn format` | Format source files with Prettier |
+| `yarn format:check` | Check source formatting |
 
----
+## Docker and Deployment
 
-## Database migrations
+Build the production image:
 
-- Folder: `src/datasource/migrations`
-- Config: `kysely.config.ts` (imports `db` from `src/datasource/db.ts`)
+```bash
+DOCKER_BUILDKIT=1 docker build -f Dockerfile.prod -t busgo-api:<tag> .
+```
 
-**Suggested workflow:** add a migration → run `yarn migrate` on an environment representative of production → verify APIs → commit the migration with the schema-related code.
+Run the compose stack:
 
----
+```bash
+IMAGE_TAG=<tag> docker compose -f docker-compose.prod.yml up -d
+```
 
-## Docker and deployment
+The production compose file includes:
 
-- **Build image:** `docker build -f Dockerfile.prod -t <image:tag> .`  
-  Enable BuildKit: `export DOCKER_BUILDKIT=1` (the sample `Jenkinsfile` in this repo sets this).
-- **Production compose:** `docker-compose.prod.yml` — the `api` service uses a pre-built image; `db` is PostgreSQL.
+| Service | Purpose |
+| --- | --- |
+| `api` | BusGo API container |
+| `db` | PostgreSQL 15 |
+| `dozzle` | Container log viewer |
+| `netdata` | Host and container monitoring |
 
-Before `docker compose ... up`, provide a suitable `.env` (the compose file attaches `env_file: .env` to `api`). Keep **credentials in `DB_URL` aligned** with the Postgres instance the stack actually uses (avoid password drift between an old volume and new env values).
+The `api` service reads `.env` through `env_file`. Keep the database
+credentials in `DB_URL` aligned with the PostgreSQL service or the external
+database used by the deployment.
 
-**Jenkins:** see `Jenkinsfile` for a sample pipeline (build, push image, migrate, `up -d`). Adjust registry, credentials, and hosts for your infrastructure.
+`Jenkinsfile` contains a deployment pipeline that:
 
----
+1. Checks out the `main` branch.
+2. Creates `.env` from Jenkins credentials.
+3. Starts supporting services.
+4. Waits for PostgreSQL.
+5. Pulls the API image.
+6. Runs migrations.
+7. Deploys the API container.
+8. Cleans up Docker artifacts.
 
-## API docs (Swagger)
+Adjust registry names, credentials, hosts, and secret handling for your
+infrastructure.
 
-- UI: **`/swagger/docs`**
-- OpenAPI JSON is exposed by `@fastify/swagger` on routes that depend on your Fastify version and config—verify on your environment.
+## Swagger
 
-**Recommendation:** on **production**, avoid exposing Swagger publicly (disable the plugin, use Basic Auth or IP allowlists, or enable only on staging) to reduce information disclosure for attackers.
+Swagger is registered through `@fastify/swagger` and Zod schema transforms.
 
----
+| Environment | Documentation URL |
+| --- | --- |
+| Local / non-production | `/swagger/docs` and `/swagger/json` |
+| Production | `/swagger/json` |
 
-## Security and operations
+The Swagger UI shell is served from `public/swagger-dev.html` only outside
+production. In production, expose API documentation only through a protected
+network, staging environment, VPN, or authentication layer.
 
-- Rotate `JWT_SECRET` and provider secrets (Stripe, VNPay, and others) on a regular schedule.
-- Back up the database before destructive or large data migrations.
-- Monitor 5xx rates, latency, and unusual 401/403 patterns.
-- Do not print `.env` contents in CI logs (the sample `Jenkinsfile` avoids `cat .env`).
+## Operations Notes
 
----
+- Keep `JWT_SECRET`, payment provider secrets, cloud credentials, and webhook
+  secrets in a managed secret store.
+- Do not print `.env` contents in CI logs.
+- Protect `/job/*` endpoints and send `x-cron-secret` from trusted schedulers
+  only.
+- Monitor 5xx rates, latency, database connection pressure, webhook failures,
+  payment reconciliation, and unusual 401/403 patterns.
+- Test Stripe and VNPay callbacks in staging before enabling production
+  credentials.
+- Back up PostgreSQL before large schema changes or destructive migrations.
 
 ## Troubleshooting
 
-| Symptom | What to check |
-|---------|----------------|
-| Cannot connect to the database | `DB_URL`, `db` container health, ports (host **5433** ↔ container **5432** in the default compose file). |
-| `password authentication failed for user "busgo"` | Match the Postgres password to `DB_URL`; an existing volume may have been initialized with a different password—update the role in Postgres or recreate the volume (data loss unless you have a backup). |
-| Migration errors | Read the stack trace; compare the migration with the live schema; avoid untested manual migrations on production. |
-| 401 / 403 | `JWT_SECRET`, token expiry, and required roles for the route. |
-| Swagger does not load | `HOST` / `PORT`, firewall, reverse proxy path for `/swagger/docs`. |
-| Yarn or lockfile issues | Run `yarn install` again after changing `package.json` or renaming the package. |
-
----
-
-## Social login (quick reference)
-
-- `POST /customer/google/verify-token`, `POST /driver/google/verify-token` — request body uses `idToken`.
-- `POST /customer/facebook/verify-token`, `POST /driver/facebook/verify-token` — `accessToken`; `idToken` may be empty for the access-token flow.
-
----
-
-## Stack
-
-Fastify 5, Zod with `fastify-type-provider-zod`, Kysely, PostgreSQL, `fast-jwt`, Stripe, VNPay, Firebase, and other services configured via the environment variables listed above.
+| Symptom | Check |
+| --- | --- |
+| API fails with `env PORT not found` or `env HOST not found` | Ensure `.env` includes `HOST` and `PORT` |
+| Cannot connect to PostgreSQL | Verify `DB_URL`, database health, and the host port mapping `5433:5432` in `docker-compose.prod.yml` |
+| PostgreSQL password errors | Ensure the password in `DB_URL` matches the initialized PostgreSQL volume |
+| Migrations fail | Compare the migration with the current schema and inspect the Kysely error output |
+| 401 or 403 responses | Check JWT validity, token version, user role, and staff profile role requirements |
+| Stripe webhook verification fails | Verify `STRIPE_WEBHOOK_SECRET` and ensure the raw JSON body reaches `/stripe/webhook` unchanged |
+| Swagger UI does not load locally | Confirm `APP_ENV` is not `production` and `public/swagger-dev.html` exists |
+| Social login fails | Verify provider credentials, token audience, and HTTPS requirements for browser-based flows |

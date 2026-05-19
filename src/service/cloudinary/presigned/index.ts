@@ -5,7 +5,9 @@ const API_KEY = process.env.CLOUDINARY_API_KEY ?? ''
 const API_SECRET = process.env.CLOUDINARY_API_SECRET ?? ''
 const CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME ?? ''
 
-export const SIGNATURE_TTL_SECONDS = 3600
+const CLOUDINARY_SIGNATURE_WINDOW_SECONDS = 3600
+
+export const SIGNATURE_TTL_SECONDS = 60
 
 const DEFAULT_ALLOWED_FORMATS_HINT = 'jpg,jpeg,png,webp'
 
@@ -36,7 +38,14 @@ export function presignedUpload(
     acceptedMimeTypes: string[]
     signatureValidSeconds: number
 } {
-    const timestamp = String(utils.time.getNow().unix())
+    // Cloudinary accepts signed uploads for one hour from `timestamp`.
+    // Backdate the timestamp so the effective upload window is about one minute.
+    const timestamp = String(
+        utils.time
+            .getNow()
+            .subtract(CLOUDINARY_SIGNATURE_WINDOW_SECONDS - SIGNATURE_TTL_SECONDS, 'seconds')
+            .unix()
+    )
     const folderPath = `${folder}/${String(id)}`
 
     const paramsToSign: Record<string, string> = {
