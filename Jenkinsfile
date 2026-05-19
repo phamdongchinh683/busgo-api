@@ -69,21 +69,21 @@ pipeline {
         }
 
         stage('Pull API Image') {
-            steps {
-                sh '''
-                    set -e
+    steps {
+        sh '''
+            set -e
 
-                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml pull api
-                '''
-            }
-        }
+            IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml pull api1
+        '''
+    }
+}
 
         stage('Run Migration') {
             steps {
                 sh '''
                     set -e
 
-                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml run --rm --no-deps api yarn migrate
+                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml run --rm --no-deps api1 yarn migrate
                 '''
             }
         }
@@ -93,7 +93,7 @@ pipeline {
                 sh '''
                     set -e
 
-                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml up -d --no-deps api
+                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml up -d --no-deps api1 api2
                 '''
             }
         }
