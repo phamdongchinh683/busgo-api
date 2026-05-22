@@ -16,7 +16,6 @@ const UP = sql`
 
 	CREATE TABLE auth.user (
 		id SERIAL PRIMARY KEY,
-		username VARCHAR(50) NOT NULL UNIQUE,
 		password VARCHAR(255) NOT NULL,
 		full_name VARCHAR(100),
 		email VARCHAR(100),
@@ -27,7 +26,6 @@ const UP = sql`
 		update_at TIMESTAMP
 	);
 
-	CREATE INDEX user_username_idx ON auth.user (username);
 	CREATE INDEX user_email_idx ON auth.user (email);
 	CREATE INDEX user_phone_idx ON auth.user (phone);
 	CREATE INDEX user_role_idx ON auth.user (role);
