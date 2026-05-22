@@ -72,7 +72,6 @@ export async function listUsers(query: UserListQuery) {
 
 export async function createUser(body: UserBody) {
     return dal.auth.user.cmd.signUp({
-        username: body.username,
         password: utils.password.hashPassword(body.password),
         fullName: body.fullName,
         email: body.email,

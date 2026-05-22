@@ -5,7 +5,6 @@ import { AuthPassword } from '../auth/index.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 
 export const UserBody = z.object({
-    username: z.string(),
     fullName: z.string().min(7),
     email: Email,
     phone: Phone.nullable(),

@@ -18,7 +18,6 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
     await dal.auth.user.cmd.authUpsertByEmail({
         data: {
             email: info.email,
-            username: 'google_' + utils.random.generateRandomNumber(6).toString(),
             password: utils.password.hashPassword(info.email),
             fullName: [info.given_name, info.family_name].filter(Boolean).join(' ').trim(),
             phone: null,

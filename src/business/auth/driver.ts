@@ -11,7 +11,6 @@ export async function register(
     companyId: OrganizationBusCompanyId
 ) {
     const data = {
-        username: body.username,
         fullName: body.fullName,
         ...utils.common.parseContactInfo(body.contactInfo),
         password: utils.password.hashPassword(body.password),

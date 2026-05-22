@@ -11,7 +11,6 @@ export const AuthPassword = z.string().regex(new RegExp(regPassword), message).d
 export type AuthPassword = z.infer<typeof AuthPassword>
 
 export const AuthBody = z.object({
-    username: z.string().min(5),
     fullName: z.string().min(7),
     contactInfo: ContactInfo,
     password: AuthPassword,
@@ -34,7 +33,6 @@ export const AuthResponse = z.object({
 export type AuthResponse = z.infer<typeof AuthResponse>
 
 export const AuthSignInBody = z.object({
-    username: z.string().min(5).optional(),
     phone: Phone.optional(),
     email: Email.optional(),
     password: AuthPassword,
@@ -43,7 +41,6 @@ export const AuthSignInBody = z.object({
 export type AuthSignInBody = z.infer<typeof AuthSignInBody>
 
 export const AuthCompanyAdminSignUpBody = z.object({
-    username: z.string().min(5),
     fullName: z.string().min(7),
     contactInfo: ContactInfo,
     password: AuthPassword,

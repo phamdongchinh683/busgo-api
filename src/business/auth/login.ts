@@ -5,9 +5,8 @@ import { dal } from '../../database/index.js'
 import { AuthSignInBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
 
-export async function byUsernameEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole) {
+export async function byEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole) {
     const user = await dal.auth.user.query.getOne({
-        username: params.username,
         email: params.email,
         phone: params.phone,
     })
@@ -15,7 +14,6 @@ export async function byUsernameEmailOrPhone(params: AuthSignInBody, role?: Auth
         throw new HttpErr.NotFound(
             user?.status === AuthUserStatus.enum.inactive ? 'USER_INACTIVE' : 'USER_NOT_FOUND',
             {
-                username: params.username,
                 email: params.email,
                 phone: params.phone,
                 status: user?.status,
@@ -34,7 +32,6 @@ export async function byUsernameEmailOrPhone(params: AuthSignInBody, role?: Auth
         throw new HttpErr.NotFound(
             'USER_NOT_FOUND',
             {
-                username: params.username,
                 email: params.email,
                 phone: params.phone,
                 role,

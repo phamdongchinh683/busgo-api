@@ -111,7 +111,6 @@ export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
         })
         .select([
             'u.id',
-            'u.username',
             'u.fullName',
             'u.email',
             'u.phone',

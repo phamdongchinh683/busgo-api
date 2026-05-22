@@ -4,7 +4,6 @@ import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 
 export interface AuthUserTable extends Timestamps {
     id: GeneratedAlways<AuthUserId>
-    username: string
     password: string
     fullName: string
     email: string

@@ -34,7 +34,6 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
     await dal.auth.user.cmd.authUpsertByEmail({
         data: {
             email: userData.email,
-            username: 'facebook_' + utils.random.generateRandomNumber(6).toString(),
             password: utils.password.hashPassword(userData.email),
             fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
             phone: null,

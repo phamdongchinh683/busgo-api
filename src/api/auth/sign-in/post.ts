@@ -13,7 +13,7 @@ api.route({
         },
     },
     handler: async request => {
-        return bus.auth.login.byUsernameEmailOrPhone(request.body)
+        return bus.auth.login.byEmailOrPhone(request.body)
     },
 
     schema: {

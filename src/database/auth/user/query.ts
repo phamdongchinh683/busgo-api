@@ -24,7 +24,6 @@ export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
         })
         .select([
             'u.id',
-            'u.username',
             'u.fullName',
             'u.email',
             'u.phone',
@@ -136,18 +135,16 @@ export async function countAll() {
 }
 
 export function getOne(params: {
-    username?: string
     email?: string
     phone?: string
     id?: AuthUserId
 }) {
-    const { username, email, phone, id } = params
+    const { email, phone, id } = params
     return db
         .selectFrom('auth.user as u')
         .leftJoin('auth.staff_profile', 'u.id', 'auth.staff_profile.userId')
         .select([
             'u.id',
-            'u.username',
             'u.fullName',
             'u.password',
             'u.email',
@@ -162,7 +159,6 @@ export function getOne(params: {
         ])
         .where(eb => {
             const cond = []
-            if (username) cond.push(eb('u.username', '=', username))
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (id) cond.push(eb('u.id', '=', id))
@@ -196,7 +192,6 @@ export function findAll(query: UserListQuery) {
         })
         .select([
             'u.id',
-            'u.username',
             'u.fullName',
             'u.email',
             'u.phone',

@@ -14,7 +14,7 @@ api.route({
         },
     },
     handler: async request => {
-        return bus.auth.login.byUsernameEmailOrPhone(request.body, AuthUserRole.enum.super_admin)
+        return bus.auth.login.byEmailOrPhone(request.body, AuthUserRole.enum.super_admin)
     },
 
     schema: {

@@ -5,7 +5,6 @@ import { utils } from '../../utils/index.js'
 
 export async function register(body: AuthBody, role: AuthUserRole) {
     const data = {
-        username: body.username,
         fullName: body.fullName,
         ...utils.common.parseContactInfo(body.contactInfo),
         password: utils.password.hashPassword(body.password),

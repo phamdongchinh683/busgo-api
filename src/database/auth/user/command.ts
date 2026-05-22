@@ -28,11 +28,6 @@ export async function signUp(params: AuthUserTableInsert) {
         }
     } catch (error) {
         if (error instanceof DatabaseError && error.code === '23505') {
-            if (error.constraint === 'user_username_key')
-                throw new HttpErr.UnprocessableEntity(
-                    `${params.username} has been registered before`,
-                    'USERNAME_ALREADY_EXISTS'
-                )
             if (error.constraint === 'user_email_key')
                 throw new HttpErr.UnprocessableEntity(
                     `${params.email} has been registered before`,
@@ -65,7 +60,6 @@ export async function signUpCompanyAdmin(
         try {
             const newUser = await dal.auth.user.cmd.insertOne(
                 {
-                    username: params.username,
                     fullName: params.fullName,
                     password: params.password,
                     phone,
@@ -94,13 +88,6 @@ export async function signUpCompanyAdmin(
             return newUser
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
-                if (error.constraint === 'user_username_key') {
-                    throw new HttpErr.UnprocessableEntity(
-                        `${params.username} has been registered before`,
-                        'USERNAME_ALREADY_EXISTS'
-                    )
-                }
-
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
                         `${email} has been registered before`,
@@ -157,7 +144,6 @@ export async function createCompanyAccount(
         try {
             const newUser = await dal.auth.user.cmd.insertOne(
                 {
-                    username: params.username,
                     fullName: params.fullName,
                     password: utils.password.hashPassword(params.password),
                     phone: phone,
@@ -195,12 +181,6 @@ export async function createCompanyAccount(
             return newUser
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
-                if (error.constraint === 'user_username_key') {
-                    throw new HttpErr.UnprocessableEntity(
-                        `${params.username} has been registered before`,
-                        'USERNAME_ALREADY_EXISTS'
-                    )
-                }
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
                         `${email} has been registered before`,
@@ -234,7 +214,6 @@ export async function signUpCompanyAdminWithCompany(
         try {
             const newUser = await dal.auth.user.cmd.insertOne(
                 {
-                    username: params.username,
                     fullName: params.fullName,
                     password: utils.password.hashPassword(params.password),
                     phone: phone,
@@ -274,12 +253,6 @@ export async function signUpCompanyAdminWithCompany(
             return newUser
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
-                if (error.constraint === 'user_username_key') {
-                    throw new HttpErr.UnprocessableEntity(
-                        `${params.username} has been registered before`,
-                        'USERNAME_ALREADY_EXISTS'
-                    )
-                }
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
                         `${email} has been registered before`,
@@ -407,12 +380,6 @@ export async function insertDriver(
             }
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
-                if (error.constraint === 'user_username_key') {
-                    throw new HttpErr.UnprocessableEntity(
-                        `${params.username} has been registered before`,
-                        'USERNAME_ALREADY_EXISTS'
-                    )
-                }
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
                         `${params.email} has been registered before`,

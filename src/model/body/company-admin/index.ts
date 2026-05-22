@@ -18,7 +18,6 @@ export type CompanyAdminUpdateBody = z.infer<typeof CompanyAdminUpdateBody>
 
 export const CompanyAdminItemSchema = z.object({
     id: AuthUserId,
-    username: z.string(),
     fullName: z.string(),
     email: Email,
     phone: Phone.nullable(),
