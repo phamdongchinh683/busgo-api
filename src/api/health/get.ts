@@ -5,12 +5,6 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
-    config: {
-        rateLimit: {
-            max: 1,
-            timeWindow: '10m',
-        },
-    },
     handler: async _request => {
         return {
             message: 'OK',
