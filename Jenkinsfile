@@ -39,12 +39,25 @@ pipeline {
             }
         }
 
+        stage('Ensure Core Images') {
+            steps {
+                sh '''
+                    set -e
+
+                    docker image inspect postgres:15 > /dev/null 2>&1 || docker pull postgres:15
+                    docker image inspect redis:7-alpine > /dev/null 2>&1 || docker pull redis:7-alpine
+                    docker image inspect amir20/dozzle:latest > /dev/null 2>&1 || docker pull amir20/dozzle:latest
+                    docker image inspect netdata/netdata:stable > /dev/null 2>&1 || docker pull netdata/netdata:stable
+                '''
+            }
+        }
+
         stage('Ensure Core Services') {
             steps {
                 sh '''
                     set -e
 
-                    docker-compose -f docker-compose.prod.yml up -d db dozzle netdata
+                    docker-compose -f docker-compose.prod.yml up -d --no-recreate db redis dozzle netdata
                 '''
             }
         }
@@ -68,15 +81,34 @@ pipeline {
             }
         }
 
-        stage('Pull API Image') {
-    steps {
-        sh '''
-            set -e
+        stage('Wait Redis') {
+            steps {
+                sh '''
+                    set -e
 
-            IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml pull api1
-        '''
-    }
-}
+                    for i in $(seq 1 30); do
+                        if docker exec redis sh -c 'redis-cli -a "$REDIS_PASSWORD" ping' | grep -q PONG; then
+                            exit 0
+                        fi
+
+                        sleep 2
+                    done
+
+                    echo "Redis is not ready"
+                    exit 1
+                '''
+            }
+        }
+
+        stage('Pull API Image') {
+            steps {
+                sh '''
+                    set -e
+
+                    IMAGE_TAG="${IMAGE_TAG}" docker-compose -f docker-compose.prod.yml pull api1
+                '''
+            }
+        }
 
         stage('Run Migration') {
             steps {
@@ -103,9 +135,8 @@ pipeline {
                 sh '''
                     set -e
 
-                    docker image prune -af > /dev/null 2>&1 || true
+                    docker image prune -f > /dev/null 2>&1 || true
                     docker container prune -f > /dev/null 2>&1 || true
-                    docker builder prune -af > /dev/null 2>&1 || true
                 '''
             }
         }
@@ -116,11 +147,17 @@ pipeline {
             sh '''
                 docker ps || true
 
-                echo "===== API LOGS ====="
-                docker logs --tail=50 api 2>/dev/null || true
+                echo "===== API1 LOGS ====="
+                docker logs --tail=50 api1 2>/dev/null || true
+
+                echo "===== API2 LOGS ====="
+                docker logs --tail=50 api2 2>/dev/null || true
 
                 echo "===== POSTGRES LOGS ====="
                 docker logs --tail=50 postgres 2>/dev/null || true
+
+                echo "===== REDIS LOGS ====="
+                docker logs --tail=50 redis 2>/dev/null || true
             '''
         }
 

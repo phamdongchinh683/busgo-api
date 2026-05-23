@@ -1,38 +1,19 @@
-import type { AuthUserId } from '../../../database/auth/user/type.js'
+import { utils } from '../../../utils/index.js'
 
-type CacheEntry = {
-    expiresAt: number
-    tokenVersion: number
+const TTL_SECONDS = 60
+
+function tokenVersionKey(userId: string) {
+    return `auth:token-version:${userId}`
 }
 
-const cache = new Map<AuthUserId, CacheEntry>()
-
-const cacheTtlMs = Number(60_000)
-const cacheEnabled = Number.isFinite(cacheTtlMs) && cacheTtlMs > 0
-
-export function getTokenVersion(userId: AuthUserId): number | undefined {
-    if (!cacheEnabled) return undefined
-
-    const entry = cache.get(userId)
-    if (!entry) return undefined
-
-    if (Date.now() > entry.expiresAt) {
-        cache.delete(userId)
-        return undefined
-    }
-
-    return entry.tokenVersion
+export async function getCachedTokenVersion(userId: string) {
+    return utils.cache.getCache<number>(tokenVersionKey(userId))
 }
 
-export function rememberTokenVersion(userId: AuthUserId, tokenVersion: number) {
-    if (!cacheEnabled) return
-
-    cache.set(userId, {
-        tokenVersion,
-        expiresAt: Date.now() + cacheTtlMs,
-    })
+export async function setCachedTokenVersion(userId: string, tokenVersion: number) {
+    await utils.cache.setCache(tokenVersionKey(userId), tokenVersion, TTL_SECONDS)
 }
 
-export function forgetTokenVersion(userId: AuthUserId) {
-    cache.delete(userId)
+export async function deleteCachedTokenVersion(userId: string) {
+    await utils.cache.delCache(tokenVersionKey(userId))
 }

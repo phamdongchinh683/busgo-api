@@ -53,6 +53,12 @@ Start PostgreSQL using the production compose file:
 docker compose -f docker-compose.prod.yml up -d db
 ```
 
+Start PostgreSQL and Redis when testing cache or rate-limit behavior:
+
+```bash
+docker compose -f docker-compose.prod.yml up -d db redis
+```
+
 Create a `.env` file in the project root. A minimal local configuration looks
 like this:
 
@@ -63,6 +69,7 @@ HOST=0.0.0.0
 PORT=3000
 DB_URL=postgres://busgo:<password>@localhost:5433/busgo
 JWT_SECRET=<replace-with-a-strong-secret>
+REDIS_URL=redis://:busgo_redis@localhost:6379/0
 ```
 
 Run migrations:
@@ -100,6 +107,7 @@ Secrets should never be committed to the repository.
 | `PORT`                   | Fastify bind port                                                               |
 | `DB_URL`                 | PostgreSQL connection string used by Kysely                                     |
 | `JWT_SECRET`             | Secret used to sign and verify JWT tokens                                       |
+| `REDIS_URL`              | Optional Redis connection string for shared cache, rate limiting, and locks     |
 | `CORS_ORIGIN`            | Optional comma-separated list of allowed origins; defaults to `*`               |
 | `ENABLE_HTTP_DEBUG_LOGS` | Set to `true` to log lightweight request details outside production             |
 
@@ -251,25 +259,34 @@ Run the compose stack:
 IMAGE_TAG=<tag> docker compose -f docker-compose.prod.yml up -d
 ```
 
+Set a Redis password when running the stack outside local development:
+
+```bash
+REDIS_PASSWORD=<strong-password> IMAGE_TAG=<tag> docker compose -f docker-compose.prod.yml up -d
+```
+
 The production compose file includes:
 
-| Service   | Purpose                       |
-| --------- | ----------------------------- |
-| `api`     | BusGo API container           |
-| `db`      | PostgreSQL 15                 |
-| `dozzle`  | Container log viewer          |
-| `netdata` | Host and container monitoring |
+| Service   | Purpose                                  |
+| --------- | ---------------------------------------- |
+| `api1`    | BusGo API container                      |
+| `api2`    | Second BusGo API container               |
+| `db`      | PostgreSQL 15                            |
+| `redis`   | Redis cache                              |
+| `dozzle`  | Container log viewer                     |
+| `netdata` | Host and container monitoring            |
 
-The `api` service reads `.env` through `env_file`. Keep the database
-credentials in `DB_URL` aligned with the PostgreSQL service or the external
-database used by the deployment.
+The API services read `.env` through `env_file`. Keep the database credentials
+in `DB_URL` aligned with the PostgreSQL service or the external database used
+by the deployment. `docker-compose.prod.yml` injects `REDIS_URL` for `api1`
+and `api2`, and stores Redis data in the `redis_data` volume.
 
 `Jenkinsfile` contains a deployment pipeline that:
 
 1. Checks out the `main` branch.
 2. Creates `.env` from Jenkins credentials.
-3. Starts supporting services.
-4. Waits for PostgreSQL.
+3. Pulls and starts supporting services, including Redis.
+4. Waits for PostgreSQL and Redis.
 5. Pulls the API image.
 6. Runs migrations.
 7. Deploys the API container.
@@ -310,6 +327,7 @@ network, staging environment, VPN, or authentication layer.
 | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
 | API fails with `env PORT not found` or `env HOST not found` | Ensure `.env` includes `HOST` and `PORT`                                                             |
 | Cannot connect to PostgreSQL                                | Verify `DB_URL`, database health, and the host port mapping `5433:5432` in `docker-compose.prod.yml` |
+| Cannot connect to Redis                                     | Verify `REDIS_URL`, `REDIS_PASSWORD`, and the host port mapping `6379:6379` in `docker-compose.prod.yml` |
 | PostgreSQL password errors                                  | Ensure the password in `DB_URL` matches the initialized PostgreSQL volume                            |
 | Migrations fail                                             | Compare the migration with the current schema and inspect the Kysely error output                    |
 | 401 or 403 responses                                        | Check JWT validity, token version, user role, and staff profile role requirements                    |

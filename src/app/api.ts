@@ -18,6 +18,7 @@ import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
 import { helmetPlugin } from './plugins/helmet.js'
+import { utils } from '../utils/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -216,7 +217,20 @@ async function registerSwagger() {
             isProduction ? 'public, max-age=300, stale-while-revalidate=600' : 'no-store'
         )
 
-        return swaggerDocument ?? api.swagger()
+        if (!isProduction) {
+            return swaggerDocument ?? api.swagger()
+        }
+
+        const key = `swagger:json:${process.env.IMAGE_TAG || 'latest'}`
+
+        const cached = await utils.cache.getCache<unknown>(key)
+        if (cached) return cached
+
+        const document = swaggerDocument ?? api.swagger()
+
+        void utils.cache.setCache(key, document, 600)
+
+        return document
     })
 }
 

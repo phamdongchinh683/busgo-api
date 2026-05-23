@@ -3,8 +3,7 @@ import { createSigner, createVerifier } from 'fast-jwt'
 import { Unauthorized } from '../../error-type.js'
 import { HttpErr } from '../../index.js'
 import { db } from '../../../datasource/db.js'
-import { getTokenVersion, rememberTokenVersion } from './token-version-cache.js'
-
+import { getCachedTokenVersion, setCachedTokenVersion } from './token-version-cache.js'
 const sign = createSigner({
     algorithm: 'HS256',
     expiresIn: `30days`,
@@ -44,8 +43,9 @@ const verifyToken = async (headers: Headers): Promise<any | null> => {
         throw new Unauthorized('Invalid token payload')
     }
 
-    const cachedTokenVersion = getTokenVersion(userInfo.id)
-    if (cachedTokenVersion !== undefined && cachedTokenVersion === userInfo.tokenVersion) {
+    const cachedTokenVersion = await getCachedTokenVersion(userInfo.id)
+
+    if (cachedTokenVersion !== null && cachedTokenVersion === userInfo.tokenVersion) {
         return userInfo
     }
 
@@ -59,7 +59,7 @@ const verifyToken = async (headers: Headers): Promise<any | null> => {
         throw new Unauthorized('Token expired')
     }
 
-    rememberTokenVersion(userInfo.id, user.tokenVersion)
+    void setCachedTokenVersion(userInfo.id, user.tokenVersion)
 
     return userInfo
 }

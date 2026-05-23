@@ -8,12 +8,15 @@ services:
     mem_limit: 768m
     env_file:
       - .env
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD:-busgo_redis}@redis:6379/0
     ports:
       - "127.0.0.1:3001:3000"
     networks:
       - internal-net
     depends_on:
       - db
+      - redis
 
   api2:
     image: phamdongchinh683/busgo-api:${IMAGE_TAG:-latest}
@@ -24,12 +27,15 @@ services:
     mem_limit: 768m
     env_file:
       - .env
+    environment:
+      REDIS_URL: redis://:${REDIS_PASSWORD:-busgo_redis}@redis:6379/0
     ports:
       - "127.0.0.1:3002:3000"
     networks:
       - internal-net
     depends_on:
       - db
+      - redis
 
   db:
     image: postgres:15
@@ -46,6 +52,37 @@ services:
       - internal-net
     ports:
       - "5433:5432"
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    labels:
+      - "app=busgo-api"
+    restart: unless-stopped
+    mem_limit: 512m
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-busgo_redis}
+    command:
+      - redis-server
+      - --appendonly
+      - "yes"
+      - --requirepass
+      - ${REDIS_PASSWORD:-busgo_redis}
+      - --maxmemory
+      - 384mb
+      - --maxmemory-policy
+      - allkeys-lru
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - internal-net
 
   dozzle:
     image: amir20/dozzle:latest
@@ -81,6 +118,7 @@ services:
 
 volumes:
   db_data:
+  redis_data:
   netdata_config:
   netdata_lib:
   netdata_cache:
