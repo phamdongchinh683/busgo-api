@@ -6,12 +6,19 @@ import { BusCompanyListQuery } from '../../model/query/bus-company/index.js'
 import { OrganizationBusCompanyTableUpdate } from '../../database/organization/bus_company/table.js'
 
 export async function list(query: BusCompanyListQuery) {
-    const result = await dal.organization.busCompany.query.findAll(query)
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
-    return {
-        companies: data,
-        next: next,
-    }
+    return utils.cache.cacheQuery({
+        prefix: 'bus-company:list',
+        query,
+        ttl: 3600,
+        queryFn: async () => {
+            const result = await dal.organization.busCompany.query.findAll(query)
+            const { data, next } = utils.common.paginateByCursor(result, query.limit)
+            return {
+                companies: data,
+                next: next,
+            }
+        },
+    })
 }
 
 export async function createOne(body: BusCompanyBody) {

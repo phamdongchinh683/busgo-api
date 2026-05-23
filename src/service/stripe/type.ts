@@ -1,13 +1,13 @@
 import { z } from 'zod'
 import { PaymentCustomerPaymentMethodId } from '../../database/payment/customer_payment_method/type.js'
 
-export const StripeStatusReponse = z.object({
+export const StripeStatusResponse = z.object({
     chargesEnabled: z.boolean(),
     payoutsEnabled: z.boolean(),
     currentlyDue: z.array(z.string()),
 })
 
-export type StripeStatusReponse = z.infer<typeof StripeStatusReponse>
+export type StripeStatusResponse = z.infer<typeof StripeStatusResponse>
 
 export const StripeAttachPaymentMethodRequest = z.object({
     paymentMethodId: z.string(),

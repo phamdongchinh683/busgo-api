@@ -1,18 +1,35 @@
+import { sql } from 'kysely'
+
 import { db } from '../../../datasource/db.js'
 import { TripSeatParam } from '../../../model/params/trip/index.js'
 import { OperationTripId } from '../../operation/trip/type.js'
 import { OrganizationVehicleId } from '../vehicle/type.js'
 import { OrganizationSeatTableInsert } from './table.js'
 import { SeatCreateBody } from '../../../model/body/seat/index.js'
+import { OrganizationSeatType } from './type.js'
 
-// 24 seats: row A 1->12 (1A..12A), row B 1->12 (1B..12B). 36 seats: row A 1->18 (1A..18A), row B 1->18 (1B..18B).
-function seatLabels(count: 24 | 36): string[] {
-    const perRow = count === 24 ? 12 : 18
-    const rows = ['A', 'B'] as const
-    const labels: string[] = []
-    for (const row of rows) {
-        for (let n = 1; n <= perRow; n++) labels.push(`${n}${row}`)
+type SeatLabel = {
+    seatNumber: string
+    type: OrganizationSeatType
+}
+
+function seatLabels(count: 24 | 36): SeatLabel[] {
+    const perFloor = count / 2
+    const floors = [
+        { suffix: 'A', type: 1 },
+        { suffix: 'B', type: 2 },
+    ] as const
+    const labels: SeatLabel[] = []
+
+    for (const floor of floors) {
+        for (let n = 1; n <= perFloor; n++) {
+            labels.push({
+                seatNumber: `${n}${floor.suffix}`,
+                type: floor.type,
+            })
+        }
     }
+
     return labels
 }
 
@@ -20,7 +37,10 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
     return db
         .selectFrom('organization.seat as s')
         .where('s.vehicleId', '=', vehicleId)
-        .select(['s.id', 's.seatNumber'])
+        .select(['s.id', 's.seatNumber', 's.type'])
+        .orderBy('s.type', 'asc')
+        .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
+        .orderBy('s.seatNumber', 'asc')
         .execute()
 }
 
@@ -62,13 +82,15 @@ export async function getAvailableSeats(params: TripSeatParam) {
 
     return db
         .selectFrom('organization.seat as s')
-        .select(['s.id', 's.seatNumber'])
+        .select(['s.id', 's.seatNumber', 's.type'])
         .where(eb => {
             const cond = []
             cond.push(eb('s.vehicleId', '=', vehicleId))
             cond.push(eb('s.id', 'not in', getOccupiedSeatsSubQuery(params)))
             return eb.and(cond)
         })
+        .orderBy('s.type', 'asc')
+        .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
         .orderBy('s.seatNumber')
         .execute()
 }
@@ -77,9 +99,10 @@ export async function createOne(body: SeatCreateBody) {
     const { vehicleId, seatCount } = body
     const count = Number(seatCount) as 24 | 36
     const labels = seatLabels(count)
-    const values: OrganizationSeatTableInsert[] = labels.map(seatNumber => ({
+    const values: OrganizationSeatTableInsert[] = labels.map(({ seatNumber, type }) => ({
         vehicleId,
         seatNumber,
+        type,
     }))
     return db.insertInto('organization.seat').values(values).returningAll().execute()
 }

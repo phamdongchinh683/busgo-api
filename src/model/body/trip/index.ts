@@ -4,7 +4,10 @@ import {
     OrganizationVehicleId,
     OrganizationVehicleType,
 } from '../../../database/organization/vehicle/type.js'
-import { OrganizationSeatId } from '../../../database/organization/seat/type.js'
+import {
+    OrganizationSeatId,
+    OrganizationSeatType,
+} from '../../../database/organization/seat/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
@@ -78,6 +81,7 @@ export const TripSeatResponse = z.object({
         z.object({
             id: OrganizationSeatId,
             seatNumber: z.string(),
+            type: OrganizationSeatType,
         })
     ),
 })

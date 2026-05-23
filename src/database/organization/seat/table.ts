@@ -1,12 +1,13 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { OrganizationSeatId } from './type.js'
+import { OrganizationSeatId, OrganizationSeatType } from './type.js'
 import { OrganizationVehicleId } from '../vehicle/type.js'
 
 export interface OrganizationSeatTable extends Timestamps {
     id: GeneratedAlways<OrganizationSeatId>
     vehicleId: OrganizationVehicleId
     seatNumber: string
+    type: OrganizationSeatType
 }
 
 export type OrganizationSeatTableInsert = Insertable<OrganizationSeatTable>

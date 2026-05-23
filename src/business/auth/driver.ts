@@ -22,7 +22,6 @@ export async function register(
 }
 
 export async function getDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {
-    
     return utils.cache.cacheQuery({
         prefix: `driver:list:${companyId}`,
         query,

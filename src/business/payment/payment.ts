@@ -15,6 +15,7 @@ import {
 } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
 import { UserInfo } from '../../model/common.js'
+import { StripeStatusResponse } from '../../service/stripe/type.js'
 
 const vnpayClientReturnUrl = process.env.VNPAY_CLIENT_RETURN_URL ?? ''
 
@@ -196,14 +197,34 @@ export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
     return service.excel.buildCompanyRevenueYearlySheet(rows, meta)
 }
 
-export async function stripeStatus(p: UserInfo) {
-    const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId ?? '')
+export async function stripeStatus(p: UserInfo): Promise<StripeStatusResponse> {
+    const key = `stripe:account-status:${p.id}`
 
-    return {
+    const cached = await utils.cache.getCache<StripeStatusResponse>(key)
+
+    if (cached) {
+        return cached
+    }
+
+    if (!p.accountStripeId) {
+        return {
+            chargesEnabled: false,
+            payoutsEnabled: false,
+            currentlyDue: [],
+        }
+    }
+
+    const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId)
+
+    const response: StripeStatusResponse = {
         chargesEnabled: result.charges_enabled,
         payoutsEnabled: result.payouts_enabled,
         currentlyDue: result.requirements?.currently_due ?? [],
     }
+
+    void utils.cache.setCache(key, response, 60)
+
+    return response
 }
 
 async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {

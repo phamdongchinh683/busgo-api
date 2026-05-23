@@ -11,22 +11,32 @@ export async function createOne(createdBy: AuthUserId, body: PromotionNewsBody) 
         createdBy,
     })
 
+    utils.cache.delCacheByPattern('promotion-new:list:*')
+
     return { item: result }
 }
 
 export async function list(query: PromotionNewsListQuery) {
-    const result = await dal.booking.promotionNews.query.findAll(query)
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
+    return utils.cache.cacheQuery({
+        prefix: 'promotion-new:list',
+        query,
+        ttl: 3600,
+        queryFn: async () => {
+            const result = await dal.booking.promotionNews.query.findAll(query)
+            const { data, next } = utils.common.paginateByCursor(result, query.limit)
 
-    return {
-        items: data,
-        next,
-    }
+            return {
+                items: data,
+                next,
+            }
+        },
+    })
 }
 
 export async function updateOne(params: { id: BookingPromotionNewsId; body: PromotionNewsBody }) {
     const { id, body } = params
     await dal.booking.promotionNews.cmd.updateOne(id, body)
 
+    utils.cache.delCacheByPattern('promotion-new:list:*')
     return { message: 'OK' }
 }

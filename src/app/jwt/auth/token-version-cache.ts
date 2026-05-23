@@ -1,6 +1,6 @@
 import { utils } from '../../../utils/index.js'
 
-const TTL_SECONDS = 60
+const TTL_SECONDS = 3600
 
 function tokenVersionKey(userId: string) {
     return `auth:token-version:${userId}`

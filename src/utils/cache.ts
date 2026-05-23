@@ -1,6 +1,5 @@
 import { redis } from '../datasource/redis.js'
 import crypto from 'crypto'
-import { utils } from './index.js'
 
 export function cacheKey(prefix: string, payload: unknown) {
     const hash = crypto.createHash('sha1').update(JSON.stringify(payload)).digest('hex')
@@ -40,7 +39,7 @@ type CacheQueryOptions<T> = {
 export async function cacheQuery<T>({
     prefix,
     query,
-    ttl = 60,
+    ttl,
     queryFn,
 }: CacheQueryOptions<T>): Promise<T> {
     const key = cacheKey(prefix, query)
