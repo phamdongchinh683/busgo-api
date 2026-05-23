@@ -1,6 +1,9 @@
 import { dal } from '../../database/index.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
-import { BusCompanyReviewBody } from '../../model/body/review/index.js'
+import {
+    BusCompanyReviewBody,
+    BusCompanyReviewListResponse,
+} from '../../model/body/review/index.js'
 import { utils } from '../../utils/index.js'
 import { BusCompanyReviewFilter } from '../../model/query/review/index.js'
 
@@ -20,10 +23,24 @@ export async function insertOne(params: { userId: AuthUserId; body: BusCompanyRe
 }
 
 export async function getReviewByCompany(query: BusCompanyReviewFilter) {
-    const result = await dal.organization.busCompanyReview.query.findAllByCompany(query)
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
-    return {
-        comments: data,
-        next: next,
+    const key = utils.cache.cacheKey('bus-company-review:list', query)
+
+    const cached = await utils.cache.getCache<BusCompanyReviewListResponse>(key)
+
+    if (cached) {
+        return cached
     }
+
+    const result = await dal.organization.busCompanyReview.query.findAllByCompany(query)
+
+    const { data, next } = utils.common.paginateByCursor(result, query.limit)
+
+    const response = {
+        comments: data,
+        next,
+    }
+
+    void utils.cache.setCache(key, response, 60)
+
+    return response
 }

@@ -3,47 +3,51 @@ import { dal } from '../../database/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripScheduleId } from '../../database/operation/trip-schedule/type.js'
-import { TripScheduleBody, TripScheduleResponse, TripScheduleUpdateBody } from '../../model/body/trip-schedule/index.js'
+import { TripScheduleBody, TripScheduleUpdateBody } from '../../model/body/trip-schedule/index.js'
 import { UserInfo } from '../../model/common.js'
 import { HttpErr } from '../../app/index.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
 
 export async function getTripSchedules(query: TripScheduleFilter) {
-    const key = utils.cache.cacheKey('trip-schedule:list', query)
+    return utils.cache.cacheQuery({
+        prefix: 'trip-schedule:list',
+        query,
+        ttl: 3600,
+        queryFn: async () => {
+            const tripSchedules = await dal.operation.tripSchedule.cmd.getTripSchedules(query)
 
-    
-    const cached = await utils.cache.getCache<TripScheduleResponse>(key)
+            const { data, next } = utils.common.paginateByCursor(tripSchedules, query.limit)
 
-    if (cached) {
-        return cached
-    }
-
-    const tripSchedules = await dal.operation.tripSchedule.cmd.getTripSchedules(query)
-
-    const { data, next } = utils.common.paginateByCursor(tripSchedules, query.limit)
-
-    const response = {
-        trip: data,
-        next,
-    }
-
-    void utils.cache.setCache(key, response, 60)
-
-    return response
+            return {
+                trip: data,
+                next,
+            }
+        },
+    })
 }
 
 export async function getTripSchedulesByCompanyId(
     query: TripScheduleFilter,
     companyId: OrganizationBusCompanyId
 ) {
-    const tripSchedules = await dal.operation.tripSchedule.query.findAllByFilter(query, companyId)
+    return utils.cache.cacheQuery({
+        prefix: `trip-schedule:list:${companyId}`,
+        query,
+        ttl: 3600,
+        queryFn: async () => {
+            const tripSchedules = await dal.operation.tripSchedule.query.findAllByFilter(
+                query,
+                companyId
+            )
 
-    const { data, next } = utils.common.paginateByCursor(tripSchedules, query.limit)
+            const { data, next } = utils.common.paginateByCursor(tripSchedules, query.limit)
 
-    return {
-        trip: data,
-        next: next,
-    }
+            return {
+                trip: data,
+                next: next,
+            }
+        },
+    })
 }
 
 export async function updateTripSchedule(params: {
@@ -51,6 +55,7 @@ export async function updateTripSchedule(params: {
     companyId: OrganizationBusCompanyId
     body: TripScheduleUpdateBody
 }) {
+    await utils.cache.delCacheByPattern('trip-schedule:list:*')
     return {
         tripSchedule: await dal.operation.tripSchedule.cmd.updateOneById(params),
     }

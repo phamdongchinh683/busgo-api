@@ -322,7 +322,7 @@ export async function incrementTokenVersion(userId: AuthUserId, trx?: Transactio
         .returningAll()
         .executeTakeFirstOrThrow()
 
-    utils.cache.delCacheByPattern(`auth:token-version:${userId}`)
+    utils.cache.delCache(`auth:token-version:${userId}`)
 
     return user
 }

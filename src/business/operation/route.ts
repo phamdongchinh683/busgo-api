@@ -7,6 +7,7 @@ import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OperationRouteBody } from '../../model/body/route/index.js'
 import { RouteFilter } from '../../model/query/route/index.js'
 import { utils } from '../../utils/index.js'
+import { OperationRoutesResponse } from '../../model/body/route/index.js'
 
 export async function getRouterByTripId(params: { driverId: AuthUserId; tripId: OperationTripId }) {
     const { driverId, tripId } = params
@@ -25,14 +26,21 @@ export async function createRoute(params: { body: OperationRouteBody }) {
 }
 
 export async function getRoutes(q: RouteFilter) {
-    const routes = await dal.operation.route.query.findAll(q)
+    return utils.cache.cacheQuery({
+        prefix: 'route:list',
+        query: q,
+        ttl: 3600,
+        queryFn: async () => {
+            const routes = await dal.operation.route.query.findAll(q)
 
-    const { data, next } = utils.common.paginateByCursor(routes, q.limit)
+            const { data, next } = utils.common.paginateByCursor(routes, q.limit)
 
-    return {
-        routes: data,
-        next: next,
-    }
+            return {
+                routes: data,
+                next,
+            }
+        },
+    })
 }
 
 export async function updateRoute(params: {
@@ -42,6 +50,8 @@ export async function updateRoute(params: {
     const { id, body } = params
 
     const data = _.omitBy(body, v => _.isNil(v)) as OperationRouteTableUpdate
+
+    await utils.cache.delCacheByPattern('route:list:*')
 
     return {
         route: await dal.operation.route.cmd.updateOneById({ id, body: data }),

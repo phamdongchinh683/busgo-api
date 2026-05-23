@@ -22,10 +22,18 @@ export async function register(
 }
 
 export async function getDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {
-    const drivers = await dal.auth.user.query.findAllDrivers(query, companyId)
-    const { data, next } = utils.common.paginateByCursor(drivers, query.limit)
-    return {
-        drivers: data,
-        next: next,
-    }
+    
+    return utils.cache.cacheQuery({
+        prefix: `driver:list:${companyId}`,
+        query,
+        ttl: 3600,
+        queryFn: async () => {
+            const drivers = await dal.auth.user.query.findAllDrivers(query, companyId)
+            const { data, next } = utils.common.paginateByCursor(drivers, query.limit)
+            return {
+                drivers: data,
+                next: next,
+            }
+        },
+    })
 }

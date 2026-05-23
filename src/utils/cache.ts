@@ -1,5 +1,6 @@
 import { redis } from '../datasource/redis.js'
 import crypto from 'crypto'
+import { utils } from './index.js'
 
 export function cacheKey(prefix: string, payload: unknown) {
     const hash = crypto.createHash('sha1').update(JSON.stringify(payload)).digest('hex')
@@ -27,4 +28,32 @@ export async function delCacheByPattern(pattern: string) {
     if (keys.length > 0) {
         await redis.del(...keys)
     }
+}
+
+type CacheQueryOptions<T> = {
+    prefix: string
+    query: unknown
+    ttl?: number
+    queryFn: () => Promise<T>
+}
+
+export async function cacheQuery<T>({
+    prefix,
+    query,
+    ttl = 60,
+    queryFn,
+}: CacheQueryOptions<T>): Promise<T> {
+    const key = cacheKey(prefix, query)
+
+    const cached = await getCache<T>(key)
+
+    if (cached) {
+        return cached
+    }
+
+    const data = await queryFn()
+
+    void setCache(key, data, ttl)
+
+    return data
 }
