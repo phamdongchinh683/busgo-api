@@ -7,7 +7,6 @@ import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OperationRouteBody } from '../../model/body/route/index.js'
 import { RouteFilter } from '../../model/query/route/index.js'
 import { utils } from '../../utils/index.js'
-import { OperationRoutesResponse } from '../../model/body/route/index.js'
 
 export async function getRouterByTripId(params: { driverId: AuthUserId; tripId: OperationTripId }) {
     const { driverId, tripId } = params
