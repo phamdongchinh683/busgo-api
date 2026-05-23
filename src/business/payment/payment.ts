@@ -16,6 +16,8 @@ import {
 import { FastifyReply } from 'fastify'
 import { UserInfo } from '../../model/common.js'
 
+const vnpayClientReturnUrl = process.env.VNPAY_CLIENT_RETURN_URL ?? ''
+
 async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
 
@@ -98,7 +100,7 @@ export async function createVnpayPayment(params: PaymentMethodRequest, ip: strin
     }
 }
 
-export async function vnpayIpn(query: Record<string, string>, reply: FastifyReply) {
+async function confirmVnpayPayment(query: Record<string, string>) {
     const vnpParams = service.vnpay.verify.verifyIpn(query)
 
     if ('RspCode' in vnpParams) {
@@ -139,6 +141,24 @@ export async function vnpayIpn(query: Record<string, string>, reply: FastifyRepl
         )
         return { RspCode: '00', Message: 'Confirm Success' }
     })
+}
+
+export async function vnpayReturn(query: Record<string, string>, reply: FastifyReply) {
+    const result = await confirmVnpayPayment(query)
+    if (!vnpayClientReturnUrl) {
+        return result
+    }
+
+    const redirectUrl = new URL(vnpayClientReturnUrl)
+    redirectUrl.searchParams.set('status', result.RspCode === '00' ? 'success' : 'failed')
+    redirectUrl.searchParams.set('code', result.RspCode ?? '99')
+    redirectUrl.searchParams.set('message', result.Message ?? '')
+
+    if (query.vnp_TxnRef) {
+        redirectUrl.searchParams.set('transactionCode', query.vnp_TxnRef)
+    }
+
+    return reply.redirect(redirectUrl.toString())
 }
 
 export async function getPayments(q: PaymentFilter, companyId: OrganizationBusCompanyId) {
