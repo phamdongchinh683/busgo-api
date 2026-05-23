@@ -3,19 +3,33 @@ import { dal } from '../../database/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripScheduleId } from '../../database/operation/trip-schedule/type.js'
-import { TripScheduleBody, TripScheduleUpdateBody } from '../../model/body/trip-schedule/index.js'
+import { TripScheduleBody, TripScheduleResponse, TripScheduleUpdateBody } from '../../model/body/trip-schedule/index.js'
 import { UserInfo } from '../../model/common.js'
 import { HttpErr } from '../../app/index.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
 
 export async function getTripSchedules(query: TripScheduleFilter) {
+    const key = utils.cache.cacheKey('trip-schedule:list', query)
+
+    
+    const cached = await utils.cache.getCache<TripScheduleResponse>(key)
+
+    if (cached) {
+        return cached
+    }
+
     const tripSchedules = await dal.operation.tripSchedule.cmd.getTripSchedules(query)
+
     const { data, next } = utils.common.paginateByCursor(tripSchedules, query.limit)
 
-    return {
+    const response = {
         trip: data,
-        next: next,
+        next,
     }
+
+    void utils.cache.setCache(key, response, 60)
+
+    return response
 }
 
 export async function getTripSchedulesByCompanyId(
@@ -46,6 +60,8 @@ export async function createTripSchedule(params: { body: TripScheduleBody; user:
     if (!params.user.companyId || params.user.companyId !== params.body.companyId) {
         throw new HttpErr.Forbidden('You are not allowed to create trip schedule for this company')
     }
+
+    await utils.cache.delCacheByPattern('trip-schedule:list:*')
 
     return {
         tripSchedule: await dal.operation.tripSchedule.cmd.upsertOne(params.body),

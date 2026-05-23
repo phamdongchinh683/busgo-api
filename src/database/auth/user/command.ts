@@ -1,10 +1,6 @@
 import { AuthUserTableInsert, AuthUserTableUpdate } from './table.js'
 import { dal } from '../../index.js'
 import { HttpErr } from '../../../app/index.js'
-import {
-    forgetTokenVersion,
-    rememberTokenVersion,
-} from '../../../app/jwt/auth/token-version-cache.js'
 import { DatabaseError } from 'pg'
 import { generateToken } from '../../../app/jwt/auth/handler.js'
 import { db } from '../../../datasource/db.js'
@@ -288,7 +284,7 @@ export async function updateOne(
         .executeTakeFirstOrThrow()
 
     if (params.tokenVersion !== undefined) {
-        rememberTokenVersion(userId, user.tokenVersion)
+        utils.cache.delCacheByPattern(`auth:token-version:${userId}`)
     }
 
     return user
@@ -326,7 +322,7 @@ export async function incrementTokenVersion(userId: AuthUserId, trx?: Transactio
         .returningAll()
         .executeTakeFirstOrThrow()
 
-    rememberTokenVersion(userId, user.tokenVersion)
+    utils.cache.delCacheByPattern(`auth:token-version:${userId}`)
 
     return user
 }
@@ -338,7 +334,7 @@ export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>)
         .returningAll()
         .executeTakeFirstOrThrow()
 
-    forgetTokenVersion(userId)
+    utils.cache.delCacheByPattern(`auth:token-version:${userId}`)
 
     return user
 }
