@@ -143,6 +143,7 @@ export function getOne(params: {
     return db
         .selectFrom('auth.user as u')
         .leftJoin('auth.staff_profile', 'u.id', 'auth.staff_profile.userId')
+        .leftJoin('organization.company_driver', 'u.id', 'organization.company_driver.userId')
         .select([
             'u.id',
             'u.fullName',
@@ -156,6 +157,7 @@ export function getOne(params: {
             'u.lastChangeContact',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
+            'organization.company_driver.companyId as driverCompanyId',
         ])
         .where(eb => {
             const cond = []
