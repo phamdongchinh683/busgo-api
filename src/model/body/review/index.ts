@@ -15,7 +15,6 @@ export const BusCompanyReviewItemResponse = z.object({
     reviewerName: z.string(),
     rating: z.number().min(1).max(5),
     comment: z.string().nullable(),
-    createdAt: z.date(),
 })
 
 export type BusCompanyReviewItemResponse = z.infer<typeof BusCompanyReviewItemResponse>

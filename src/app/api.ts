@@ -224,7 +224,7 @@ async function registerSwagger() {
         const key = `swagger:json:${process.env.IMAGE_TAG || 'latest'}`
 
         const cached = await utils.cache.getCache<unknown>(key)
-        if (cached) return cached
+        if (cached !== null) return cached
 
         const document = swaggerDocument ?? api.swagger()
 

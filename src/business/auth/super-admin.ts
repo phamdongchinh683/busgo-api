@@ -45,8 +45,11 @@ export async function createCompanyAdmin(body: CompanyAdminCreateBody) {
 }
 
 export async function updateOne(id: AuthUserId, body: UserUpdateBody) {
+    const user = await dal.auth.user.cmd.updateOne(id, body)
+    await utils.cache.delCacheByPattern('driver:list:*')
+
     return {
-        user: await dal.auth.user.cmd.updateOne(id, body),
+        user,
     }
 }
 
@@ -83,6 +86,8 @@ export async function createUser(body: UserBody) {
 
 export async function deleteOne(id: AuthUserId) {
     const user = await dal.auth.user.cmd.deleteOne(id)
+    await utils.cache.delCacheByPattern('driver:list:*')
+
     return {
         message: 'OK',
         user: user,
@@ -100,6 +105,9 @@ export async function verifyAccount(params: {
     companyId?: OrganizationBusCompanyId | null
 }) {
     await dal.auth.user.cmd.verify(params)
+    await utils.cache.delCacheByPattern(
+        params.companyId ? `driver:list:${params.companyId}:*` : 'driver:list:*'
+    )
 
     return {
         message: 'OK',

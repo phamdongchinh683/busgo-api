@@ -25,9 +25,11 @@ export async function getVehicles(query: VehicleFilter, companyId: OrganizationB
 }
 
 export async function createVehicle(params: OrganizationVehicleTableInsert) {
-    utils.cache.delCache(`vehicle:list:${params.companyId}`)
+    const vehicle = await dal.organization.vehicle.cmd.createOrganizationVehicle(params)
+    await utils.cache.delCacheByPattern(`vehicle:list:${params.companyId}:*`)
+
     return {
-        vehicle: await dal.organization.vehicle.cmd.createOrganizationVehicle(params),
+        vehicle,
     }
 }
 
@@ -35,8 +37,11 @@ export async function updateVehicle(
     id: OrganizationVehicleId,
     params: OrganizationVehicleTableUpdate
 ) {
-    utils.cache.delCache(`vehicle:list:${params.companyId}`)
+    const vehicle = await dal.organization.vehicle.cmd.updateOrganizationVehicle(id, params)
+
+    await utils.cache.delCacheByPattern(`vehicle:list:${vehicle.companyId}:*`)
+
     return {
-        vehicle: await dal.organization.vehicle.cmd.updateOrganizationVehicle(id, params),
+        vehicle,
     }
 }

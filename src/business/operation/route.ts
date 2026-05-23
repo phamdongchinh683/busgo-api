@@ -18,9 +18,12 @@ export async function getRouterByTripId(params: { driverId: AuthUserId; tripId: 
 
 export async function createRoute(params: { body: OperationRouteBody }) {
     const { body } = params
+    const route = await dal.operation.route.cmd.createRoute(body)
+
+    await utils.cache.delCacheByPattern('route:list:*')
 
     return {
-        route: await dal.operation.route.cmd.createRoute(body),
+        route,
     }
 }
 
@@ -50,9 +53,14 @@ export async function updateRoute(params: {
 
     const data = _.omitBy(body, v => _.isNil(v)) as OperationRouteTableUpdate
 
-    await utils.cache.delCacheByPattern('route:list:*')
+    const route = await dal.operation.route.cmd.updateOneById({ id, body: data })
+
+    await Promise.all([
+        utils.cache.delCacheByPattern('route:list:*'),
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+    ])
 
     return {
-        route: await dal.operation.route.cmd.updateOneById({ id, body: data }),
+        route,
     }
 }

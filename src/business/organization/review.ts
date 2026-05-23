@@ -1,9 +1,6 @@
 import { dal } from '../../database/index.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
-import {
-    BusCompanyReviewBody,
-    BusCompanyReviewListResponse,
-} from '../../model/body/review/index.js'
+import { BusCompanyReviewBody } from '../../model/body/review/index.js'
 import { utils } from '../../utils/index.js'
 import { BusCompanyReviewFilter } from '../../model/query/review/index.js'
 
@@ -19,28 +16,29 @@ export async function insertOne(params: { userId: AuthUserId; body: BusCompanyRe
         comment: body.comment ?? null,
     })
 
+    await Promise.all([
+        utils.cache.delCacheByPattern(`bus-company-review:list:${trip.companyId}:*`),
+        utils.cache.delCacheByPattern('bus-company:list:*'),
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+    ])
+
     return { message: 'OK' }
 }
 
 export async function getReviewByCompany(query: BusCompanyReviewFilter) {
-    const key = utils.cache.cacheKey('bus-company-review:list', query)
+    return utils.cache.cacheQuery({
+        prefix: `bus-company-review:list:${query.companyId}`,
+        query,
+        ttl: 3600,
+        queryFn: async () => {
+            const result = await dal.organization.busCompanyReview.query.findAllByCompany(query)
 
-    const cached = await utils.cache.getCache<BusCompanyReviewListResponse>(key)
+            const { data, next } = utils.common.paginateByCursor(result, query.limit)
 
-    if (cached) {
-        return cached
-    }
-
-    const result = await dal.organization.busCompanyReview.query.findAllByCompany(query)
-
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
-
-    const response = {
-        comments: data,
-        next,
-    }
-
-    void utils.cache.setCache(key, response, 60)
-
-    return response
+            return {
+                comments: data,
+                next,
+            }
+        },
+    })
 }

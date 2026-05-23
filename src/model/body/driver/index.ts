@@ -16,8 +16,8 @@ export type DriverResponse = z.infer<typeof DriverResponse>
 export const DriverListResponse = z.object({
     drivers: z.array(
         DriverResponse.extend({
-            cancelledTripCount: z.number().nullable(),
-            completedTripCount: z.number().nullable(),
+            cancelledTripCount: z.number(),
+            completedTripCount: z.number(),
         })
     ),
     next: AuthUserId.nullable(),

@@ -7,6 +7,7 @@ import { TripScheduleBody, TripScheduleUpdateBody } from '../../model/body/trip-
 import { UserInfo } from '../../model/common.js'
 import { HttpErr } from '../../app/index.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
+import { TripStopPickUpItem } from '../../model/body/trip/index.js'
 
 export async function getTripSchedules(query: TripScheduleFilter) {
     return utils.cache.cacheQuery({
@@ -55,9 +56,15 @@ export async function updateTripSchedule(params: {
     companyId: OrganizationBusCompanyId
     body: TripScheduleUpdateBody
 }) {
-    await utils.cache.delCacheByPattern('trip-schedule:list:*')
+    const tripSchedule = await dal.operation.tripSchedule.cmd.updateOneById(params)
+
+    await Promise.all([
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        utils.cache.delCache(`trip-schedule:pickup-stops:${params.id}`),
+    ])
+
     return {
-        tripSchedule: await dal.operation.tripSchedule.cmd.updateOneById(params),
+        tripSchedule,
     }
 }
 
@@ -66,16 +73,32 @@ export async function createTripSchedule(params: { body: TripScheduleBody; user:
         throw new HttpErr.Forbidden('You are not allowed to create trip schedule for this company')
     }
 
+    const tripSchedule = await dal.operation.tripSchedule.cmd.upsertOne(params.body)
+
     await utils.cache.delCacheByPattern('trip-schedule:list:*')
 
     return {
-        tripSchedule: await dal.operation.tripSchedule.cmd.upsertOne(params.body),
+        tripSchedule,
     }
 }
 
 export async function getPickupStops(id: OperationTripScheduleId) {
+    const cacheKey = `trip-schedule:pickup-stops:${id}`
+
+    const cached = await utils.cache.getCache<TripStopPickUpItem[]>(cacheKey)
+
+    if (cached !== null) {
+        return {
+            tripStops: cached,
+        }
+    }
+
+    const tripStops = await dal.operation.tripSchedule.cmd.findAllPickupStop(id)
+
+    await utils.cache.setCache(cacheKey, tripStops, 60 * 5)
+
     return {
-        tripStops: await dal.operation.tripSchedule.cmd.findAllPickupStop(id),
+        tripStops,
     }
 }
 
@@ -94,7 +117,14 @@ export async function getDropoffStops(
 }
 
 export async function deleteTripSchedule(params: { id: OperationTripScheduleId }) {
+    const tripSchedule = await dal.operation.tripSchedule.cmd.deleteOneById(params.id)
+
+    await Promise.all([
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        utils.cache.delCache(`trip-schedule:pickup-stops:${params.id}`),
+    ])
+
     return {
-        tripSchedule: await dal.operation.tripSchedule.cmd.deleteOneById(params.id),
+        tripSchedule,
     }
 }

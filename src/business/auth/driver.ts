@@ -18,7 +18,11 @@ export async function register(
         status: AuthUserStatus.enum.inactive,
     }
 
-    return dal.auth.user.cmd.insertDriver(data, companyId)
+    const result = await dal.auth.user.cmd.insertDriver(data, companyId)
+
+    await utils.cache.delCacheByPattern(`driver:list:${companyId}:*`)
+
+    return result
 }
 
 export async function getDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {

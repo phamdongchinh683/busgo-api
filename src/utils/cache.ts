@@ -1,31 +1,89 @@
 import { redis } from '../datasource/redis.js'
 import crypto from 'crypto'
 
+function normalizePayload(value: unknown): unknown {
+    if (typeof value === 'bigint') return value.toString()
+    if (value === null || typeof value !== 'object') return value
+    if (value instanceof Date) return value.toISOString()
+    if (Array.isArray(value)) return value.map(normalizePayload)
+
+    return Object.keys(value as Record<string, unknown>)
+        .sort()
+        .reduce<Record<string, unknown>>((acc, key) => {
+            const item = (value as Record<string, unknown>)[key]
+            if (item !== undefined) {
+                acc[key] = normalizePayload(item)
+            }
+            return acc
+        }, {})
+}
+
+function stringifyPayload(payload: unknown) {
+    return JSON.stringify(normalizePayload(payload)) ?? 'undefined'
+}
+
+function logCacheError(operation: string, key: string, error: unknown) {
+    console.error(`Redis cache ${operation} failed for ${key}`, error)
+}
+
 export function cacheKey(prefix: string, payload: unknown) {
-    const hash = crypto.createHash('sha1').update(JSON.stringify(payload)).digest('hex')
+    const hash = crypto.createHash('sha1').update(stringifyPayload(payload)).digest('hex')
 
     return `${prefix}:${hash}`
 }
 
 export async function getCache<T>(key: string): Promise<T | null> {
-    const value = await redis.get(key)
-    if (!value) return null
+    try {
+        const value = await redis.get(key)
+        if (!value) return null
 
-    return JSON.parse(value) as T
+        return JSON.parse(value) as T
+    } catch (error) {
+        logCacheError('get', key, error)
+        return null
+    }
 }
 
 export async function setCache(key: string, value: unknown, ttlSeconds = 60) {
-    await redis.set(key, JSON.stringify(value), 'EX', ttlSeconds)
+    try {
+        const serialized = JSON.stringify(value)
+        if (serialized === undefined) return
+
+        await redis.set(key, serialized, 'EX', ttlSeconds)
+    } catch (error) {
+        logCacheError('set', key, error)
+    }
 }
 
 export async function delCache(key: string) {
-    await redis.del(key)
+    try {
+        await redis.del(key)
+    } catch (error) {
+        logCacheError('del', key, error)
+    }
 }
 
-export async function delCacheByPattern(pattern: string) {
-    const keys = await redis.keys(pattern)
-    if (keys.length > 0) {
+async function deleteKeys(keys: string[]) {
+    if (keys.length === 0) return
+
+    try {
+        await redis.unlink(...keys)
+    } catch {
         await redis.del(...keys)
+    }
+}
+
+export async function delCacheByPattern(pattern: string, count = 100) {
+    let cursor = '0'
+
+    try {
+        do {
+            const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', pattern, 'COUNT', count)
+            cursor = nextCursor
+            await deleteKeys(keys)
+        } while (cursor !== '0')
+    } catch (error) {
+        logCacheError('del pattern', pattern, error)
     }
 }
 
@@ -46,7 +104,7 @@ export async function cacheQuery<T>({
 
     const cached = await getCache<T>(key)
 
-    if (cached) {
+    if (cached !== null) {
         return cached
     }
 

@@ -202,7 +202,7 @@ export async function stripeStatus(p: UserInfo): Promise<StripeStatusResponse> {
 
     const cached = await utils.cache.getCache<StripeStatusResponse>(key)
 
-    if (cached) {
+    if (cached !== null) {
         return cached
     }
 

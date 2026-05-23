@@ -11,7 +11,7 @@ export async function createOne(createdBy: AuthUserId, body: PromotionNewsBody) 
         createdBy,
     })
 
-    utils.cache.delCacheByPattern('promotion-new:list:*')
+    await utils.cache.delCacheByPattern('promotion-new:list:*')
 
     return { item: result }
 }
@@ -37,6 +37,6 @@ export async function updateOne(params: { id: BookingPromotionNewsId; body: Prom
     const { id, body } = params
     await dal.booking.promotionNews.cmd.updateOne(id, body)
 
-    utils.cache.delCacheByPattern('promotion-new:list:*')
+    await utils.cache.delCacheByPattern('promotion-new:list:*')
     return { message: 'OK' }
 }

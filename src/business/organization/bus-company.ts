@@ -22,24 +22,45 @@ export async function list(query: BusCompanyListQuery) {
 }
 
 export async function createOne(body: BusCompanyBody) {
+    const company = await dal.organization.busCompany.cmd.upsertOne({
+        ...body,
+        reviewCount: 0,
+        reviewAvgStars: 0,
+    })
+
+    await Promise.all([
+        utils.cache.delCacheByPattern('bus-company:list:*'),
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+    ])
+
     return {
-        company: await dal.organization.busCompany.cmd.upsertOne({
-            ...body,
-            reviewCount: 0,
-            reviewAvgStars: 0,
-        }),
+        company,
     }
 }
 
 export async function deleteOne(id: OrganizationBusCompanyId) {
-    return { company: await dal.organization.busCompany.cmd.deleteOne(id) }
+    const company = await dal.organization.busCompany.cmd.deleteOne(id)
+
+    await Promise.all([
+        utils.cache.delCacheByPattern('bus-company:list:*'),
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+    ])
+
+    return { company }
 }
 
 export async function updateOne(
     id: OrganizationBusCompanyId,
     body: OrganizationBusCompanyTableUpdate
 ) {
-    return { company: await dal.organization.busCompany.cmd.updateOne(id, body) }
+    const company = await dal.organization.busCompany.cmd.updateOne(id, body)
+
+    await Promise.all([
+        utils.cache.delCacheByPattern('bus-company:list:*'),
+        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+    ])
+
+    return { company }
 }
 
 export async function getOne(id: OrganizationBusCompanyId) {

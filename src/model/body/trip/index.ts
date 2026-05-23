@@ -63,15 +63,17 @@ export const TripStopResponse = z.object({
 
 export type TripStopResponse = z.infer<typeof TripStopResponse>
 
+export const TripStopPickUpItem = z.object({
+    address: z.string(),
+    city: z.string(),
+    stationId: OperationStationId,
+    stopOrder: z.number(),
+})
+
+export type TripStopPickUpItem = z.infer<typeof TripStopPickUpItem>
+
 export const TripStopPickupResponse = z.object({
-    tripStops: z.array(
-        z.object({
-            address: z.string(),
-            city: z.string(),
-            stopOrder: z.number(),
-            stationId: OperationStationId,
-        })
-    ),
+    tripStops: z.array(TripStopPickUpItem),
 })
 
 export type TripStopPickupResponse = z.infer<typeof TripStopPickupResponse>

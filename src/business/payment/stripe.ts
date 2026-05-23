@@ -171,7 +171,10 @@ export async function linkStripeAccount(userInfo: UserInfo) {
 
     const result = await service.stripe.connect.linkBankAccount(accountStripeId)
 
-    await utils.cache.delCache(`auth:token-version:${userInfo.id}`)
+    await Promise.all([
+        utils.cache.delCache(`auth:token-version:${userInfo.id}`),
+        utils.cache.delCache(`stripe:account-status:${userInfo.id}`),
+    ])
 
     return {
         message: 'OK',
