@@ -13,7 +13,7 @@ export async function upsertOne(params: AuthUserOtpTableInsert & { field: 'email
         .executeTakeFirstOrThrow()
 }
 
-export async function getOne(params: { otp?: Otp ; email?: string; phone?: string }) {
+export async function getOne(params: { otp?: Otp; email?: string; phone?: string }) {
     const { email, phone, otp } = params
 
     return db

@@ -134,11 +134,7 @@ export async function countAll() {
     return r.total
 }
 
-export function getOne(params: {
-    email?: string
-    phone?: string
-    id?: AuthUserId
-}) {
+export function getOne(params: { email?: string; phone?: string; id?: AuthUserId }) {
     const { email, phone, id } = params
     return db
         .selectFrom('auth.user as u')
