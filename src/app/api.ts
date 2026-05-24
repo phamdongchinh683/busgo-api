@@ -15,7 +15,6 @@ import 'dotenv/config'
 
 import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
-import { compressPlugin } from './plugins/compress.js'
 import { corsPlugin } from './plugins/cors.js'
 import { helmetPlugin } from './plugins/helmet.js'
 import { utils } from '../utils/index.js'
@@ -184,7 +183,6 @@ async function apiRouter() {
 
 async function registerPlugins() {
     await api.register(rateLimitPlugin)
-    await api.register(compressPlugin)
     await api.register(helmetPlugin)
     await api.register(corsPlugin)
     await api.register(errorHandlerPlugin)
