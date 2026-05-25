@@ -94,6 +94,8 @@ type CacheQueryOptions<T> = {
     queryFn: () => Promise<T>
 }
 
+const pendingQueries = new Map<string, Promise<unknown>>()
+
 export async function cacheQuery<T>({
     prefix,
     query,
@@ -108,9 +110,23 @@ export async function cacheQuery<T>({
         return cached
     }
 
-    const data = await queryFn()
+    const pending = pendingQueries.get(key) as Promise<T> | undefined
+    if (pending) {
+        return pending
+    }
 
-    void setCache(key, data, ttl)
+    const queryPromise = (async () => {
+        const data = await queryFn()
 
-    return data
+        await setCache(key, data, ttl)
+
+        return data
+    })()
+    pendingQueries.set(key, queryPromise)
+
+    try {
+        return await queryPromise
+    } finally {
+        pendingQueries.delete(key)
+    }
 }

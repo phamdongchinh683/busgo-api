@@ -9,9 +9,27 @@ import { HttpErr } from '../../app/index.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
 import { TripStopPickUpItem } from '../../model/body/trip/index.js'
 
+const TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX = 'trip-schedule:public:list'
+const TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX = 'trip-schedule:company:list'
+
+function getTripScheduleCompanyListCachePrefix(companyId: OrganizationBusCompanyId) {
+    return `${TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX}:${companyId}`
+}
+
+export async function clearTripScheduleListCache(companyId?: OrganizationBusCompanyId) {
+    await Promise.all([
+        utils.cache.delCacheByPattern(`${TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX}:*`),
+        utils.cache.delCacheByPattern(
+            companyId
+                ? `${getTripScheduleCompanyListCachePrefix(companyId)}:*`
+                : `${TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX}:*`
+        ),
+    ])
+}
+
 export async function getTripSchedules(query: TripScheduleFilter) {
     return utils.cache.cacheQuery({
-        prefix: 'trip-schedule:list',
+        prefix: TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX,
         query,
         ttl: 3600,
         queryFn: async () => {
@@ -32,7 +50,7 @@ export async function getTripSchedulesByCompanyId(
     companyId: OrganizationBusCompanyId
 ) {
     return utils.cache.cacheQuery({
-        prefix: `trip-schedule:list:${companyId}`,
+        prefix: getTripScheduleCompanyListCachePrefix(companyId),
         query,
         ttl: 3600,
         queryFn: async () => {
@@ -59,7 +77,7 @@ export async function updateTripSchedule(params: {
     const tripSchedule = await dal.operation.tripSchedule.cmd.updateOneById(params)
 
     await Promise.all([
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        clearTripScheduleListCache(params.companyId),
         utils.cache.delCache(`trip-schedule:pickup-stops:${params.id}`),
     ])
 
@@ -75,7 +93,7 @@ export async function createTripSchedule(params: { body: TripScheduleBody; user:
 
     const tripSchedule = await dal.operation.tripSchedule.cmd.upsertOne(params.body)
 
-    await utils.cache.delCacheByPattern('trip-schedule:list:*')
+    await clearTripScheduleListCache(params.body.companyId)
 
     return {
         tripSchedule,
@@ -120,7 +138,7 @@ export async function deleteTripSchedule(params: { id: OperationTripScheduleId }
     const tripSchedule = await dal.operation.tripSchedule.cmd.deleteOneById(params.id)
 
     await Promise.all([
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        clearTripScheduleListCache(tripSchedule.companyId),
         utils.cache.delCache(`trip-schedule:pickup-stops:${params.id}`),
     ])
 

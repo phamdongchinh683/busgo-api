@@ -7,6 +7,12 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
+    config: {
+        rateLimit: {
+            max: 3,
+            timeWindow: '2m',
+        },
+    },
     handler: async request => {
         return bus.auth.otp.send(request.body)
     },

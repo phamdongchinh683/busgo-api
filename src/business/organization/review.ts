@@ -3,6 +3,7 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { BusCompanyReviewBody } from '../../model/body/review/index.js'
 import { utils } from '../../utils/index.js'
 import { BusCompanyReviewFilter } from '../../model/query/review/index.js'
+import { clearTripScheduleListCache } from '../operation/trip-schedule.js'
 
 export async function insertOne(params: { userId: AuthUserId; body: BusCompanyReviewBody }) {
     const { userId, body } = params
@@ -19,7 +20,7 @@ export async function insertOne(params: { userId: AuthUserId; body: BusCompanyRe
     await Promise.all([
         utils.cache.delCacheByPattern(`bus-company-review:list:${trip.companyId}:*`),
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        clearTripScheduleListCache(trip.companyId),
     ])
 
     return { message: 'OK' }

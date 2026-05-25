@@ -319,10 +319,10 @@ export async function incrementTokenVersion(userId: AuthUserId, trx?: Transactio
             tokenVersion: sql<number>`token_version + 1`,
         })
         .where('id', '=', userId)
-        .returningAll()
+        .returning(['id'])
         .executeTakeFirstOrThrow()
 
-    await utils.cache.delCache(`auth:token-version:${userId}`)
+    await utils.cache.delCache(`auth:token-version:${user.id}`)
 
     return user
 }

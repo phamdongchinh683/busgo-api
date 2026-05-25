@@ -7,6 +7,7 @@ import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OperationRouteBody } from '../../model/body/route/index.js'
 import { RouteFilter } from '../../model/query/route/index.js'
 import { utils } from '../../utils/index.js'
+import { clearTripScheduleListCache } from './trip-schedule.js'
 
 export async function getRouterByTripId(params: { driverId: AuthUserId; tripId: OperationTripId }) {
     const { driverId, tripId } = params
@@ -20,7 +21,7 @@ export async function createRoute(params: { body: OperationRouteBody }) {
     const { body } = params
     const route = await dal.operation.route.cmd.createRoute(body)
 
-    await utils.cache.delCacheByPattern('route:list:*')
+    await Promise.all([utils.cache.delCacheByPattern('route:list:*'), clearTripScheduleListCache()])
 
     return {
         route,
@@ -55,10 +56,7 @@ export async function updateRoute(params: {
 
     const route = await dal.operation.route.cmd.updateOneById({ id, body: data })
 
-    await Promise.all([
-        utils.cache.delCacheByPattern('route:list:*'),
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
-    ])
+    await Promise.all([utils.cache.delCacheByPattern('route:list:*'), clearTripScheduleListCache()])
 
     return {
         route,

@@ -5,7 +5,17 @@ import { utils } from '../../utils/index.js'
 
 export async function send(params: { field: 'email' | 'phone'; value: string }) {
     const { field, value } = params
-    const otp = utils.random.generateRandomNumber(6)
+
+    const normalizedValue = field === 'email' ? value.trim().toLowerCase() : value.trim()
+    const cacheKey = utils.cache.cacheKey(`otp:${field}`, normalizedValue)
+
+    const cachedOtp = await utils.cache.getCache<Otp>(cacheKey)
+
+    const otp = cachedOtp ?? utils.random.generateRandomNumber(6)
+
+    if (!cachedOtp) {
+        await utils.cache.setCache(cacheKey, otp, 120)
+    }
 
     if (field === 'email') {
         return sendByEmail({ to: value, otp: otp.toString() })

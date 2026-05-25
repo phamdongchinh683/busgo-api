@@ -9,11 +9,19 @@ import { UserInfo } from '../../model/common.js'
 import { TripPriceTemplateFilter } from '../../model/query/trip-price-template/index.js'
 import { utils } from '../../utils/index.js'
 
+const TRIP_PRICE_TEMPLATE_CACHE_PREFIX = 'trip-price-template:list'
+
 export async function createTripPriceTemplate(params: {
     body: OperationTripPriceTemplateTableInsert
 }) {
+    const tripPriceTemplate = await dal.operation.tripPriceTemplate.cmd.createOne(params.body)
+
+    await utils.cache.delCacheByPattern(
+        `${TRIP_PRICE_TEMPLATE_CACHE_PREFIX}:${params.body.companyId}:*`
+    )
+
     return {
-        tripPriceTemplate: await dal.operation.tripPriceTemplate.cmd.createOne(params.body),
+        tripPriceTemplate,
     }
 }
 
@@ -24,34 +32,54 @@ export async function getTripPriceTemplates(params: {
     if (!params.user.companyId) {
         throw new HttpErr.Forbidden('You are not allowed to access trip price templates')
     }
+    const companyId = params.user.companyId
 
-    const result = await dal.operation.tripPriceTemplate.query.findAllByCompanyId({
-        q: params.q,
-        companyId: params.user.companyId,
-        routeId: params.q.routeId,
+    return utils.cache.cacheQuery({
+        prefix: `${TRIP_PRICE_TEMPLATE_CACHE_PREFIX}:${companyId}`,
+        query: params.q,
+        ttl: 3600,
+        queryFn: async () => {
+            const result = await dal.operation.tripPriceTemplate.query.findAllByCompanyId({
+                q: params.q,
+                companyId,
+                routeId: params.q.routeId,
+            })
+            const { data, next } = utils.common.paginateByCursor(result, params.q.limit)
+
+            return {
+                prices: data,
+                next,
+            }
+        },
     })
-    const { data, next } = utils.common.paginateByCursor(result, params.q.limit)
-
-    return {
-        prices: data,
-        next,
-    }
 }
 
 export async function updateTripPriceTemplates(params: {
     id: OperationTripPriceTemplateId
     body: OperationTripPriceTemplateTableUpdate
 }) {
+    const tripPriceTemplate = await dal.operation.tripPriceTemplate.query.updateOneById(
+        params.id,
+        params.body
+    )
+
+    await utils.cache.delCacheByPattern(
+        `${TRIP_PRICE_TEMPLATE_CACHE_PREFIX}:${tripPriceTemplate.companyId}:*`
+    )
+
     return {
-        tripPriceTemplate: await dal.operation.tripPriceTemplate.query.updateOneById(
-            params.id,
-            params.body
-        ),
+        tripPriceTemplate,
     }
 }
 
 export async function deleteTripPriceTemplate(params: { id: OperationTripPriceTemplateId }) {
+    const tripPriceTemplate = await dal.operation.tripPriceTemplate.cmd.deleteOneById(params.id)
+
+    await utils.cache.delCacheByPattern(
+        `${TRIP_PRICE_TEMPLATE_CACHE_PREFIX}:${tripPriceTemplate.companyId}:*`
+    )
+
     return {
-        tripPriceTemplate: await dal.operation.tripPriceTemplate.cmd.deleteOneById(params.id),
+        tripPriceTemplate,
     }
 }

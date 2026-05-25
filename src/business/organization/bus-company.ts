@@ -4,6 +4,7 @@ import { BusCompanyBody } from '../../model/body/bus-company/index.js'
 import { utils } from '../../utils/index.js'
 import { BusCompanyListQuery } from '../../model/query/bus-company/index.js'
 import { OrganizationBusCompanyTableUpdate } from '../../database/organization/bus_company/table.js'
+import { clearTripScheduleListCache } from '../operation/trip-schedule.js'
 
 export async function list(query: BusCompanyListQuery) {
     return utils.cache.cacheQuery({
@@ -30,7 +31,7 @@ export async function createOne(body: BusCompanyBody) {
 
     await Promise.all([
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        clearTripScheduleListCache(company.id),
     ])
 
     return {
@@ -43,7 +44,7 @@ export async function deleteOne(id: OrganizationBusCompanyId) {
 
     await Promise.all([
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        clearTripScheduleListCache(company.id),
     ])
 
     return { company }
@@ -57,7 +58,7 @@ export async function updateOne(
 
     await Promise.all([
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        utils.cache.delCacheByPattern('trip-schedule:list:*'),
+        clearTripScheduleListCache(company.id),
     ])
 
     return { company }

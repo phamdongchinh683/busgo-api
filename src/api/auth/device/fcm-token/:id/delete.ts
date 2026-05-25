@@ -10,8 +10,8 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await auth.requiredAuthenticate(request.headers)
-        return bus.auth.device.removeDevice(request.params.id)
+        const userInfo = await auth.requiredAuthenticate(request.headers)
+        return bus.auth.device.removeDevice(request.params.id, userInfo.id)
     },
 
     schema: {
