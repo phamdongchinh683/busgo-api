@@ -16,8 +16,9 @@ types.setTypeParser(types.builtins.NUMERIC, toNumber)
 
 const poolConfig: PoolConfig = {
     connectionString: process.env.DB_URL,
-    max: 10,
-    min: 0,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 }
 
 if (process.env.APP_ENV === 'local') {
