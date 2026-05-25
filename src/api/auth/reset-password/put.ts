@@ -7,12 +7,6 @@ const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
-    config: {
-        rateLimit: {
-            max: 5,
-            timeWindow: '1m',
-        },
-    },
     handler: async request => {
         return bus.auth.password.resetPassword(request.body)
     },
