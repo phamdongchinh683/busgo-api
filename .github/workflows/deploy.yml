@@ -43,3 +43,4 @@ jobs:
           curl -X POST -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             -H "$CRUMB" \
             "${{ secrets.JENKINS_URL }}/job/busgo-api/buildWithParameters?IMAGE_TAG=${{ github.sha }}"
+
