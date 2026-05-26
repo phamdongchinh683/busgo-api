@@ -1,6 +1,7 @@
 name: BusGo API CI/CD
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -37,10 +38,11 @@ jobs:
 
       - name: Trigger Jenkins Deployment
         run: |
-          CRUMB=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
+          set -euo pipefail
+
+          CRUMB=$(curl --fail-with-body -sS -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             "${{ secrets.JENKINS_URL }}/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,\":\",//crumb)")
 
-          curl -X POST -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
+          curl --fail-with-body -sS -X POST -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             -H "$CRUMB" \
             "${{ secrets.JENKINS_URL }}/job/busgo-api/buildWithParameters?IMAGE_TAG=${{ github.sha }}"
-
