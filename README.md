@@ -285,15 +285,17 @@ and `api2`, and stores Redis data in the `redis_data` volume.
 
 1. Checks out the `main` branch.
 2. Creates `.env` from Jenkins credentials.
-3. Pulls and starts supporting services, including Redis.
-4. Waits for PostgreSQL and Redis.
-5. Pulls the API image.
-6. Runs migrations.
-7. Deploys the API container.
-8. Cleans up Docker artifacts.
+3. Builds the API image locally from `Dockerfile.prod`.
+4. Pulls and starts supporting services, including Redis.
+5. Waits for PostgreSQL and Redis.
+6. Runs migrations with the newly built API image.
+7. Recreates the API containers.
+8. Checks `/health` on both API containers.
+9. Cleans up Docker artifacts.
 
-Adjust registry names, credentials, hosts, and secret handling for your
-infrastructure.
+The old GitHub Actions build-and-trigger workflow is no longer required.
+Configure the GitHub webhook to trigger the Jenkins job directly, and keep the
+Jenkins agent on the Docker host that runs the production compose stack.
 
 ## Swagger
 
