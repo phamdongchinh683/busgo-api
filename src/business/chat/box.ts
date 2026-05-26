@@ -15,18 +15,22 @@ export async function createBox(params: { userInfo: UserInfo; body: ChatBoxBody 
         createdBy: userInfo.id,
     })
 
-    ws.emitEvent({
-        targetId: String(result.receiverId),
-        event: 'chat:new',
-        data: {
-            boxId: String(result.boxId),
-            senderId: userInfo.id,
-            senderName: userInfo.fullName,
-            receiverId: result.receiverId,
-            body: result.body,
-            createdAt: result.createdAt,
-        },
-    })
+    try {
+        ws.emitEvent({
+            targetId: String(result.receiverId),
+            event: 'chat:new',
+            data: {
+                boxId: String(result.boxId),
+                senderId: userInfo.id,
+                senderName: userInfo.fullName,
+                receiverId: result.receiverId,
+                body: result.body,
+                createdAt: result.createdAt,
+            },
+        })
+    } catch (error) {
+        console.error(error)
+    }
 
     return {
         message: 'Thành công',
