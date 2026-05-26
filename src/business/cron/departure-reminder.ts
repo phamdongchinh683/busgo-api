@@ -84,7 +84,7 @@ export async function departureReminder() {
 
     if (candidates.length === 0)
         return {
-            message: 'Thành công.',
+            message: 'Thành công',
         }
 
     await db
@@ -106,6 +106,6 @@ export async function departureReminder() {
         .execute()
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }

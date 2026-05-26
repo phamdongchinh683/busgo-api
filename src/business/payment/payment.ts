@@ -103,7 +103,7 @@ export async function createVnpayPayment(params: PaymentMethodRequest, ip: strin
     const payment = await preparePayment(params.id, PaymentMethod.enum.vnpay)
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         paymentUrl: service.vnpay.init.initiatePayment(payment.amount, payment.transactionCode, ip),
     }
 }
@@ -265,7 +265,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         payment: payment,

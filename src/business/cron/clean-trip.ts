@@ -4,6 +4,6 @@ export async function cleanupTripWeekly() {
     await bus.operation.trip.cleanupTrips()
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }

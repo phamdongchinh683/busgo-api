@@ -24,7 +24,7 @@ export async function send(params: { field: 'email' | 'phone'; value: string }) 
     }
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -40,7 +40,7 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
 
     if (process.env.APP_ENV !== 'production') {
         return {
-            message: 'Thành công.',
+            message: 'Thành công',
         }
     }
 
@@ -51,7 +51,7 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -67,7 +67,7 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
 
     if (process.env.APP_ENV !== 'production') {
         return {
-            message: 'Thành công.',
+            message: 'Thành công',
         }
     }
 
@@ -77,6 +77,6 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }

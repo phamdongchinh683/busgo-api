@@ -114,6 +114,6 @@ export async function updatePaymentStatusByBookingId(
 export async function updatePaymentByTransactionCode(transactionCode: string) {
     return db.transaction().execute(async tx => {
         await dal.payment.payment.cmd.updatePaymentStatusFailed(transactionCode, tx)
-        return { message: 'Thành công.' }
+        return { message: 'Thành công' }
     })
 }

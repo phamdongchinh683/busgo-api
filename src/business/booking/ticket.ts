@@ -54,7 +54,7 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         tickets: tickets,
     }
 }
@@ -66,7 +66,7 @@ export async function checkInTicket(params: {
 }) {
     const ticket = await dal.booking.ticket.cmd.updateStatusTicket(params)
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         ticket: ticket,
     }
 }
@@ -102,7 +102,7 @@ export async function deleteTicket(id: BookingTicketId) {
     assertTicketCanBeCancelled(data.tripStatus, data.departureDate)
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         tickets: await dal.booking.ticket.cmd.cancelTicketTransaction(id),
     }
 }

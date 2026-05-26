@@ -83,7 +83,7 @@ export async function updateTrip(
 export async function cleanupTrips() {
     await dal.operation.trip.cmd.deleteTripsBeforeToday()
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 

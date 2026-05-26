@@ -28,7 +28,7 @@ export async function updatePassword(
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -73,6 +73,6 @@ export async function resetPassword(params: {
     }
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }

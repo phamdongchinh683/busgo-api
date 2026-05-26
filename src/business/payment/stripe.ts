@@ -97,7 +97,7 @@ export async function addPaymentMethod(userInfo: UserInfo, paymentMethodId: stri
     }
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -134,7 +134,7 @@ export async function setDefault(userInfo: UserInfo, paymentMethodId: string) {
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -150,7 +150,7 @@ export async function removePaymentMethod(params: { user: UserInfo; paymentMetho
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -203,7 +203,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
     ])
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         url: result.url,
         token: auth.generateToken({
             ...userInfo,
@@ -257,7 +257,7 @@ export async function withdrawBalance(params: { amount: number; userInfo: UserIn
     await clearBalanceCache(params.userInfo)
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         amountVnd: params.amount,
         amountUsdCents: payoutAmountUsdCents,
     }

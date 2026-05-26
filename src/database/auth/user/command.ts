@@ -18,7 +18,7 @@ export async function signUp(params: AuthUserTableInsert) {
         const user = await dal.auth.user.query.insertOne(params)
 
         return {
-            message: 'Thành công.',
+            message: 'Thành công',
             token: generateToken(user),
             user: user,
         }
@@ -195,7 +195,7 @@ export async function createCompanyAccount(
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 

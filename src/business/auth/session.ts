@@ -48,7 +48,7 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
     }
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         token: auth.generateToken(tokenPayload),
         user: {
             id: tokenPayload.id,

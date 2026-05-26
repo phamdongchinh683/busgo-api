@@ -121,7 +121,7 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
     })
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -160,7 +160,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
     }
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
         token: auth.generateToken(payload),
         user: payload,
     }

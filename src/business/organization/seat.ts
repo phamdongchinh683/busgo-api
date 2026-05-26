@@ -19,7 +19,7 @@ export async function createSeat(body: SeatCreateBody) {
     await dal.organization.seat.query.createOne(body)
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
 
@@ -27,6 +27,6 @@ export async function deleteSeat(vehicleId: OrganizationVehicleId) {
     await dal.organization.seat.query.deleteByVehicleId(vehicleId)
 
     return {
-        message: 'Thành công.',
+        message: 'Thành công',
     }
 }
