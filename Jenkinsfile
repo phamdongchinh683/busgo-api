@@ -17,27 +17,21 @@ pipeline {
 
     stages {
         stage('Checkout Latest Main') {
-            steps {
-                git branch: 'main',
-                    credentialsId: 'github-ssh-key',
-                    url: 'git@github.com:phamdongchinh683/busgo-api.git'
+    steps {
+        git branch: 'main',
+            credentialsId: 'github-ssh-key',
+            url: 'git@github.com:phamdongchinh683/busgo-api.git'
 
-                script {
-                    sh '''
-                        set -e
-                        git fetch origin main
-                        git reset --hard origin/main
-                    '''
-
-                    env.DEPLOY_IMAGE_TAG = sh(
-                        script: 'git rev-parse --short=12 HEAD',
-                        returnStdout: true
-                    ).trim()
-
-                    echo "Deploy commit: ${env.DEPLOY_IMAGE_TAG}"
-                }
-            }
+        script {
+            env.DEPLOY_IMAGE_TAG = sh(
+                script: 'git rev-parse --short=12 HEAD',
+                returnStdout: true
+            ).trim()
         }
+
+        echo "Deploy commit: ${DEPLOY_IMAGE_TAG}"
+    }
+}
 
         stage('Prepare') {
             steps {
