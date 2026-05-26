@@ -15,9 +15,16 @@ import {
 } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
 import { UserInfo } from '../../model/common.js'
-import { StripeStatusResponse } from '../../service/stripe/type.js'
+import type { StripeStatusResponse } from '../../service/stripe/type.js'
+import { stripeCacheKey, stripeCachePayload, type StripeCacheOwner } from './stripe-cache.js'
 
 const vnpayClientReturnUrl = process.env.VNPAY_CLIENT_RETURN_URL ?? ''
+const STRIPE_ACCOUNT_STATUS_CACHE_PREFIX = 'stripe:account-status'
+const STRIPE_ACCOUNT_STATUS_CACHE_TTL_SECONDS = 60
+
+export function stripeAccountStatusCacheKey(userInfo: StripeCacheOwner) {
+    return stripeCacheKey(STRIPE_ACCOUNT_STATUS_CACHE_PREFIX, userInfo)
+}
 
 async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
     let payment = await dal.payment.payment.query.getPayment(bookingId)
@@ -198,33 +205,28 @@ export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
 }
 
 export async function stripeStatus(p: UserInfo): Promise<StripeStatusResponse> {
-    const key = `stripe:account-status:${p.id}`
+    return utils.cache.cacheQuery<StripeStatusResponse>({
+        prefix: STRIPE_ACCOUNT_STATUS_CACHE_PREFIX,
+        query: stripeCachePayload(p),
+        ttl: STRIPE_ACCOUNT_STATUS_CACHE_TTL_SECONDS,
+        queryFn: async () => {
+            if (!p.accountStripeId) {
+                return {
+                    chargesEnabled: false,
+                    payoutsEnabled: false,
+                    currentlyDue: [],
+                }
+            }
 
-    const cached = await utils.cache.getCache<StripeStatusResponse>(key)
+            const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId)
 
-    if (cached !== null) {
-        return cached
-    }
-
-    if (!p.accountStripeId) {
-        return {
-            chargesEnabled: false,
-            payoutsEnabled: false,
-            currentlyDue: [],
-        }
-    }
-
-    const result = await service.stripe.connect.callbackRetrieveAccount(p.accountStripeId)
-
-    const response: StripeStatusResponse = {
-        chargesEnabled: result.charges_enabled,
-        payoutsEnabled: result.payouts_enabled,
-        currentlyDue: result.requirements?.currently_due ?? [],
-    }
-
-    void utils.cache.setCache(key, response, 60)
-
-    return response
+            return {
+                chargesEnabled: result.charges_enabled,
+                payoutsEnabled: result.payouts_enabled,
+                currentlyDue: result.requirements?.currently_due ?? [],
+            }
+        },
+    })
 }
 
 async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {

@@ -14,7 +14,7 @@ api.route({
 
         return bus.payment.stripe.withdrawBalance({
             amount: request.body.amount,
-            accountStripeId: userInfo.accountStripeId,
+            userInfo,
         })
     },
 

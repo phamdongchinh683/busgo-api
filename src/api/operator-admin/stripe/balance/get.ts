@@ -16,7 +16,7 @@ api.route({
             [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin]
         )
-        return bus.payment.stripe.getBalance(userInfo.accountStripeId)
+        return bus.payment.stripe.getBalance(userInfo)
     },
 
     schema: {

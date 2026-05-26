@@ -11,7 +11,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return bus.payment.stripe.getBalance(userInfo.accountStripeId)
+        return bus.payment.stripe.getBalance(userInfo)
     },
 
     schema: {

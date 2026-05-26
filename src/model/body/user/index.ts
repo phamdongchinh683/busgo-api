@@ -55,8 +55,8 @@ export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
             id: AuthUserId,
-            staffProfileRole: AuthStaffProfileRole.nullable(),  
-        }).omit({ password: true }),
+            staffProfileRole: AuthStaffProfileRole.nullable(),
+        }).omit({ password: true })
     ),
     next: AuthUserId.nullable(),
 })

@@ -3,12 +3,16 @@ import { service } from '../../service/index.js'
 import { dal } from '../../database/index.js'
 import { HttpErr } from '../../app/index.js'
 import { auth } from '../../app/jwt/index.js'
-import { StripePayoutListRequest } from '../../service/stripe/type.js'
+import type { BalanceResponse, StripePayoutListRequest } from '../../service/stripe/type.js'
 import { db } from '../../datasource/db.js'
 import { utils } from '../../utils/index.js'
+import { stripeAccountStatusCacheKey } from './payment.js'
+import { stripeCacheKey, stripeCachePayload } from './stripe-cache.js'
 
 const EXCHANGE_RATE_API_URL = 'https://open.er-api.com/v6/latest/USD'
 const EXCHANGE_RATE_CACHE_TTL_MS = 5 * 60 * 1000
+const BALANCE_CACHE_PREFIX = 'stripe:balance'
+const BALANCE_CACHE_TTL_SECONDS = 30
 
 type ExchangeRate = {
     usdToVnd: number
@@ -16,6 +20,14 @@ type ExchangeRate = {
 }
 
 let exchangeRateCache: { expiresAt: number; value: ExchangeRate } | null = null
+
+function balanceCacheKey(userInfo: UserInfo) {
+    return stripeCacheKey(BALANCE_CACHE_PREFIX, userInfo)
+}
+
+async function clearBalanceCache(userInfo: UserInfo) {
+    await utils.cache.delCache(balanceCacheKey(userInfo))
+}
 
 async function getUsdVndRate() {
     if (exchangeRateCache && exchangeRateCache.expiresAt > Date.now()) {
@@ -142,15 +154,33 @@ export async function removePaymentMethod(params: { user: UserInfo; paymentMetho
     }
 }
 
-export async function getBalance(accountStripeId: string) {
-    const balance = await service.stripe.connect.getConnectedAccountBalance(accountStripeId)
-    return {
-        available: balance.available,
-        pending: balance.pending,
+export async function getBalance(userInfo: UserInfo) {
+    const accountStripeId = userInfo.accountStripeId
+
+    if (!accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Không tìm thấy tài khoản Stripe.',
+            'STRIPE_ACCOUNT_NOT_FOUND'
+        )
     }
+
+    return utils.cache.cacheQuery<BalanceResponse>({
+        prefix: BALANCE_CACHE_PREFIX,
+        query: stripeCachePayload(userInfo),
+        ttl: BALANCE_CACHE_TTL_SECONDS,
+        queryFn: async () => {
+            const balance = await service.stripe.connect.getConnectedAccountBalance(accountStripeId)
+
+            return {
+                available: balance.available,
+                pending: balance.pending,
+            }
+        },
+    })
 }
 
 export async function linkStripeAccount(userInfo: UserInfo) {
+    const previousUserInfo = { ...userInfo }
     let accountStripeId = userInfo.accountStripeId
 
     if (!accountStripeId) {
@@ -169,10 +199,13 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         userInfo.tokenVersion = newTokenVersion
     }
 
+    const nextUserInfo = { ...userInfo, accountStripeId }
     const result = await service.stripe.connect.linkBankAccount(accountStripeId)
 
     await Promise.all([
         utils.cache.delCache(`auth:token-version:${userInfo.id}`),
+        utils.cache.delCache(stripeAccountStatusCacheKey(previousUserInfo)),
+        utils.cache.delCache(stripeAccountStatusCacheKey(nextUserInfo)),
         utils.cache.delCache(`stripe:account-status:${userInfo.id}`),
     ])
 
@@ -186,10 +219,19 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         }),
     }
 }
-export async function withdrawBalance(params: { amount: number; accountStripeId: string }) {
+export async function withdrawBalance(params: { amount: number; userInfo: UserInfo }) {
+    const accountStripeId = params.userInfo.accountStripeId
+
+    if (!accountStripeId) {
+        throw new HttpErr.UnprocessableEntity(
+            'Không tìm thấy tài khoản Stripe.',
+            'STRIPE_ACCOUNT_NOT_FOUND'
+        )
+    }
+
     const [rate, balance] = await Promise.all([
         getUsdVndRate(),
-        service.stripe.connect.getConnectedAccountBalance(params.accountStripeId),
+        service.stripe.connect.getConnectedAccountBalance(accountStripeId),
     ])
 
     const usdAmount = params.amount / rate.usdToVnd
@@ -216,8 +258,10 @@ export async function withdrawBalance(params: { amount: number; accountStripeId:
 
     await service.stripe.connect.payout({
         amount: payoutAmountUsdCents,
-        accountStripeId: params.accountStripeId,
+        accountStripeId,
     })
+
+    await clearBalanceCache(params.userInfo)
 
     return {
         message: 'Thành công.',
