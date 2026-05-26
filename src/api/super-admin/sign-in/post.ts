@@ -1,14 +1,13 @@
 import { api, endpoint, tags } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { AuthSignInBody, AuthResponse } from '../../../model/body/auth/index.js'
-import { AuthUserRole } from '../../../database/auth/user/type.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        return bus.auth.login.byEmailOrPhone(request.body, AuthUserRole.enum.super_admin)
+        return bus.auth.login.byEmailOrPhoneSuperAdmin(request.body)
     },
 
     schema: {
