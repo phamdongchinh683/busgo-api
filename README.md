@@ -334,3 +334,4 @@ network, staging environment, VPN, or authentication layer.
 | Stripe webhook verification fails                           | Verify `STRIPE_WEBHOOK_SECRET` and ensure the raw JSON body reaches `/stripe/webhook` unchanged      |
 | Swagger UI does not load locally                            | Confirm `APP_ENV` is not `production` and `public/swagger-dev.html` exists                           |
 | Social login fails                                          | Verify provider credentials, token audience, and HTTPS requirements for browser-based flows          |
+trigger
