@@ -27,7 +27,7 @@ export async function sendMessage(
         result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId
 
     ws.emitEvent({
-        targetId: `box:${result.box.id}`,
+        targetId: String(result.box.id),
         event: 'message:new',
         data: {
             messageId: String(result.row.id),
@@ -41,7 +41,7 @@ export async function sendMessage(
     })
 
     ws.emitEvent({
-        targetId: `user:${receiverId}`,
+        targetId: String(receiverId),
         event: 'chat:unread:count',
         data: {
             boxId: String(result.box.id),
