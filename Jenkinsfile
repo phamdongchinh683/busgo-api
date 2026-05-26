@@ -219,39 +219,17 @@ pipeline {
         }
     }
 
-    post {
-        failure {
-            sh '''
-                echo "===== DOCKER PS ====="
-                docker ps || true
+   post {
+    always {
+        sh '''
+            rm -f .env
+        '''
 
-                echo "===== COMPOSE STATUS ====="
-                $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" ps || true
-
-                echo "===== API1 LOGS ====="
-                docker logs --tail=20 api1 2>/dev/null || true
-
-                echo "===== API2 LOGS ====="
-                docker logs --tail=20 api2 2>/dev/null || true
-
-                echo "===== POSTGRES LOGS ====="
-                docker logs --tail=20 postgres 2>/dev/null || true
-
-                echo "===== REDIS LOGS ====="
-                docker logs --tail=20 redis 2>/dev/null || true
-            '''
-        }
-
-        always {
-            sh '''
-                rm -f .env
-            '''
-
-            cleanWs()
-        }
-
-        success {
-            echo "Deploy completed: ${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}"
-        }
+        cleanWs()
     }
+
+    success {
+        echo "Deploy completed: ${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}"
+    }
+}
 }
