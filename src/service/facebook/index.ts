@@ -12,18 +12,18 @@ export async function verifyToken(p: { token: string }) {
     const { data } = await debugToken(p)
     if (data.app_id !== ACCOUNT_ID)
         throw new HttpErr.UnprocessableEntity(
-            'Invalid token, wrong app id',
+            'Token không hợp lệ do sai Facebook App ID.',
             'VERIFY_CODE_INVALID',
             data
         )
     if (data.expires_at * 1000 < Date.now())
         throw new HttpErr.UnprocessableEntity(
-            'Invalid token, token expired',
+            'Token không hợp lệ hoặc đã hết hạn.',
             'VERIFY_CODE_INVALID',
             data
         )
     if (!data.is_valid)
-        throw new HttpErr.UnprocessableEntity('Invalid token', 'VERIFY_CODE_INVALID', data)
+        throw new HttpErr.UnprocessableEntity('Token không hợp lệ.', 'VERIFY_CODE_INVALID', data)
 
     const info = await getMe(p)
     return info
@@ -41,7 +41,7 @@ async function debugToken(p: { token: string }): Promise<FacebookDebugTokenResp>
     const result = FacebookDebugTokenResp.safeParse(data)
     if (!result.success)
         throw new HttpErr.UnprocessableEntity(
-            'Failed to call facebook debug_token',
+            'Không thể xác thực token Facebook.',
             'FACEBOOK_LOGIN_FAIL',
             z.looseObject({}).parse(data)
         )
@@ -59,7 +59,7 @@ async function getMe(p: { token: string }): Promise<FacebookGetMeResp> {
     const result = FacebookGetMeResp.safeParse(data)
     if (!result.success)
         throw new HttpErr.UnprocessableEntity(
-            'Failed to call facebook /me',
+            'Không thể lấy thông tin tài khoản Facebook.',
             'FACEBOOK_LOGIN_FAIL',
             z.looseObject({}).parse(data)
         )

@@ -88,7 +88,7 @@ export async function updateTripSchedule(params: {
 
 export async function createTripSchedule(params: { body: TripScheduleBody; user: UserInfo }) {
     if (!params.user.companyId || params.user.companyId !== params.body.companyId) {
-        throw new HttpErr.Forbidden('You are not allowed to create trip schedule for this company')
+        throw new HttpErr.Forbidden('Bạn không có quyền tạo lịch trình cho công ty này.')
     }
 
     const tripSchedule = await dal.operation.tripSchedule.cmd.upsertOne(params.body)

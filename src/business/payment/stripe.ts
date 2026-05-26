@@ -25,14 +25,14 @@ async function getUsdVndRate() {
     const response = await fetch(EXCHANGE_RATE_API_URL)
 
     if (!response.ok) {
-        throw new HttpErr.BadRequest('Failed to get exchange rate', 'EXCHANGE_RATE_UNAVAILABLE')
+        throw new HttpErr.BadRequest('Không thể lấy tỷ giá.', 'EXCHANGE_RATE_UNAVAILABLE')
     }
 
     const data = await response.json()
     const usdToVnd = data.rates?.VND
 
     if (!usdToVnd || usdToVnd <= 0) {
-        throw new HttpErr.BadRequest('Failed to get exchange rate', 'EXCHANGE_RATE_UNAVAILABLE')
+        throw new HttpErr.BadRequest('Không thể lấy tỷ giá.', 'EXCHANGE_RATE_UNAVAILABLE')
     }
 
     const rate = {
@@ -52,7 +52,7 @@ export async function setUpIntent(userInfo: UserInfo) {
     const user = await dal.auth.user.query.getOne({ id: userInfo.id })
     if (!user?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
-            'Customer Stripe account not found',
+            'Không tìm thấy tài khoản Stripe của khách hàng.',
             'CUSTOMER_STRIPE_NOT_FOUND'
         )
     }
@@ -85,7 +85,7 @@ export async function addPaymentMethod(userInfo: UserInfo, paymentMethodId: stri
     }
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -122,7 +122,7 @@ export async function setDefault(userInfo: UserInfo, paymentMethodId: string) {
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -138,7 +138,7 @@ export async function removePaymentMethod(params: { user: UserInfo; paymentMetho
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -177,7 +177,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
     ])
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         url: result.url,
         token: auth.generateToken({
             ...userInfo,
@@ -196,7 +196,7 @@ export async function withdrawBalance(params: { amount: number; accountStripeId:
     const payoutAmountUsdCents = Math.round(usdAmount * 100)
 
     if (payoutAmountUsdCents <= 0) {
-        throw new HttpErr.BadRequest('Payout amount is too small', 'INVALID_PAYOUT_AMOUNT')
+        throw new HttpErr.BadRequest('Số tiền rút quá nhỏ.', 'INVALID_PAYOUT_AMOUNT')
     }
 
     const available = balance.available.find(i => i.currency === 'usd')
@@ -204,7 +204,7 @@ export async function withdrawBalance(params: { amount: number; accountStripeId:
 
     if (payoutAmountUsdCents > availableAmount) {
         throw new HttpErr.UnprocessableEntity(
-            'Not enough money available',
+            'Số dư khả dụng không đủ.',
             'INSUFFICIENT_AVAILABLE_BALANCE',
             {
                 requestedAmountVnd: params.amount,
@@ -220,7 +220,7 @@ export async function withdrawBalance(params: { amount: number; accountStripeId:
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         amountVnd: params.amount,
         amountUsdCents: payoutAmountUsdCents,
     }

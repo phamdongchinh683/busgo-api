@@ -65,7 +65,7 @@ export async function sendMessage(
     //                 : result.row.createdAt,
     //     },
     // })
-    return { message: 'OK' }
+    return { message: 'Thành công.' }
 }
 
 export async function getMessages(
@@ -115,6 +115,6 @@ export async function recallMessage(params: {
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }

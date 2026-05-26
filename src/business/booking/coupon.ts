@@ -41,29 +41,39 @@ export async function getCoupons(filter: CouponFilter) {
 export function validateCoupon(coupon: CouponResponse, orderTotal: number) {
     const now = utils.time.getNow().toDate()
     if (coupon.startDate && coupon.startDate > now) {
-        throw new HttpErr.UnprocessableEntity('Coupon is not active yet', 'COUPON_NOT_ACTIVE_YET')
+        throw new HttpErr.UnprocessableEntity(
+            'Mã giảm giá chưa có hiệu lực.',
+            'COUPON_NOT_ACTIVE_YET'
+        )
     }
     if (coupon.endDate && coupon.endDate < now) {
-        throw new HttpErr.UnprocessableEntity('Coupon is expired', 'COUPON_EXPIRED')
+        throw new HttpErr.UnprocessableEntity('Mã giảm giá đã hết hạn.', 'COUPON_EXPIRED')
     }
     if (!coupon.isActive) {
-        throw new HttpErr.UnprocessableEntity('Coupon is not active', 'COUPON_NOT_ACTIVE')
+        throw new HttpErr.UnprocessableEntity(
+            'Mã giảm giá không còn hoạt động.',
+            'COUPON_NOT_ACTIVE'
+        )
     }
     if (coupon.usedQuantity >= coupon.totalQuantity) {
-        throw new HttpErr.UnprocessableEntity('Coupon is out of stock', 'COUPON_OUT_OF_STOCK', {
-            totalQuantity: coupon.totalQuantity,
-        })
+        throw new HttpErr.UnprocessableEntity(
+            'Mã giảm giá đã hết lượt sử dụng.',
+            'COUPON_OUT_OF_STOCK',
+            {
+                totalQuantity: coupon.totalQuantity,
+            }
+        )
     }
     if (coupon.minOrderAmount > orderTotal) {
         throw new HttpErr.UnprocessableEntity(
-            'Order total is not eligible for this coupon',
+            'Tổng giá trị đơn hàng chưa đủ điều kiện áp dụng mã giảm giá này.',
             'ORDER_NOT_ELIGIBLE',
             { minOrderValue: coupon.minOrderAmount }
         )
     }
     if (coupon.maxDiscountAmount && coupon.maxDiscountAmount < coupon.discountValue) {
         throw new HttpErr.UnprocessableEntity(
-            'Discount value is greater than the maximum discount amount for this coupon',
+            'Giá trị giảm giá vượt quá mức giảm tối đa của mã này.',
             'MAX_DISCOUNT_EXCEEDED',
             { maxDiscountAmount: coupon.maxDiscountAmount }
         )
@@ -114,7 +124,7 @@ export async function resultAmountOneWay(
     })
 
     if (!originalAmount) {
-        throw new HttpErr.NotFound('Trip price not found for the selected segment', {
+        throw new HttpErr.NotFound('Không tìm thấy giá chuyến đi cho chặng đã chọn.', {
             companyId: params.companyId,
             fromStationId: params.fromStationId,
             toStationId: params.toStationId,

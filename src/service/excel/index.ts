@@ -8,23 +8,23 @@ import type { PaymentMethod } from '../../database/payment/payment/type.js'
 type RevenueSheetMeta = { year: number; method: PaymentMethod }
 
 const MONTH_LABELS = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
+    'Tháng 1',
+    'Tháng 2',
+    'Tháng 3',
+    'Tháng 4',
+    'Tháng 5',
+    'Tháng 6',
+    'Tháng 7',
+    'Tháng 8',
+    'Tháng 9',
+    'Tháng 10',
+    'Tháng 11',
+    'Tháng 12',
 ] as const
 
 function revenueTitleLine(meta: RevenueSheetMeta, granularity: 'yearly' | 'monthly') {
-    const g = granularity === 'monthly' ? 'by month' : 'yearly total'
-    return `Company revenue (${g}) — ${meta.year} · ${meta.method} · success`
+    const g = granularity === 'monthly' ? 'theo tháng' : 'tổng theo năm'
+    return `Doanh thu công ty (${g}) - ${meta.year} - ${meta.method} - thanh toán thành công`
 }
 
 export async function buildCompanyRevenueYearlySheet(
@@ -32,7 +32,7 @@ export async function buildCompanyRevenueYearlySheet(
     meta: RevenueSheetMeta
 ): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook()
-    const sheet = workbook.addWorksheet('Revenue yearly', {
+    const sheet = workbook.addWorksheet('Doanh thu năm', {
         views: [{ state: 'frozen', ySplit: 2 }],
     })
 
@@ -40,7 +40,7 @@ export async function buildCompanyRevenueYearlySheet(
     sheet.getCell(1, 1).value = revenueTitleLine(meta, 'yearly')
     sheet.getCell(1, 1).font = { bold: true, size: 12 }
 
-    const headerRow = sheet.addRow(['Company name', 'Total'])
+    const headerRow = sheet.addRow(['Tên công ty', 'Tổng cộng'])
     headerRow.font = { bold: true }
     sheet.getColumn(1).width = 42
     sheet.getColumn(2).width = 18
@@ -49,7 +49,7 @@ export async function buildCompanyRevenueYearlySheet(
         sheet.addRow([row.companyName, row.total])
     }
 
-    const footer = sheet.addRow(['Total', rows.reduce((acc, x) => acc + x.total, 0)])
+    const footer = sheet.addRow(['Tổng cộng', rows.reduce((acc, x) => acc + x.total, 0)])
     footer.font = { bold: true }
 
     const buf = await workbook.xlsx.writeBuffer()
@@ -62,7 +62,7 @@ export async function buildCompanyRevenueMonthlySheet(
 ): Promise<Buffer> {
     const workbook = new ExcelJS.Workbook()
     const colCount = 2 + MONTH_LABELS.length
-    const sheet = workbook.addWorksheet('Revenue monthly', {
+    const sheet = workbook.addWorksheet('Doanh thu tháng', {
         views: [{ state: 'frozen', ySplit: 2 }],
     })
 
@@ -70,7 +70,7 @@ export async function buildCompanyRevenueMonthlySheet(
     sheet.getCell(1, 1).value = revenueTitleLine(meta, 'monthly')
     sheet.getCell(1, 1).font = { bold: true, size: 12 }
 
-    const header = ['Company name', 'Total', ...MONTH_LABELS] as const
+    const header = ['Tên công ty', 'Tổng cộng', ...MONTH_LABELS] as const
     const headerRow = sheet.addRow([...header])
     headerRow.font = { bold: true }
     sheet.getColumn(1).width = 40
@@ -90,7 +90,7 @@ export async function buildCompanyRevenueMonthlySheet(
         })
     }
     const grand = rows.reduce((acc, x) => acc + x.yearTotal, 0)
-    const footer = sheet.addRow(['Total', grand, ...monthTotals])
+    const footer = sheet.addRow(['Tổng cộng', grand, ...monthTotals])
     footer.font = { bold: true }
 
     const buf = await workbook.xlsx.writeBuffer()

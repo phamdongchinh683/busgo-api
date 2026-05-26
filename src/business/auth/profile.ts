@@ -56,7 +56,7 @@ export async function updateStaffRole(id: AuthUserId, role: AuthStaffProfileRole
 export async function getProfileCustomer(userInfo: UserInfo) {
     const user = await dal.auth.user.query.getOne({ id: userInfo.id })
     if (!user) {
-        throw new HttpErr.NotFound('USER_NOT_FOUND')
+        throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
     }
 
     let accountStripeId = user?.accountStripeId
@@ -90,7 +90,7 @@ async function verifyOtp(params: { email?: string; phone?: string; otp?: string 
 
     const userOtp = await dal.auth.userOtp.cmd.getOne({ otp, email, phone })
     if (!userOtp || (userOtp.expiresAt && userOtp.expiresAt < utils.time.getNow().toDate())) {
-        throw new HttpErr.Unauthorized('Invalid or expired OTP.')
+        throw new HttpErr.Unauthorized('Mã OTP không hợp lệ hoặc đã hết hạn.')
     }
 }
 
@@ -101,7 +101,7 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
     })
 
     if (!user) {
-        throw new HttpErr.NotFound('USER_NOT_FOUND')
+        throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
     }
 
     if (user.lastChangeContact) {
@@ -109,7 +109,7 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
             utils.time.getNow().valueOf() - new Date(user.lastChangeContact).getTime()
         if (changedAgoMs < utils.time.coolDownTime12Hours) {
             throw new HttpErr.UnprocessableEntity(
-                'You can only change contact information after 12 hours.',
+                'Bạn chỉ có thể thay đổi thông tin liên hệ sau 12 giờ.',
                 'CONTACT_INFO_CHANGE_COOLDOWN'
             )
         }
@@ -121,14 +121,16 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
 export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdateContactBody) {
     if (params.value === userInfo[params.field]) {
         throw new HttpErr.UnprocessableEntity(
-            params.field === 'email' ? 'EMAIL_SAME_AS_CURRENT' : 'PHONE_SAME_AS_CURRENT',
+            params.field === 'email'
+                ? 'Email mới không được trùng với email hiện tại.'
+                : 'Số điện thoại mới không được trùng với số điện thoại hiện tại.',
             params.field === 'email' ? 'EMAIL_SAME_AS_CURRENT' : 'PHONE_SAME_AS_CURRENT'
         )
     }
@@ -158,7 +160,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
     }
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         token: auth.generateToken(payload),
         user: payload,
     }

@@ -12,7 +12,7 @@ function emailDomain(email: string): string {
 const EXAMPLE_EMAIL_DOMAIN = /^(?:.+\.)?example\.(?:com|org|net)$/i
 
 export const Email = z.email().refine(v => !EXAMPLE_EMAIL_DOMAIN.test(emailDomain(v)), {
-    message: 'Email must not use example.com, example.org, or example.net',
+    message: 'Email không được sử dụng tên miền example.com, example.org hoặc example.net.',
 })
 
 export type Email = z.infer<typeof Email>
@@ -20,7 +20,7 @@ export type Email = z.infer<typeof Email>
 export const Phone = z
     .string()
     .trim()
-    .regex(/^\d{10,13}$/, 'Phone must contain only digits and be 10-13 characters long')
+    .regex(/^\d{10,13}$/, 'Số điện thoại chỉ được chứa chữ số và có độ dài từ 10 đến 13 ký tự.')
 export type Phone = z.infer<typeof Phone>
 
 export const ContactInfo = z.object({

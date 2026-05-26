@@ -29,7 +29,7 @@ export async function createBox(params: { userInfo: UserInfo; body: ChatBoxBody 
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -48,7 +48,7 @@ export async function markRead(boxId: ChatBoxId, userId: AuthUserId) {
     const row = await dal.chat.box.cmd.markRead(boxId, userId)
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         boxId: row.id,
         unreadReceiverCount: row.unreadReceiverCount,
         unreadSenderCount: row.unreadSenderCount,

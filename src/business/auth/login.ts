@@ -12,7 +12,9 @@ export async function byEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole
     })
     if (!user || user.status !== AuthUserStatus.enum.active) {
         throw new HttpErr.NotFound(
-            user?.status === AuthUserStatus.enum.inactive ? 'USER_INACTIVE' : 'USER_NOT_FOUND',
+            user?.status === AuthUserStatus.enum.inactive
+                ? 'Tài khoản chưa được kích hoạt.'
+                : 'Không tìm thấy người dùng.',
             {
                 email: params.email,
                 phone: params.phone,
@@ -25,12 +27,12 @@ export async function byEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole
 
     const isValid = utils.password.verifyPassword(params.password, user.password)
     if (!isValid) {
-        throw new HttpErr.Unauthorized('Incorrect password.')
+        throw new HttpErr.Unauthorized('Mật khẩu không chính xác.')
     }
 
     if (role && user.role !== role) {
         throw new HttpErr.NotFound(
-            'USER_NOT_FOUND',
+            'Không tìm thấy người dùng.',
             {
                 email: params.email,
                 phone: params.phone,

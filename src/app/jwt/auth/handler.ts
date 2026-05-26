@@ -32,7 +32,7 @@ const verifyToken = async (headers: Headers): Promise<any | null> => {
         payload = verify(token)
     } catch (error) {
         console.error(error)
-        throw new Unauthorized('Invalid authorization header')
+        throw new Unauthorized('Header xác thực không hợp lệ.')
     }
 
     let userInfo: any
@@ -40,13 +40,13 @@ const verifyToken = async (headers: Headers): Promise<any | null> => {
         userInfo = payload
     } catch (error) {
         console.error(error)
-        throw new Unauthorized('Invalid token payload')
+        throw new Unauthorized('Thông tin token không hợp lệ.')
     }
 
     const cachedTokenVersion = await getCachedTokenVersion(userInfo.id)
     if (cachedTokenVersion !== null) {
         if (cachedTokenVersion !== userInfo.tokenVersion) {
-            throw new Unauthorized('Token expired')
+            throw new Unauthorized('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
         }
 
         return userInfo
@@ -59,7 +59,7 @@ const verifyToken = async (headers: Headers): Promise<any | null> => {
         .executeTakeFirst()
 
     if (!user || user.tokenVersion !== userInfo.tokenVersion) {
-        throw new Unauthorized('Token expired')
+        throw new Unauthorized('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
     }
 
     await setCachedTokenVersion(user.id, user.tokenVersion)

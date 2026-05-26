@@ -59,7 +59,7 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
         return {
             id: booking.id,
             expiredAt: booking.expiredAt,
-            message: 'Your ticket will be held for ten minutes please choose your payment method',
+            message: 'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
         }
     })
 }
@@ -75,7 +75,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
             const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
             if (seatConflict) {
                 throw new HttpErr.UnprocessableEntity(
-                    'Seat is already reserved',
+                    'Ghế đã được giữ hoặc đã được đặt.',
                     'SEAT_CONFLICT_OUTBOUND'
                 )
             }
@@ -86,7 +86,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
             )
             if (seatConflictReturn) {
                 throw new HttpErr.UnprocessableEntity(
-                    'Seat is already reserved',
+                    'Ghế đã được giữ hoặc đã được đặt.',
                     'SEAT_CONFLICT_RETURNBOUND'
                 )
             }
@@ -102,7 +102,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
                 )
                 if (!result) {
                     throw new HttpErr.NotFound(
-                        'Trip price not found for the selected segment',
+                        'Không tìm thấy giá chuyến đi cho chặng đã chọn.',
                         {
                             companyId: trip.companyId,
                             fromStationId: trip.fromStationId,
@@ -183,7 +183,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
                 id: booking.id,
                 expiredAt: booking.expiredAt,
                 message:
-                    'Your ticket will be held for ten minutes please choose your payment method',
+                    'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
             }
         })
     }

@@ -13,7 +13,11 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
 
     const info = await service.google.verifyToken({ idToken })
 
-    if (!info.email) throw new HttpErr.UnprocessableEntity('Email not found', 'EMAIL_NOT_FOUND')
+    if (!info.email)
+        throw new HttpErr.UnprocessableEntity(
+            'Không tìm thấy email từ tài khoản Google.',
+            'EMAIL_NOT_FOUND'
+        )
 
     await dal.auth.user.cmd.authUpsertByEmail({
         data: {
@@ -34,7 +38,7 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
         user.role === AuthUserRole.enum.super_admin ||
         user.status !== AuthUserStatus.enum.active
     ) {
-        throw new HttpErr.NotFound('User not found or not active')
+        throw new HttpErr.NotFound('Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.')
     }
 
     return buildAuthResponse(user)

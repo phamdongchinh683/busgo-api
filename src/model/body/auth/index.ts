@@ -5,7 +5,7 @@ import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 
 const regPassword = `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@\\$%&!\\*\\?\\^_])(?!.*\\s).+$`
 const message =
-    'Password must contain uppercase, lowercase, a number, and one special character (# @ $ % & ! * ? ^ _), and no spaces'
+    'Mật khẩu phải có chữ hoa, chữ thường, chữ số, một ký tự đặc biệt (# @ $ % & ! * ? ^ _) và không chứa khoảng trắng.'
 
 export const AuthPassword = z.string().regex(new RegExp(regPassword), message).default('Abcd12345#')
 export type AuthPassword = z.infer<typeof AuthPassword>

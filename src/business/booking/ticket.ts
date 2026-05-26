@@ -31,15 +31,15 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
     })
 
     if (!data)
-        throw new HttpErr.Forbidden(
-            'You cannot cancel this ticket because you are not the owner of it'
-        )
+        throw new HttpErr.Forbidden('Bạn không thể hủy vé này vì bạn không phải chủ sở hữu vé.')
 
     if (
         data.tripStatus === OperationTripStatus.enum.running ||
         data.tripStatus === OperationTripStatus.enum.completed
     ) {
-        throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
+        throw new HttpErr.Forbidden(
+            'Chuyến đi đang diễn ra hoặc đã hoàn thành, bạn không thể hủy vé này.'
+        )
     }
 
     if (
@@ -48,13 +48,13 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
             now: utils.time.getNow().toDate(),
         })
     ) {
-        throw new HttpErr.Forbidden('You can only cancel ticket before 24 hours of trip departure')
+        throw new HttpErr.Forbidden('Bạn chỉ có thể hủy vé trước giờ khởi hành ít nhất 24 giờ.')
     }
 
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         tickets: tickets,
     }
 }
@@ -66,7 +66,7 @@ export async function checkInTicket(params: {
 }) {
     const ticket = await dal.booking.ticket.cmd.updateStatusTicket(params)
     return {
-        message: 'OK',
+        message: 'Thành công.',
         ticket: ticket,
     }
 }
@@ -96,13 +96,13 @@ export async function detailTicketSupport(
 export async function deleteTicket(id: BookingTicketId) {
     const data = await dal.booking.booking.query.getBookingByTicketId(id)
     if (!data) {
-        throw new HttpErr.Forbidden('Ticket not found')
+        throw new HttpErr.Forbidden('Không tìm thấy vé.')
     }
 
     assertTicketCanBeCancelled(data.tripStatus, data.departureDate)
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         tickets: await dal.booking.ticket.cmd.cancelTicketTransaction(id),
     }
 }
@@ -112,12 +112,14 @@ function assertTicketCanBeCancelled(tripStatus: OperationTripStatus, departureDa
         tripStatus === OperationTripStatus.enum.running ||
         tripStatus === OperationTripStatus.enum.completed
     ) {
-        throw new HttpErr.Forbidden('Trip running or completed you can not cancel this ticket')
+        throw new HttpErr.Forbidden(
+            'Chuyến đi đang diễn ra hoặc đã hoàn thành, bạn không thể hủy vé này.'
+        )
     }
 
     if (
         utils.time.isOutsideCancelableWindow({ departureDate, now: utils.time.getNow().toDate() })
     ) {
-        throw new HttpErr.Forbidden('You can only cancel ticket before 24 hours of trip departure')
+        throw new HttpErr.Forbidden('Bạn chỉ có thể hủy vé trước giờ khởi hành ít nhất 24 giờ.')
     }
 }

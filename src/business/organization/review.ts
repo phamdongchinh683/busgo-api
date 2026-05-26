@@ -23,7 +23,7 @@ export async function insertOne(params: { userId: AuthUserId; body: BusCompanyRe
         clearTripScheduleListCache(trip.companyId),
     ])
 
-    return { message: 'OK' }
+    return { message: 'Thành công.' }
 }
 
 export async function getReviewByCompany(query: BusCompanyReviewFilter) {

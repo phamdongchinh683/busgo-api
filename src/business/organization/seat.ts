@@ -13,13 +13,13 @@ export async function getSeats(params: TripSeatParam) {
 export async function createSeat(body: SeatCreateBody) {
     const seats = await dal.organization.seat.cmd.getSeatsByVehicle(body.vehicleId)
     if (seats.length > 0) {
-        throw new HttpErr.UnprocessableEntity('Vehicle has no available seats')
+        throw new HttpErr.UnprocessableEntity('Xe này đã được cấu hình ghế.')
     }
 
     await dal.organization.seat.query.createOne(body)
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -27,6 +27,6 @@ export async function deleteSeat(vehicleId: OrganizationVehicleId) {
     await dal.organization.seat.query.deleteByVehicleId(vehicleId)
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }

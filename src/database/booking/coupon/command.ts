@@ -59,7 +59,7 @@ export async function resultAmountOneWay(
 
     if (!originalAmount) {
         throw new HttpErr.NotFound(
-            'Trip price not found for the selected segment',
+            'Không tìm thấy giá chuyến đi cho chặng đã chọn.',
             {
                 fromStationId: params.fromStationId,
                 toStationId: params.toStationId,

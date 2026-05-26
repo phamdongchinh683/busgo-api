@@ -25,7 +25,7 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
     if (payment) {
         if (payment.status === PaymentStatus.enum.success) {
             throw new HttpErr.UnprocessableEntity(
-                'Payment already confirmed',
+                'Thanh toán đã được xác nhận.',
                 'PAYMENT_ALREADY_CONFIRMED'
             )
         }
@@ -35,7 +35,7 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
             (payment.expiredAt && payment.expiredAt < utils.time.getNow().toDate())
         ) {
             throw new HttpErr.UnprocessableEntity(
-                'Payment failed or expired',
+                'Thanh toán đã thất bại hoặc đã hết hạn.',
                 'PAYMENT_FAILED_OR_EXPIRED'
             )
         }
@@ -63,7 +63,7 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
     })
 
     if (!bookingInfo) {
-        throw new HttpErr.Forbidden('You are not allowed to create payment for this booking')
+        throw new HttpErr.Forbidden('Bạn không có quyền tạo thanh toán cho đặt vé này.')
     }
 
     switch (method) {
@@ -75,7 +75,7 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
             return createStripePayment(params, userId)
         default:
             throw new HttpErr.UnprocessableEntity(
-                'Invalid payment method',
+                'Phương thức thanh toán không hợp lệ.',
                 'INVALID_PAYMENT_METHOD'
             )
     }
@@ -87,7 +87,7 @@ export async function createCashPayment(params: PaymentMethodRequest) {
     await dal.booking.booking.cmd.updateExpiredBooking(params.id)
 
     return {
-        message: 'Please pay when you board the bus',
+        message: 'Vui lòng thanh toán khi lên xe.',
         payment,
     }
 }
@@ -96,7 +96,7 @@ export async function createVnpayPayment(params: PaymentMethodRequest, ip: strin
     const payment = await preparePayment(params.id, PaymentMethod.enum.vnpay)
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         paymentUrl: service.vnpay.init.initiatePayment(payment.amount, payment.transactionCode, ip),
     }
 }
@@ -111,27 +111,27 @@ async function confirmVnpayPayment(query: Record<string, string>) {
     const { vnp_TxnRef, vnp_Amount, vnp_ResponseCode, vnp_TransactionNo, vnp_PayDate } = vnpParams
 
     if (!vnp_TxnRef || vnp_Amount == null || !vnp_ResponseCode) {
-        return { RspCode: '99', Message: 'Invalid request' }
+        return { RspCode: '99', Message: 'Yêu cầu không hợp lệ' }
     }
 
     return db.transaction().execute(async tx => {
         const payment = await dal.payment.payment.query.getPayment(undefined, vnp_TxnRef, tx)
 
         if (!payment) {
-            return { RspCode: '01', Message: 'Payment not found' }
+            return { RspCode: '01', Message: 'Không tìm thấy thanh toán' }
         }
 
         if (payment.status === PaymentStatus.enum.success) {
-            return { RspCode: '00', Message: 'Already confirmed' }
+            return { RspCode: '00', Message: 'Thanh toán đã được xác nhận' }
         }
 
         if (payment.amount !== Number(vnp_Amount) / 100) {
-            return { RspCode: '04', Message: 'Invalid amount' }
+            return { RspCode: '04', Message: 'Số tiền thanh toán không hợp lệ' }
         }
 
         if (vnp_ResponseCode !== '00') {
             await dal.payment.payment.cmd.updatePaymentStatusFailed(vnp_TxnRef, tx)
-            return { RspCode: '24', Message: 'Payment failed' }
+            return { RspCode: '24', Message: 'Thanh toán thất bại' }
         }
 
         await dal.payment.payment.cmd.updatePaymentStatusSuccess(
@@ -140,7 +140,7 @@ async function confirmVnpayPayment(query: Record<string, string>) {
             vnp_PayDate,
             tx
         )
-        return { RspCode: '00', Message: 'Confirm Success' }
+        return { RspCode: '00', Message: 'Xác nhận thanh toán thành công' }
     })
 }
 
@@ -233,7 +233,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
     const user = await dal.auth.user.query.getOne({ id: userId })
     if (!user?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
-            'Customer Stripe account not found',
+            'Không tìm thấy tài khoản Stripe của khách hàng.',
             'CUSTOMER_STRIPE_NOT_FOUND'
         )
     }
@@ -241,7 +241,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
     const companyRow = await dal.payment.payment.query.getCompanyIdByBookingId(params.id)
     if (!companyRow?.companyId) {
         throw new HttpErr.UnprocessableEntity(
-            'Company not found for this booking',
+            'Không tìm thấy công ty cho đặt vé này.',
             'COMPANY_NOT_FOUND'
         )
     }
@@ -250,7 +250,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
 
     if (!companyAdmin?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
-            'Company has not linked Stripe account',
+            'Công ty chưa liên kết tài khoản Stripe.',
             'COMPANY_STRIPE_NOT_LINKED'
         )
     }
@@ -263,7 +263,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         payment: payment,

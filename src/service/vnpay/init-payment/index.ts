@@ -10,7 +10,7 @@ export function initiatePayment(amount: number, transactionCode: string, ip: str
         vnp_Amount: String(amount * 100),
         vnp_CurrCode: 'VND',
         vnp_TxnRef: transactionCode,
-        vnp_OrderInfo: 'Payment for ticket',
+        vnp_OrderInfo: 'Thanh toán vé xe BusGo',
         vnp_Locale: 'vn',
         vnp_IpAddr: ip,
         vnp_OrderType: 'other',

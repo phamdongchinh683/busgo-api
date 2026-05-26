@@ -104,7 +104,7 @@ export const TripBody = z.object({
             return input >= today
         },
         {
-            message: 'departureDate must be today or in the future',
+            message: 'Ngày khởi hành phải là hôm nay hoặc một ngày trong tương lai.',
         }
     ),
 })

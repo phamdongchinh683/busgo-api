@@ -16,7 +16,7 @@ export function verifyIpn(query: Record<string, string>) {
     const signed = createSecureHash(signData, hashSecret)
 
     if (secureHash !== signed) {
-        return { RspCode: '97', Message: 'Invalid checksum' }
+        return { RspCode: '97', Message: 'Chữ ký không hợp lệ' }
     }
 
     return vnpParams

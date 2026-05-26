@@ -38,5 +38,5 @@ export async function updateOne(params: { id: BookingPromotionNewsId; body: Prom
     await dal.booking.promotionNews.cmd.updateOne(id, body)
 
     await utils.cache.delCacheByPattern('promotion-new:list:*')
-    return { message: 'OK' }
+    return { message: 'Thành công.' }
 }

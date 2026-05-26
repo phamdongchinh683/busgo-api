@@ -59,7 +59,7 @@ export async function updateNewPassword(id: AuthUserId, password: AuthPassword) 
         password: password,
     })
     return {
-        message: 'OK',
+        message: 'Thành công.',
         password: password,
     }
 }
@@ -89,7 +89,7 @@ export async function deleteOne(id: AuthUserId) {
     await utils.cache.delCacheByPattern('driver:list:*')
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
         user: user,
     }
 }
@@ -110,6 +110,6 @@ export async function verifyAccount(params: {
     )
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }

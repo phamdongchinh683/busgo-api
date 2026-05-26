@@ -13,8 +13,8 @@ export const rateLimitPlugin = fastifyPlugin(async (app: FastifyInstance) => {
         max: 4000,
         timeWindow: '1m',
         keyGenerator: req => req.ip,
-        errorResponseBuilder: (request, context) => {
-            throw new HttpErr.TooManyRequests(`Rate limit exceeded. Try again in ${context.after}`)
+        errorResponseBuilder: () => {
+            throw new HttpErr.TooManyRequests('Bạn đã gửi quá nhiều yêu cầu. Vui lòng thử lại sau.')
         },
     })
 })

@@ -14,13 +14,13 @@ export async function updatePassword(
 ) {
     const user = await dal.auth.user.query.getOne({ id })
     if (!user) {
-        throw new HttpErr.NotFound('USER_NOT_FOUND')
+        throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
     }
 
     const verify = utils.password.verifyPassword(params.oldPassword, user.password)
 
     if (!verify) {
-        throw new HttpErr.Unauthorized('Incorrect password.')
+        throw new HttpErr.Unauthorized('Mật khẩu hiện tại không chính xác.')
     }
 
     await dal.auth.user.cmd.updatePassword({
@@ -28,7 +28,7 @@ export async function updatePassword(
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -44,7 +44,7 @@ export async function resetPassword(params: {
         const user = await dal.auth.userOtp.cmd.getOne({ otp, email, phone })
         const now = utils.time.getNow().toDate()
         if (!user || (user.expiresAt && user.expiresAt < now))
-            throw new HttpErr.Unauthorized('Invalid or expired OTP.')
+            throw new HttpErr.Unauthorized('Mã OTP không hợp lệ hoặc đã hết hạn.')
     }
 
     if (email && !phone) {
@@ -73,6 +73,6 @@ export async function resetPassword(params: {
     }
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }

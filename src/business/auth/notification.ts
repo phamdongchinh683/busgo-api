@@ -31,10 +31,10 @@ export async function createNotification(params: {
             })
         }
 
-        return { message: 'OK' }
+        return { message: 'Thành công.' }
     }
 
-    return { message: 'OK' }
+    return { message: 'Thành công.' }
 }
 
 export async function getMyNotifications(query: NotificationQuery, userId: AuthUserId) {

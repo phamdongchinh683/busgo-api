@@ -22,12 +22,12 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
     const userData = await getFacebookUserData({ payload })
     if (!userData.facebookId)
         throw new HttpErr.UnprocessableEntity(
-            'Facebook account id not found',
+            'Không tìm thấy mã định danh tài khoản Facebook.',
             'INVALID_FACEBOOK_ACCOUNT'
         )
     if (!userData.email)
         throw new HttpErr.UnprocessableEntity(
-            'Email not found. Grant email permission in Facebook Login and request the email scope.',
+            'Không tìm thấy email. Vui lòng cấp quyền truy cập email trong Facebook Login.',
             'EMAIL_NOT_FOUND'
         )
 
@@ -50,7 +50,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
         user.role === AuthUserRole.enum.super_admin ||
         user.status !== AuthUserStatus.enum.active
     ) {
-        throw new HttpErr.NotFound('User not found or not active')
+        throw new HttpErr.NotFound('Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.')
     }
 
     return buildAuthResponse(user)
@@ -82,7 +82,7 @@ async function getFacebookUserData(params: {
     }
 
     throw new HttpErr.UnprocessableEntity(
-        'Must have at least idToken or accessToken',
+        'Vui lòng cung cấp idToken hoặc accessToken.',
         'TOKEN_INVALID'
     )
 }

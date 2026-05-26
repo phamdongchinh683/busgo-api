@@ -18,7 +18,7 @@ export async function signUp(params: AuthUserTableInsert) {
         const user = await dal.auth.user.query.insertOne(params)
 
         return {
-            message: 'OK',
+            message: 'Thành công.',
             token: generateToken(user),
             user: user,
         }
@@ -26,12 +26,12 @@ export async function signUp(params: AuthUserTableInsert) {
         if (error instanceof DatabaseError && error.code === '23505') {
             if (error.constraint === 'user_email_key')
                 throw new HttpErr.UnprocessableEntity(
-                    `${params.email} has been registered before`,
+                    `Email ${params.email} đã được đăng ký.`,
                     'EMAIL_ALREADY_EXISTS'
                 )
             if (error.constraint === 'user_phone_key')
                 throw new HttpErr.UnprocessableEntity(
-                    `${params.phone} has been registered before`,
+                    `Số điện thoại ${params.phone} đã được đăng ký.`,
                     'PHONE_ALREADY_EXISTS'
                 )
         }
@@ -86,14 +86,14 @@ export async function signUpCompanyAdmin(
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${email} has been registered before`,
+                        `Email ${email} đã được đăng ký.`,
                         'EMAIL_ALREADY_EXISTS'
                     )
                 }
 
                 if (error.constraint === 'user_phone_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${phone} has been registered before`,
+                        `Số điện thoại ${phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
                     )
                 }
@@ -179,13 +179,13 @@ export async function createCompanyAccount(
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${email} has been registered before`,
+                        `Email ${email} đã được đăng ký.`,
                         'EMAIL_ALREADY_EXISTS'
                     )
                 }
                 if (error.constraint === 'user_phone_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${phone} has been registered before`,
+                        `Số điện thoại ${phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
                     )
                 }
@@ -195,7 +195,7 @@ export async function createCompanyAccount(
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -251,13 +251,13 @@ export async function signUpCompanyAdminWithCompany(
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${email} has been registered before`,
+                        `Email ${email} đã được đăng ký.`,
                         'EMAIL_ALREADY_EXISTS'
                     )
                 }
                 if (error.constraint === 'user_phone_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${phone} has been registered before`,
+                        `Số điện thoại ${phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
                     )
                 }
@@ -378,19 +378,19 @@ export async function insertDriver(
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${params.email} has been registered before`,
+                        `Email ${params.email} đã được đăng ký.`,
                         'EMAIL_ALREADY_EXISTS'
                     )
                 }
                 if (error.constraint === 'user_phone_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `${params.phone} has been registered before`,
+                        `Số điện thoại ${params.phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
                     )
                 }
                 if (error.constraint === 'company_drivers_user_id_company_id_uidx') {
                     throw new HttpErr.UnprocessableEntity(
-                        'This driver is already registered for this company',
+                        'Tài xế này đã được đăng ký cho công ty này.',
                         'DRIVER_COMPANY_ALREADY_EXISTS'
                     )
                 }

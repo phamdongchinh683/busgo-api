@@ -24,7 +24,7 @@ export async function send(params: { field: 'email' | 'phone'; value: string }) 
     }
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -40,18 +40,18 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
 
     if (process.env.APP_ENV !== 'production') {
         return {
-            message: 'OK',
+            message: 'Thành công.',
         }
     }
 
     await service.email.sender.send({
         to: to,
-        subject: 'BusGo - OTP Code',
+        subject: 'BusGo - Mã OTP',
         html: service.email.template.otpTemplate({ otp: otp.toString() }),
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }
 
@@ -67,16 +67,16 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
 
     if (process.env.APP_ENV !== 'production') {
         return {
-            message: 'OK',
+            message: 'Thành công.',
         }
     }
 
     await service.infobip.sender.send({
         to: to,
-        message: `Your OTP code is ${otp.toString()}. This OTP will expire in 2 minutes.`,
+        message: `Mã OTP của bạn là ${otp.toString()}. Mã này sẽ hết hạn sau 2 phút.`,
     })
 
     return {
-        message: 'OK',
+        message: 'Thành công.',
     }
 }

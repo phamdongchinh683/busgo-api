@@ -54,7 +54,7 @@ export async function upsertOne(params: OperationTripScheduleTableInsert) {
 
     if (!inserted) {
         throw new HttpErr.UnprocessableEntity(
-            'Trip schedule already exists',
+            'Lịch trình chuyến đi đã tồn tại.',
             'TRIP_SCHEDULE_ALREADY_EXISTS'
         )
     }

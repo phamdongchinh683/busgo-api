@@ -30,7 +30,7 @@ export async function getTripPriceTemplates(params: {
     user: UserInfo
 }) {
     if (!params.user.companyId) {
-        throw new HttpErr.Forbidden('You are not allowed to access trip price templates')
+        throw new HttpErr.Forbidden('Bạn không có quyền truy cập bảng giá chuyến đi.')
     }
     const companyId = params.user.companyId
 

@@ -18,7 +18,7 @@ export async function expireBooking() {
 
         if (expiredBookings.length === 0) {
             return {
-                message: 'OK',
+                message: 'Thành công.',
                 expiredBookingCount: 0,
                 cancelledTicketCount: 0,
             }
@@ -41,7 +41,7 @@ export async function expireBooking() {
 
         if (updatedBookingIds.length === 0) {
             return {
-                message: 'OK',
+                message: 'Thành công.',
                 expiredBookingCount: 0,
                 cancelledTicketCount: 0,
             }
@@ -76,7 +76,7 @@ export async function expireBooking() {
         }
 
         return {
-            message: 'OK',
+            message: 'Thành công.',
             expiredBookingCount: updatedBookingIds.length,
             cancelledTicketCount: ticketIds.length,
         }
