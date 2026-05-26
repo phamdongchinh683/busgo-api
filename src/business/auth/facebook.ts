@@ -1,12 +1,9 @@
 import { HttpErr } from '../../app/index.js'
-import { dal } from '../../database/index.js'
 import { AuthFacebookBody, AuthResponse } from '../../model/body/auth/index.js'
 import { service } from '../../service/index.js'
 import { createDecoder } from 'fast-jwt'
-import { utils } from '../../utils/index.js'
-import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
 import { FacebookIdTokenPayload } from '../../service/facebook/type.js'
-import { buildAuthResponse } from './session.js'
+import { signInByEmail } from './social.js'
 
 interface FacebookUserData {
     email?: null | string
@@ -31,37 +28,11 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
             'EMAIL_NOT_FOUND'
         )
 
-    const user = await dal.auth.user.cmd.authUpsertByEmail({
-        data: {
-            email: userData.email,
-            password: utils.password.hashPassword(userData.email),
-            fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
-            phone: null,
-            isPhoneVerified: false,
-            role: AuthUserRole.enum.customer,
-            status: AuthUserStatus.enum.active,
-        },
+    return signInByEmail({
+        email: userData.email,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
     })
-
-    if (user.role === AuthUserRole.enum.super_admin || user.status !== AuthUserStatus.enum.active) {
-        throw new HttpErr.NotFound('Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.')
-    }
-
-    if (user.role === AuthUserRole.enum.customer) {
-        return buildAuthResponse(user)
-    }
-
-    const authUser = await dal.auth.user.query.getAuthUser({ email: user.email })
-
-    if (
-        !authUser ||
-        authUser.role === AuthUserRole.enum.super_admin ||
-        authUser.status !== AuthUserStatus.enum.active
-    ) {
-        throw new HttpErr.NotFound('Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.')
-    }
-
-    return buildAuthResponse(authUser)
 }
 
 async function getFacebookUserData(params: {
