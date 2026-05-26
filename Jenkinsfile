@@ -5,7 +5,7 @@ pipeline {
         skipDefaultCheckout(true)
         disableConcurrentBuilds()
         timestamps()
-        timeout(time: 30, unit: 'MINUTES')
+        timeout(time: 20, unit: 'MINUTES')
         buildDiscarder(logRotator(numToKeepStr: '10'))
     }
 
@@ -16,19 +16,25 @@ pipeline {
     }
 
     stages {
-        stage('Checkout') {
+        stage('Checkout Latest Main') {
             steps {
-                cleanWs()
-
                 git branch: 'main',
                     credentialsId: 'github-ssh-key',
                     url: 'git@github.com:phamdongchinh683/busgo-api.git'
 
                 script {
+                    sh '''
+                        set -e
+                        git fetch origin main
+                        git reset --hard origin/main
+                    '''
+
                     env.DEPLOY_IMAGE_TAG = sh(
                         script: 'git rev-parse --short=12 HEAD',
                         returnStdout: true
                     ).trim()
+
+                    echo "Deploy commit: ${env.DEPLOY_IMAGE_TAG}"
                 }
             }
         }
@@ -44,9 +50,9 @@ pipeline {
                         error('Docker Compose is not installed.')
                     }
 
-                    echo "Image: ${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}"
-                    echo "Compose command: ${COMPOSE_CMD}"
-                    echo "Compose project: ${COMPOSE_PROJECT_NAME}"
+                    echo "Compose command: ${env.COMPOSE_CMD}"
+                    echo "Compose project: ${env.COMPOSE_PROJECT_NAME}"
+                    echo "Image: ${env.IMAGE_REPOSITORY}:${env.DEPLOY_IMAGE_TAG}"
                 }
             }
         }
@@ -79,51 +85,18 @@ pipeline {
             }
         }
 
-        stage('Push Docker Hub') {
-            steps {
-                withCredentials([usernamePassword(
-                    credentialsId: 'dockerhub-creds',
-                    usernameVariable: 'DOCKERHUB_USERNAME',
-                    passwordVariable: 'DOCKERHUB_TOKEN'
-                )]) {
-                    sh '''
-                        set -e
-
-                        echo "$DOCKERHUB_TOKEN" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin >/dev/null
-
-                        docker push "${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}" >/dev/null
-                        docker push "${IMAGE_REPOSITORY}:latest" >/dev/null
-
-                        echo "Docker image pushed: ${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}"
-                    '''
-                }
-            }
-        }
-
-        stage('Ensure Core Images') {
-            steps {
-                sh '''
-                    set -e
-
-                    docker image inspect postgres:15 >/dev/null 2>&1 || docker pull postgres:15 >/dev/null
-                    docker image inspect redis:7-alpine >/dev/null 2>&1 || docker pull redis:7-alpine >/dev/null
-                    docker image inspect amir20/dozzle:latest >/dev/null 2>&1 || docker pull amir20/dozzle:latest >/dev/null
-                    docker image inspect netdata/netdata:stable >/dev/null 2>&1 || docker pull netdata/netdata:stable >/dev/null
-                '''
-            }
-        }
-
         stage('Ensure Core Services') {
             steps {
                 sh '''
                     set -e
 
-                    $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" up -d --no-recreate db redis dozzle netdata
+                    $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" \
+                    up -d --no-recreate db redis dozzle netdata
                 '''
             }
         }
 
-        stage('Wait PostgreSQL') {
+        stage('Wait Database And Redis') {
             steps {
                 sh '''
                     set -e
@@ -131,32 +104,30 @@ pipeline {
                     for i in $(seq 1 30); do
                         if docker exec postgres pg_isready -U busgo -d busgo >/dev/null 2>&1; then
                             echo "PostgreSQL ready"
-                            exit 0
+                            break
                         fi
-                        sleep 2
+
+                        if [ "$i" -eq 30 ]; then
+                            echo "PostgreSQL is not ready"
+                            exit 1
+                        fi
+
+                        sleep 1
                     done
-
-                    echo "PostgreSQL is not ready"
-                    exit 1
-                '''
-            }
-        }
-
-        stage('Wait Redis') {
-            steps {
-                sh '''
-                    set -e
 
                     for i in $(seq 1 30); do
                         if docker exec redis sh -c 'redis-cli -a "$REDIS_PASSWORD" ping' 2>/dev/null | grep -q PONG; then
                             echo "Redis ready"
-                            exit 0
+                            break
                         fi
-                        sleep 2
-                    done
 
-                    echo "Redis is not ready"
-                    exit 1
+                        if [ "$i" -eq 30 ]; then
+                            echo "Redis is not ready"
+                            exit 1
+                        fi
+
+                        sleep 1
+                    done
                 '''
             }
         }
@@ -191,45 +162,47 @@ pipeline {
                     set -e
 
                     for port in 3001 3002; do
-                        for i in $(seq 1 30); do
+                        for i in $(seq 1 20); do
                             if curl -fsS "http://127.0.0.1:${port}/health" >/dev/null; then
                                 echo "API port ${port} healthy"
                                 break
                             fi
 
-                            if [ "$i" -eq 30 ]; then
+                            if [ "$i" -eq 20 ]; then
                                 echo "API on port ${port} is not healthy"
                                 exit 1
                             fi
 
-                            sleep 2
+                            sleep 1
                         done
                     done
                 '''
             }
         }
 
-        stage('Cleanup') {
+        stage('Light Cleanup') {
             steps {
                 sh '''
-                    docker image prune -f >/dev/null 2>&1 || true
                     docker container prune -f >/dev/null 2>&1 || true
+                    docker image prune -f >/dev/null 2>&1 || true
                 '''
             }
         }
     }
 
-   post {
-    always {
-        sh '''
-            rm -f .env
-        '''
+    post {
+        always {
+            sh '''
+                rm -f .env
+            '''
+        }
 
-        cleanWs()
-    }
+        success {
+            echo "Deploy completed: ${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}"
+        }
 
-    success {
-        echo "Deploy completed: ${IMAGE_REPOSITORY}:${DEPLOY_IMAGE_TAG}"
+        failure {
+            echo 'Deploy failed. Check the failed stage above.'
+        }
     }
-}
 }
