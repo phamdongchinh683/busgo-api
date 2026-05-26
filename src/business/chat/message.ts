@@ -26,34 +26,30 @@ export async function sendMessage(
     const receiverId =
         result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId
 
-    try {
-        ws.emitEvent({
-            targetId: `box:${result.box.id}`,
-            event: 'message:new',
-            data: {
-                messageId: String(result.row.id),
-                boxId: String(result.box.id),
-                senderName: userInfo.fullName,
-                body: result.row.body,
-                senderId: result.row.senderId,
-                receiverId,
-                createdAt: result.row.createdAt,
-            },
-        })
+    ws.emitEvent({
+        targetId: `box:${result.box.id}`,
+        event: 'message:new',
+        data: {
+            messageId: String(result.row.id),
+            boxId: String(result.box.id),
+            senderName: userInfo.fullName,
+            body: result.row.body,
+            senderId: result.row.senderId,
+            receiverId,
+            createdAt: result.row.createdAt,
+        },
+    })
 
-        ws.emitEvent({
-            targetId: `user:${receiverId}`,
-            event: 'chat:unread:count',
-            data: {
-                boxId: String(result.box.id),
-                lastMessage: result.row.body,
-                unreadReceiverCount: result.box.unreadReceiverCount,
-                unreadSenderCount: result.box.unreadSenderCount,
-            },
-        })
-    } catch (error) {
-        console.error(error)
-    }
+    ws.emitEvent({
+        targetId: `user:${receiverId}`,
+        event: 'chat:unread:count',
+        data: {
+            boxId: String(result.box.id),
+            lastMessage: result.row.body,
+            unreadReceiverCount: result.box.unreadReceiverCount,
+            unreadSenderCount: result.box.unreadSenderCount,
+        },
+    })
 
     // await service.queue.chat.pushChatMessage({
     //     action: 'message:new',
