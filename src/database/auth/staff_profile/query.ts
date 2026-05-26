@@ -33,6 +33,14 @@ export async function getOne(params: { userId: AuthUserId; companyId?: Organizat
         .executeTakeFirst()
 }
 
+export async function getAuthContext(userId: AuthUserId) {
+    return db
+        .selectFrom('auth.staff_profile as sp')
+        .select(['sp.companyId', 'sp.role as staffProfileRole'])
+        .where('sp.userId', '=', userId)
+        .executeTakeFirst()
+}
+
 export async function updateRole(userId: AuthUserId, role: AuthStaffProfileRole) {
     return db
         .updateTable('auth.staff_profile')

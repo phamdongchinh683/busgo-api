@@ -1,12 +1,12 @@
 import { HttpErr } from '../../app/index.js'
-import { generateToken } from '../../app/jwt/auth/handler.js'
 import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { AuthSignInBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
+import { buildAuthResponse } from './session.js'
 
 export async function byEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole) {
-    const user = await dal.auth.user.query.getOne({
+    const user = await dal.auth.user.query.getAuthUser({
         email: params.email,
         phone: params.phone,
     })
@@ -28,7 +28,7 @@ export async function byEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole
         throw new HttpErr.Unauthorized('Incorrect password.')
     }
 
-    if (role && user.role !== role && user.role == AuthUserRole.enum.super_admin) {
+    if (role && user.role !== role) {
         throw new HttpErr.NotFound(
             'USER_NOT_FOUND',
             {
@@ -40,12 +40,6 @@ export async function byEmailOrPhone(params: AuthSignInBody, role?: AuthUserRole
             404
         )
     }
-    return {
-        message: 'OK',
-        token: generateToken({
-            ...user,
-            tokenVersion: user.tokenVersion,
-        }),
-        user,
-    }
+
+    return buildAuthResponse(user)
 }

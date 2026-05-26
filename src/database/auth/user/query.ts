@@ -165,6 +165,37 @@ export function getOne(params: { email?: string; phone?: string; id?: AuthUserId
         .executeTakeFirst()
 }
 
+export async function getAuthUser(params: { email?: string; phone?: string; id?: AuthUserId }) {
+    const { email, phone, id } = params
+
+    if (!email && !phone && !id) {
+        return undefined
+    }
+
+    return db
+        .selectFrom('auth.user as u')
+        .select([
+            'u.id',
+            'u.fullName',
+            'u.password',
+            'u.email',
+            'u.phone',
+            'u.role',
+            'u.status',
+            'u.tokenVersion',
+            'u.accountStripeId',
+            'u.lastChangeContact',
+        ])
+        .where(eb => {
+            const cond = []
+            if (email) cond.push(eb('u.email', '=', email))
+            if (phone) cond.push(eb('u.phone', '=', phone))
+            if (id) cond.push(eb('u.id', '=', id))
+            return eb.and(cond)
+        })
+        .executeTakeFirst()
+}
+
 export function findAll(query: UserListQuery) {
     const { limit, next, status, role, companyId, email, phone } = query
     return db

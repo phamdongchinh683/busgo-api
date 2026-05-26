@@ -1,5 +1,4 @@
 import { HttpErr } from '../../app/index.js'
-import { auth } from '../../app/jwt/index.js'
 import { dal } from '../../database/index.js'
 import { AuthFacebookBody, AuthResponse } from '../../model/body/auth/index.js'
 import { service } from '../../service/index.js'
@@ -7,6 +6,7 @@ import { createDecoder } from 'fast-jwt'
 import { utils } from '../../utils/index.js'
 import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
 import { FacebookIdTokenPayload } from '../../service/facebook/type.js'
+import { buildAuthResponse } from './session.js'
 
 interface FacebookUserData {
     email?: null | string
@@ -43,7 +43,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
         },
     })
 
-    const user = await dal.auth.user.query.getOne({ email: userData.email })
+    const user = await dal.auth.user.query.getAuthUser({ email: userData.email })
 
     if (
         !user ||
@@ -53,14 +53,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
         throw new HttpErr.NotFound('User not found or not active')
     }
 
-    return {
-        message: 'OK',
-        token: auth.generateToken({
-            ...user,
-            tokenVersion: user.tokenVersion,
-        }),
-        user,
-    }
+    return buildAuthResponse(user)
 }
 
 async function getFacebookUserData(params: {

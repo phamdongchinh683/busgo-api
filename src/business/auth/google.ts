@@ -2,9 +2,9 @@ import { HttpErr } from '../../app/index.js'
 import { dal } from '../../database/index.js'
 import { service } from '../../service/index.js'
 import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
-import { auth } from '../../app/jwt/index.js'
 import { AuthGoogleBody, AuthResponse } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
+import { buildAuthResponse } from './session.js'
 
 export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<AuthResponse> {
     const {
@@ -27,7 +27,7 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
         },
     })
 
-    const user = await dal.auth.user.query.getOne({ email: info.email })
+    const user = await dal.auth.user.query.getAuthUser({ email: info.email })
 
     if (
         !user ||
@@ -37,12 +37,5 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
         throw new HttpErr.NotFound('User not found or not active')
     }
 
-    return {
-        message: 'OK',
-        token: auth.generateToken({
-            ...user,
-            tokenVersion: user.tokenVersion,
-        }),
-        user,
-    }
+    return buildAuthResponse(user)
 }
