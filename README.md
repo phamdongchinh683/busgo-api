@@ -335,3 +335,4 @@ network, staging environment, VPN, or authentication layer.
 | Swagger UI does not load locally                            | Confirm `APP_ENV` is not `production` and `public/swagger-dev.html` exists                           |
 | Social login fails                                          | Verify provider credentials, token audience, and HTTPS requirements for browser-based flows          |
 trigger
+trigger Tue May 26 18:41:13 +07 2026
