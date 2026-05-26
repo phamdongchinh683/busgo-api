@@ -31,7 +31,7 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
             'EMAIL_NOT_FOUND'
         )
 
-    await dal.auth.user.cmd.authUpsertByEmail({
+    const user = await dal.auth.user.cmd.authUpsertByEmail({
         data: {
             email: userData.email,
             password: utils.password.hashPassword(userData.email),
@@ -43,17 +43,25 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
         },
     })
 
-    const user = await dal.auth.user.query.getAuthUser({ email: userData.email })
+    if (user.role === AuthUserRole.enum.super_admin || user.status !== AuthUserStatus.enum.active) {
+        throw new HttpErr.NotFound('Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.')
+    }
+
+    if (user.role === AuthUserRole.enum.customer) {
+        return buildAuthResponse(user)
+    }
+
+    const authUser = await dal.auth.user.query.getAuthUser({ email: user.email })
 
     if (
-        !user ||
-        user.role === AuthUserRole.enum.super_admin ||
-        user.status !== AuthUserStatus.enum.active
+        !authUser ||
+        authUser.role === AuthUserRole.enum.super_admin ||
+        authUser.status !== AuthUserStatus.enum.active
     ) {
         throw new HttpErr.NotFound('Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.')
     }
 
-    return buildAuthResponse(user)
+    return buildAuthResponse(authUser)
 }
 
 async function getFacebookUserData(params: {

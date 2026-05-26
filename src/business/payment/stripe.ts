@@ -160,7 +160,9 @@ export async function getBalance(userInfo: UserInfo) {
         query: stripeCachePayload(userInfo),
         ttl: BALANCE_CACHE_TTL_SECONDS,
         queryFn: async () => {
-            const balance = await service.stripe.connect.getConnectedAccountBalance(userInfo.accountStripeId ?? '')
+            const balance = await service.stripe.connect.getConnectedAccountBalance(
+                userInfo.accountStripeId ?? ''
+            )
 
             return {
                 available: balance.available,
