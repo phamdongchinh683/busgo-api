@@ -3,6 +3,7 @@ import { AuthUserId, AuthUserRole, AuthUserStatus } from '../../../database/auth
 import z from 'zod'
 import { AuthPassword } from '../auth/index.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 
 export const UserBody = z.object({
     fullName: z.string().min(7),
@@ -54,6 +55,7 @@ export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
             id: AuthUserId,
+            staffProfileRole: AuthStaffProfileRole.nullable(),  
         }).omit({ password: true }),
     ),
     next: AuthUserId.nullable(),
