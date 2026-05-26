@@ -155,21 +155,12 @@ export async function removePaymentMethod(params: { user: UserInfo; paymentMetho
 }
 
 export async function getBalance(userInfo: UserInfo) {
-    const accountStripeId = userInfo.accountStripeId
-
-    if (!accountStripeId) {
-        throw new HttpErr.UnprocessableEntity(
-            'Không tìm thấy tài khoản Stripe.',
-            'STRIPE_ACCOUNT_NOT_FOUND'
-        )
-    }
-
     return utils.cache.cacheQuery<BalanceResponse>({
         prefix: BALANCE_CACHE_PREFIX,
         query: stripeCachePayload(userInfo),
         ttl: BALANCE_CACHE_TTL_SECONDS,
         queryFn: async () => {
-            const balance = await service.stripe.connect.getConnectedAccountBalance(accountStripeId)
+            const balance = await service.stripe.connect.getConnectedAccountBalance(userInfo.accountStripeId ?? '')
 
             return {
                 available: balance.available,
