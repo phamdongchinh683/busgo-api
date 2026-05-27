@@ -95,7 +95,7 @@ export async function createTripTransaction({ scheduleId, departureDate, company
 function assertTripIsBookable(status: OperationTripStatus) {
     if (status !== OperationTripStatus.enum.scheduled) {
         throw new HttpErr.UnprocessableEntity(
-            'Chuyến đi không còn khả dụng để đặt vé.',
+            'Chuyến đi đã bắt đầu, hoàn thành nên bạn không thể đặt vé cho ngày hôm nay.',
             'TRIP_NOT_BOOKABLE'
         )
     }
