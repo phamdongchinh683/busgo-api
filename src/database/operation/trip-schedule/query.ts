@@ -5,12 +5,16 @@ import { db } from '../../../datasource/db.js'
 import { OperationStationId } from '../station/type.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { sql } from 'kysely'
+import { utils } from '../../../utils/index.js'
 
 export async function findAllByFilter(
     query: TripScheduleFilter,
     companyId?: OrganizationBusCompanyId
 ) {
     const { limit, next, from, to, date, orderBy } = query
+
+    const today = utils.time.getNow().format('YYYY-MM-DD')
+    const nowTime = utils.time.getNow().format('HH:mm:ss')
 
     return db
         .selectFrom('operation.trip_schedule as ts')
@@ -32,27 +36,42 @@ export async function findAllByFilter(
             'r.durationMinutes',
             'bc.reviewAvgStars as totalStars',
         ])
-
         .where(eb => {
             const cond = []
+
             cond.push(eb('ts.status', '=', true))
+
             if (from) {
                 cond.push(eb('r.fromLocation', '=', from))
             }
+
             if (to) {
                 cond.push(eb('r.toLocation', '=', to))
             }
+
             if (date) {
                 cond.push(eb('ts.startDate', '<=', date))
                 cond.push(eb('ts.endDate', '>=', date))
+
+                cond.push(
+                    eb.or([
+                        eb(sql`${date}`, '>', today),
+                        eb.and([
+                            eb(sql`${date}`, '=', today),
+                            sql<boolean>`ts.departure_time > ${nowTime}::time`,
+                        ]),
+                    ])
+                )
             }
 
             if (companyId) {
                 cond.push(eb('ts.companyId', '=', companyId))
             }
+
             if (next) {
                 cond.push(eb('ts.id', '>', next))
             }
+
             return eb.and(cond)
         })
         .limit(limit + 1)

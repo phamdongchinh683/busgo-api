@@ -42,7 +42,7 @@ export async function findByScheduleIdAndDepartureDate(
             cond.push(eb('t.departureDate', '=', params.departureDate))
             return eb.and(cond)
         })
-        .select(['t.id', 't.status', 'ts.companyId'])
+        .select(['t.id', 't.status', 'ts.companyId', 'ts.departureTime'])
         .executeTakeFirst()
 }
 
