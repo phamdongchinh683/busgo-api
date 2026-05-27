@@ -4,6 +4,7 @@ import { OperationTripScheduleTableInsert } from './table.js'
 import { db } from '../../../datasource/db.js'
 import { OperationStationId } from '../station/type.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
+import { sql } from 'kysely'
 
 export async function findAllByFilter(
     query: TripScheduleFilter,
@@ -26,8 +27,8 @@ export async function findAllByFilter(
             'r.toLocation',
             'ts.companyId',
             'r.distanceKm',
-            'ts.startDate',
-            'ts.endDate',
+            sql<string>`to_char(ts.start_date, 'YYYY-MM-DD')`.as('startDate'),
+            sql<string>`to_char(ts.end_date, 'YYYY-MM-DD')`.as('endDate'),
             'r.durationMinutes',
             'bc.reviewAvgStars as totalStars',
         ])
