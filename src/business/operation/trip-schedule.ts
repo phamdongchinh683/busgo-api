@@ -11,9 +11,28 @@ import { TripStopPickUpItem } from '../../model/body/trip/index.js'
 
 const TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX = 'trip-schedule:public:list'
 const TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX = 'trip-schedule:company:list'
+const TRIP_SCHEDULE_LIST_CACHE_TTL_SECONDS = 3600
 
 function getTripScheduleCompanyListCachePrefix(companyId: OrganizationBusCompanyId) {
     return `${TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX}:${companyId}`
+}
+
+function getTripScheduleListCacheTtl(query: TripScheduleFilter) {
+    if (!query.date) {
+        return TRIP_SCHEDULE_LIST_CACHE_TTL_SECONDS
+    }
+
+    const now = utils.time.getNow()
+    const today = now.format('YYYY-MM-DD')
+    const searchDate = utils.time.formatCalendarDate(query.date, 'YYYY-MM-DD')
+
+    if (searchDate === today) {
+        return 0
+    }
+
+    const secondsUntilTomorrow = now.add(1, 'day').startOf('day').diff(now, 'second')
+
+    return Math.min(TRIP_SCHEDULE_LIST_CACHE_TTL_SECONDS, Math.max(secondsUntilTomorrow, 1))
 }
 
 export async function clearTripScheduleListCache(companyId?: OrganizationBusCompanyId) {
@@ -31,7 +50,7 @@ export async function getTripSchedules(query: TripScheduleFilter) {
     return utils.cache.cacheQuery({
         prefix: TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX,
         query,
-        ttl: 3600,
+        ttl: getTripScheduleListCacheTtl(query),
         queryFn: async () => {
             const tripSchedules = await dal.operation.tripSchedule.cmd.getTripSchedules(query)
 
@@ -52,7 +71,7 @@ export async function getTripSchedulesByCompanyId(
     return utils.cache.cacheQuery({
         prefix: getTripScheduleCompanyListCachePrefix(companyId),
         query,
-        ttl: 3600,
+        ttl: getTripScheduleListCacheTtl(query),
         queryFn: async () => {
             const tripSchedules = await dal.operation.tripSchedule.query.findAllByFilter(
                 query,

@@ -4,7 +4,7 @@ import { OperationTripScheduleTableInsert } from './table.js'
 import { db } from '../../../datasource/db.js'
 import { OperationStationId } from '../station/type.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
-import { sql } from 'kysely'
+import { Expression, SqlBool, sql } from 'kysely'
 import { utils } from '../../../utils/index.js'
 
 export async function findAllByFilter(
@@ -13,8 +13,10 @@ export async function findAllByFilter(
 ) {
     const { limit, next, from, to, date, orderBy } = query
 
-    const today = utils.time.getNow().format('YYYY-MM-DD')
-    const nowTime = utils.time.getNow().format('HH:mm:ss')
+    const now = utils.time.getNow()
+    const today = now.format('YYYY-MM-DD')
+    const nowTime = now.format('HH:mm:ss')
+    const searchDate = date ? utils.time.formatCalendarDate(date, 'YYYY-MM-DD') : undefined
 
     return db
         .selectFrom('operation.trip_schedule as ts')
@@ -37,7 +39,7 @@ export async function findAllByFilter(
             'bc.reviewAvgStars as totalStars',
         ])
         .where(eb => {
-            const cond = []
+            const cond: Expression<SqlBool>[] = []
 
             cond.push(eb('ts.status', '=', true))
 
@@ -49,15 +51,15 @@ export async function findAllByFilter(
                 cond.push(eb('r.toLocation', '=', to))
             }
 
-            if (date) {
-                cond.push(eb('ts.startDate', '<=', date))
-                cond.push(eb('ts.endDate', '>=', date))
+            if (searchDate) {
+                cond.push(sql<boolean>`ts.start_date <= ${searchDate}::date`)
+                cond.push(sql<boolean>`ts.end_date >= ${searchDate}::date`)
 
                 cond.push(
                     eb.or([
-                        eb(sql`${date}`, '>', today),
+                        sql<boolean>`${searchDate}::date > ${today}::date`,
                         eb.and([
-                            eb(sql`${date}`, '=', today),
+                            sql<boolean>`${searchDate}::date = ${today}::date`,
                             sql<boolean>`ts.departure_time > ${nowTime}::time`,
                         ]),
                     ])
