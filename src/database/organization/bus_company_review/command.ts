@@ -10,12 +10,6 @@ export async function insertOne(params: OrganizationBusCompanyReviewTableInsert)
         const review = await trx
             .insertInto('organization.bus_company_review')
             .values(data)
-            .onConflict(oc =>
-                oc.columns(['companyId', 'userId']).doUpdateSet({
-                    rating: data.rating,
-                    comment: data.comment ?? null,
-                })
-            )
             .returningAll()
             .executeTakeFirstOrThrow()
 
