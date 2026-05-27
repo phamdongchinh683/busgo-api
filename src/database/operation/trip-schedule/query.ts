@@ -26,6 +26,8 @@ export async function findAllByFilter(
             'r.toLocation',
             'ts.companyId',
             'r.distanceKm',
+            'ts.startDate',
+            'ts.endDate',
             'r.durationMinutes',
             'bc.reviewAvgStars as totalStars',
         ])

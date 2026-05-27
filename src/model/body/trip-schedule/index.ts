@@ -26,6 +26,8 @@ export const TripScheduleResponse = z.object({
             fromLocation: z.string(),
             toLocation: z.string(),
             distanceKm: z.number(),
+            startDate: z.coerce.date(),
+            endDate: z.coerce.date(),
             companyId: OrganizationBusCompanyId,
             durationMinutes: z.number(),
             totalStars: z.number().min(0).max(5),
