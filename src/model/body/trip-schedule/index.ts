@@ -2,15 +2,14 @@ import z from 'zod'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { DateInput } from '../../common.js'
 
 export const TripScheduleItemResponse = z.object({
     id: OperationTripScheduleId,
     routeId: OperationRouteId,
     companyId: OrganizationBusCompanyId,
     departureTime: z.string(),
-    startDate: DateInput,
-    endDate: DateInput,
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
     status: z.boolean(),
 })
 
@@ -27,8 +26,8 @@ export const TripScheduleResponse = z.object({
             fromLocation: z.string(),
             toLocation: z.string(),
             distanceKm: z.number(),
-            startDate: DateInput,
-            endDate: DateInput,
+            startDate: z.coerce.date(),
+            endDate: z.coerce.date(),
             companyId: OrganizationBusCompanyId,
             durationMinutes: z.number(),
             totalStars: z.number().min(0).max(5),
@@ -49,15 +48,15 @@ export const TripScheduleBody = z.object({
     routeId: OperationRouteId,
     companyId: OrganizationBusCompanyId,
     departureTime: z.string(),
-    startDate: DateInput,
-    endDate: DateInput,
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
     status: z.boolean(),
 })
 
 export const TripScheduleUpdateBody = z.object({
     departureTime: z.string().optional(),
-    startDate: DateInput.optional(),
-    endDate: DateInput.optional(),
+    startDate: z.coerce.date().optional(),
+    endDate: z.coerce.date().optional(),
     status: z.boolean().optional(),
 })
 

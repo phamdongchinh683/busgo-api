@@ -48,36 +48,6 @@ export type UserInfo = z.infer<typeof UserInfo>
 export const OrderBy = z.enum(['asc', 'desc'])
 export type OrderBy = z.infer<typeof OrderBy>
 
-function parseDateInput(value: unknown) {
-    if (typeof value !== 'string') return value
-
-    const trimmed = value.trim()
-    const match = /^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/.exec(trimmed)
-    if (!match) return trimmed
-
-    const [, dayText, monthText, yearText] = match
-    const day = Number(dayText)
-    const month = Number(monthText)
-    const year = Number(yearText)
-    const date = new Date(Date.UTC(year, month - 1, day))
-
-    if (
-        date.getUTCFullYear() !== year ||
-        date.getUTCMonth() !== month - 1 ||
-        date.getUTCDate() !== day
-    ) {
-        return new Date(Number.NaN)
-    }
-
-    return date
-}
-
-export const DateInput = z.preprocess(
-    parseDateInput,
-    z.union([z.date(), z.string().trim().min(1), z.number()]).pipe(z.coerce.date())
-)
-export type DateInput = z.infer<typeof DateInput>
-
 export const MessageResponse = z.object({
     message: z.string(),
 })
