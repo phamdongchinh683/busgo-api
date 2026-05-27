@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return bus.organization.review.insertOne({
+        return bus.organization.review.createOne({
             userId: userInfo.id,
             body: request.body,
         })

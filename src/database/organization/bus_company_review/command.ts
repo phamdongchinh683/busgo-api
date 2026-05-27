@@ -3,13 +3,19 @@ import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { OrganizationBusCompanyReviewTableInsert } from './table.js'
 
-export async function insertOne(params: OrganizationBusCompanyReviewTableInsert) {
+export async function upsertOne(params: OrganizationBusCompanyReviewTableInsert) {
     const data = _.omitBy(params, v => _.isNil(v)) as OrganizationBusCompanyReviewTableInsert
 
     return db.transaction().execute(async trx => {
         const review = await trx
             .insertInto('organization.bus_company_review')
             .values(data)
+            .onConflict(oc =>
+                oc.columns(['companyId', 'userId', 'ticketId']).doUpdateSet({
+                    rating: params.rating,
+                    comment: params.comment ?? null,
+                })
+            )
             .returningAll()
             .executeTakeFirstOrThrow()
 

@@ -5,14 +5,15 @@ import { utils } from '../../utils/index.js'
 import { BusCompanyReviewFilter } from '../../model/query/review/index.js'
 import { clearTripScheduleListCache } from '../operation/trip-schedule.js'
 
-export async function insertOne(params: { userId: AuthUserId; body: BusCompanyReviewBody }) {
+export async function createOne(params: { userId: AuthUserId; body: BusCompanyReviewBody }) {
     const { userId, body } = params
 
     const trip = await dal.operation.trip.query.findById(body.tripId)
 
-    await dal.organization.busCompanyReview.cmd.insertOne({
+    await dal.organization.busCompanyReview.cmd.upsertOne({
         companyId: trip.companyId,
         userId,
+        ticketId: body.ticketId,
         rating: body.rating,
         comment: body.comment ?? null,
     })

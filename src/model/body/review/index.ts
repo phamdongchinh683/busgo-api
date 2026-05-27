@@ -1,9 +1,11 @@
 import z from 'zod'
 import { OrganizationBusCompanyReviewId } from '../../../database/organization/bus_company_review/type.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
+import { BookingTicketId } from '../../../database/booking/ticket/type.js'
 
 export const BusCompanyReviewBody = z.object({
     tripId: OperationTripId,
+    ticketId: BookingTicketId,
     rating: z.coerce.number().int().min(1).max(5),
     comment: z.string().max(1000).optional().nullable(),
 })
