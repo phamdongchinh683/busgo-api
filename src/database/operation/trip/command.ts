@@ -8,17 +8,25 @@ import { OperationTripId, OperationTripStatus } from './type.js'
 import { OperationTripTableInsert } from './table.js'
 import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js'
-import _ from 'lodash'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
-import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
+import { HttpErr } from '../../../app/index.js'
 
 export async function getManyByFilter(params: TripFilter) {
     return dal.operation.trip.query.findAllByFilter(params)
 }
 
 export async function createTrip(params: OperationTripTableInsert, trx: Transaction<Database>) {
-    const data = _.omitBy(params, v => _.isNil(v)) as OperationTripTableInsert
-    return trx.insertInto('operation.trip').values(data).returningAll().executeTakeFirstOrThrow()
+    return trx
+        .insertInto('operation.trip')
+        .values(params)
+        .onConflict(oc =>
+            oc.columns(['scheduleId', 'departureDate']).doUpdateSet({
+                scheduleId: params.scheduleId,
+                departureDate: params.departureDate,
+            })
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow()
 }
 
 export async function findByScheduleIdAndDepartureDate(
@@ -34,41 +42,63 @@ export async function findByScheduleIdAndDepartureDate(
             cond.push(eb('t.departureDate', '=', params.departureDate))
             return eb.and(cond)
         })
-        .select(['t.id', 'ts.companyId'])
+        .select(['t.id', 't.status', 'ts.companyId'])
         .executeTakeFirst()
 }
 
-export async function createTripTransaction(params: TripBody) {
+export async function createTripTransaction({ scheduleId, departureDate, companyId }: TripBody) {
     return db.transaction().execute(async trx => {
-        const { scheduleId, departureDate, companyId } = params
-
-        const result = await findByScheduleIdAndDepartureDate({ scheduleId, departureDate }, trx)
-
-        if (result) return result
+        const existingTrip = await findByScheduleIdAndDepartureDate(
+            { scheduleId, departureDate },
+            trx
+        )
+        if (existingTrip) {
+            assertTripIsBookable(existingTrip.status)
+            return {
+                id: existingTrip.id,
+                companyId: existingTrip.companyId,
+            }
+        }
 
         const schedule = await dal.operation.tripSchedule.cmd.findByIdAndDate(
             { id: scheduleId, date: departureDate },
             trx
         )
+        if (schedule.companyId !== companyId) {
+            throw new HttpErr.UnprocessableEntity(
+                'Công ty không khớp với lịch trình chuyến đi.',
+                'TRIP_SCHEDULE_COMPANY_MISMATCH'
+            )
+        }
 
-        const vehicle = await dal.organization.vehicle.cmd.randomVehicle(companyId, trx)
+        const vehicle = await dal.organization.vehicle.cmd.randomVehicle(schedule.companyId, trx)
 
         const trip = await createTrip(
             {
                 scheduleId: schedule.id,
-                departureDate: departureDate,
+                departureDate,
                 routeId: schedule.routeId,
                 vehicleId: vehicle.id,
                 status: OperationTripStatus.enum.scheduled,
             },
             trx
         )
+        assertTripIsBookable(trip.status)
 
         return {
             id: trip.id,
             companyId: schedule.companyId,
         }
     })
+}
+
+function assertTripIsBookable(status: OperationTripStatus) {
+    if (status !== OperationTripStatus.enum.scheduled) {
+        throw new HttpErr.UnprocessableEntity(
+            'Chuyến đi không còn khả dụng để đặt vé.',
+            'TRIP_NOT_BOOKABLE'
+        )
+    }
 }
 
 export async function getManyByDriverId(params: DriverTripQuery, userId: AuthUserId) {
