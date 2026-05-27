@@ -86,7 +86,7 @@ export async function cancelTicketTransaction(id: BookingTicketId) {
             trx
         )
 
-        await handleRefund(trx, ticket.bookingId)
+        await handlePaymentCancellation(trx, ticket.bookingId)
 
         return tickets
     })
@@ -127,8 +127,17 @@ export async function updateStatusTicket(params: {
     })
 }
 
-async function handleRefund(trx: Transaction<Database>, bookingId: BookingId) {
+async function handlePaymentCancellation(trx: Transaction<Database>, bookingId: BookingId) {
     const payment = await dal.payment.payment.query.getPayment(bookingId, undefined, trx)
+
+    if (payment?.status === PaymentStatus.enum.pending) {
+        await dal.payment.payment.query.updateStatusPaymentTransaction(
+            PaymentStatus.enum.failed,
+            bookingId,
+            trx
+        )
+        return
+    }
 
     if (!payment || payment.status !== PaymentStatus.enum.success) {
         return

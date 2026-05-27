@@ -36,8 +36,15 @@ export async function getBookingByUserIdAndBookingId(
         .selectFrom('booking.booking as b')
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .leftJoin('payment.payment as pp', 'pp.bookingId', 'b.id')
         .selectAll()
-        .select(['trip.status as tripStatus', 'trip.departureDate'])
+        .select([
+            'b.status as bookingStatus',
+            'trip.status as tripStatus',
+            'trip.departureDate',
+            'pp.method as paymentMethod',
+            'pp.status as paymentStatus',
+        ])
         .where(eb => {
             const cond = []
             cond.push(eb('b.userId', '=', userId))
@@ -53,8 +60,15 @@ export async function getBookingByTicketId(ticketId: BookingTicketId, trx?: Tran
         .selectFrom('booking.booking as b')
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .leftJoin('payment.payment as pp', 'pp.bookingId', 'b.id')
         .selectAll()
-        .select(['trip.status as tripStatus', 'trip.departureDate'])
+        .select([
+            'b.status as bookingStatus',
+            'trip.status as tripStatus',
+            'trip.departureDate',
+            'pp.method as paymentMethod',
+            'pp.status as paymentStatus',
+        ])
         .where('t.id', '=', ticketId)
         .executeTakeFirst()
 }

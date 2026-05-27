@@ -6,6 +6,8 @@ import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripId, OperationTripStatus } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
+import { BookingStatus } from '../../database/booking/booking/type.js'
+import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {
     const tickets = await dal.booking.ticket.query.findAll(q, userId)
@@ -33,23 +35,7 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
     if (!data)
         throw new HttpErr.Forbidden('Bạn không thể hủy vé này vì bạn không phải chủ sở hữu vé.')
 
-    if (
-        data.tripStatus === OperationTripStatus.enum.running ||
-        data.tripStatus === OperationTripStatus.enum.completed
-    ) {
-        throw new HttpErr.Forbidden(
-            'Chuyến đi đang diễn ra hoặc đã hoàn thành, bạn không thể hủy vé này.'
-        )
-    }
-
-    if (
-        utils.time.isOutsideCancelableWindow({
-            departureDate: data.departureDate,
-            now: utils.time.getNow().toDate(),
-        })
-    ) {
-        throw new HttpErr.Forbidden('Bạn chỉ có thể hủy vé trước giờ khởi hành ít nhất 24 giờ.')
-    }
+    assertTicketCanBeCancelled(data)
 
     const tickets = await dal.booking.ticket.cmd.cancelTicketTransaction(id)
 
@@ -99,7 +85,7 @@ export async function deleteTicket(id: BookingTicketId) {
         throw new HttpErr.Forbidden('Không tìm thấy vé.')
     }
 
-    assertTicketCanBeCancelled(data.tripStatus, data.departureDate)
+    assertTicketCanBeCancelled(data)
 
     return {
         message: 'Thành công',
@@ -107,19 +93,44 @@ export async function deleteTicket(id: BookingTicketId) {
     }
 }
 
-function assertTicketCanBeCancelled(tripStatus: OperationTripStatus, departureDate: Date) {
+function assertTicketCanBeCancelled(params: {
+    bookingStatus: BookingStatus
+    departureDate: Date
+    paymentMethod: PaymentMethod | null
+    paymentStatus: PaymentStatus | null
+    tripStatus: OperationTripStatus
+}) {
     if (
-        tripStatus === OperationTripStatus.enum.running ||
-        tripStatus === OperationTripStatus.enum.completed
+        params.tripStatus === OperationTripStatus.enum.running ||
+        params.tripStatus === OperationTripStatus.enum.completed
     ) {
         throw new HttpErr.Forbidden(
             'Chuyến đi đang diễn ra hoặc đã hoàn thành, bạn không thể hủy vé này.'
         )
     }
 
+    if (canCancelWithoutRefundWindow(params)) {
+        return
+    }
+
     if (
-        utils.time.isOutsideCancelableWindow({ departureDate, now: utils.time.getNow().toDate() })
+        utils.time.isOutsideCancelableWindow({
+            departureDate: params.departureDate,
+            now: utils.time.getNow().toDate(),
+        })
     ) {
         throw new HttpErr.Forbidden('Bạn chỉ có thể hủy vé trước giờ khởi hành ít nhất 24 giờ.')
     }
+}
+
+function canCancelWithoutRefundWindow(params: {
+    bookingStatus: BookingStatus
+    paymentMethod: PaymentMethod | null
+    paymentStatus: PaymentStatus | null
+}) {
+    return (
+        params.paymentMethod === PaymentMethod.enum.cash ||
+        params.paymentStatus === PaymentStatus.enum.pending ||
+        params.bookingStatus === BookingStatus.enum.pending
+    )
 }
