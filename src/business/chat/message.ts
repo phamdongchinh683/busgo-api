@@ -51,21 +51,6 @@ export async function sendMessage(
         },
     })
 
-    // await service.queue.chat.pushChatMessage({
-    //     action: 'message:new',
-    //     data: {
-    //         boxId: String(result.box.id),
-    //         messageId: String(result.row.id),
-    //         senderId: result.row.senderId,
-    //         receiverId,
-    //         senderName: userInfo.fullName,
-    //         body: result.row.body,
-    //         createdAt:
-    //             result.row.createdAt instanceof Date
-    //                 ? result.row.createdAt.toISOString()
-    //                 : result.row.createdAt,
-    //     },
-    // })
     return { message: 'Thành công' }
 }
 

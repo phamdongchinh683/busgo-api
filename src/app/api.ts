@@ -17,7 +17,6 @@ import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { corsPlugin } from './plugins/cors.js'
 import { helmetPlugin } from './plugins/helmet.js'
-import { utils } from '../utils/index.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -31,8 +30,6 @@ const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !is
 const isTsRuntime = process.argv[1]?.endsWith('.ts') ?? false
 
 const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
-
-
 
 type RawWithStripeBody = import('http').IncomingMessage & {
     rawBody?: Buffer
