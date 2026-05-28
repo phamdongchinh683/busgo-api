@@ -131,6 +131,8 @@ export async function updateTripAndUpCount(params: {
     userId: AuthUserId
 }) {
     return db.transaction().execute(async trx => {
+        await assertTripCanBeCompleted(params, trx)
+
         const trip = await updateStatus(params, trx)
 
         if (
@@ -153,4 +155,23 @@ export async function updateTripAndUpCount(params: {
 
         return trip
     })
+}
+
+async function assertTripCanBeCompleted(
+    params: { id: OperationTripId; status: OperationTripStatus },
+    trx: Transaction<Database>
+) {
+    if (params.status !== OperationTripStatus.enum.completed) {
+        return
+    }
+
+    const uncheckedPassengerCount =
+        await dal.booking.ticket.query.countUncheckedActivePassengersByTripId(params.id, trx)
+
+    if (uncheckedPassengerCount > 0) {
+        throw new HttpErr.UnprocessableEntity(
+            'Vẫn còn hành khách chưa check-in, không thể hoàn thành chuyến.',
+            'TRIP_HAS_UNCHECKED_PASSENGERS'
+        )
+    }
 }

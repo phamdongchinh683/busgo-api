@@ -1,4 +1,5 @@
 import { db } from '../../../datasource/db.js'
+import { Database } from '../../../datasource/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { OperationTripId, OperationTripStatus } from '../../operation/trip/type.js'
 import {
@@ -9,6 +10,7 @@ import {
 import { BookingTicketId, BookingTicketStatus } from './type.js'
 import { BookingStatus } from '../booking/type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
+import { Transaction, sql } from 'kysely'
 
 export async function findAll(q: TicketFilter, userId: AuthUserId) {
     const { limit, next } = q
@@ -145,6 +147,29 @@ export async function findPassengersByDriverAndTripId(
         .orderBy('seat.seatNumber')
         .limit(limit + 1)
         .execute()
+}
+
+export async function countUncheckedActivePassengersByTripId(
+    tripId: OperationTripId,
+    trx?: Transaction<Database>
+) {
+    const result = await (trx ?? db)
+        .selectFrom('booking.ticket as t')
+        .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
+        .select(sql<number>`count(*)::int`.as('total'))
+        .where(eb =>
+            eb.and([
+                eb('t.tripId', '=', tripId),
+                eb('b.status', 'in', [BookingStatus.enum.pending, BookingStatus.enum.paid]),
+                eb('t.status', 'in', [
+                    BookingTicketStatus.enum.reserved,
+                    BookingTicketStatus.enum.paid,
+                ]),
+            ])
+        )
+        .executeTakeFirstOrThrow()
+
+    return result.total
 }
 
 export async function findAllSupport(q: TicketSupportFilter, companyId: OrganizationBusCompanyId) {
