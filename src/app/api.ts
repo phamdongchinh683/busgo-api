@@ -32,7 +32,7 @@ const isTsRuntime = process.argv[1]?.endsWith('.ts') ?? false
 
 const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
 
-let swaggerDocument: unknown = null
+
 
 type RawWithStripeBody = import('http').IncomingMessage & {
     rawBody?: Buffer
@@ -210,25 +210,7 @@ async function registerSwagger() {
     })
 
     api.get('/swagger/json', async (_request, reply) => {
-        reply.header(
-            'Cache-Control',
-            isProduction ? 'public, max-age=300, stale-while-revalidate=600' : 'no-store'
-        )
-
-        if (!isProduction) {
-            return swaggerDocument ?? api.swagger()
-        }
-
-        const key = `swagger:json:${process.env.IMAGE_TAG || 'latest'}`
-
-        const cached = await utils.cache.getCache<unknown>(key)
-        if (cached !== null) return cached
-
-        const document = swaggerDocument ?? api.swagger()
-
-        void utils.cache.setCache(key, document, 600)
-
-        return document
+        return api.swagger()
     })
 }
 
@@ -259,8 +241,6 @@ async function start() {
         await apiRouter()
 
         await api.ready()
-
-        swaggerDocument = api.swagger()
 
         await api.listen({
             host,
