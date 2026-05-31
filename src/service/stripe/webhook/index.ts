@@ -7,15 +7,22 @@ import { utils } from '../../../utils/index.js'
 export async function handleWebhook(rawBody: string | Buffer, signature: string) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? ''
 
-    const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
+    try {
+        const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
 
-    switch (event.type) {
-        case 'payment_intent.succeeded':
-            await handlePaymentSuccess(event.data.object)
-            break
-        case 'payment_intent.payment_failed':
-            await handlePaymentFailed(event.data.object)
-            break
+        switch (event.type) {
+            case 'payment_intent.succeeded':
+                await handlePaymentSuccess(event.data.object)
+                break
+            case 'payment_intent.payment_failed':
+                await handlePaymentFailed(event.data.object)
+                break
+        }
+    } catch (err: any) {
+        if (err?.message?.includes('parseEventNotification')) {
+            return { received: true }
+        }
+        throw err
     }
 
     return { received: true }
