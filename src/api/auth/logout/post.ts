@@ -1,5 +1,5 @@
 import { api, bearer, endpoint, tags } from '../../../app/api.js'
-import { auth } from '../../../app/jwt/index.js'
+import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { MessageResponse } from '../../../model/common.js'
 
@@ -9,7 +9,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requiredAuthenticate(request.headers)
+        const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
         return bus.auth.logout.updateTokenVersion(userInfo)
     },
 

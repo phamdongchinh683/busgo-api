@@ -1,6 +1,6 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
-import { auth } from '../../../../app/jwt/index.js'
+import { jwt } from '../../../../app/index.js'
 import { AuthUserRole } from '../../../../database/auth/user/type.js'
 import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
 import { TripScheduleIdParam } from '../../../../model/params/trip-schedule/index.js'
@@ -15,7 +15,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.dispatcher]

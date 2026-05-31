@@ -10,7 +10,7 @@ import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
 import { ProfileUpdateBody, ProfileUpdateContactBody } from '../../model/body/profile/index.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
-import { auth } from '../../app/jwt/index.js'
+import { jwt } from '../../app/index.js'
 
 export async function getProfile(userInfo: UserInfo) {
     return {
@@ -161,7 +161,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
 
     return {
         message: 'Thành công',
-        token: auth.generateToken(payload),
+        token: jwt.auth.generateToken(payload),
         user: payload,
     }
 }

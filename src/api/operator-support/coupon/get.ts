@@ -1,5 +1,5 @@
 import { api, endpoint, bearer, tags } from '../../../app/api.js'
-import { auth } from '../../../app/jwt/index.js'
+import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { CouponSupportFilter } from '../../../model/query/coupon/index.js'
@@ -12,7 +12,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await auth.requireStaffProfileRole(
+        await jwt.auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]

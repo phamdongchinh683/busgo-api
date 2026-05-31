@@ -1,5 +1,5 @@
 import { api, bearer, endpoint, tags } from '../../../app/api.js'
-import { auth } from '../../../app/jwt/index.js'
+import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { UserListQuery, UserListResponse } from '../../../model/body/user/index.js'
 
@@ -9,7 +9,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await auth.requiredAuthenticate(request.headers)
+        await jwt.auth.requiredAuthenticate(request.headers)
         return bus.auth.superAdmin.listUsers(request.query)
     },
 

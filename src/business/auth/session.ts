@@ -1,4 +1,4 @@
-import { auth } from '../../app/jwt/index.js'
+import { jwt } from '../../app/index.js'
 import { AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import type { AuthResponse } from '../../model/body/auth/index.js'
@@ -49,7 +49,7 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
 
     return {
         message: 'Thành công',
-        token: auth.generateToken(tokenPayload),
+        token: jwt.auth.generateToken(tokenPayload),
         user: {
             id: tokenPayload.id,
             email: tokenPayload.email,

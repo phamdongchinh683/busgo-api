@@ -5,7 +5,6 @@ import { ChatMessageQuery } from '../../model/query/chat/index.js'
 import { utils } from '../../utils/index.js'
 import { UserInfo } from '../../model/common.js'
 import { ws } from '../../app/index.js'
-
 export async function sendMessage(
     params: {
         userInfo: UserInfo
@@ -26,30 +25,31 @@ export async function sendMessage(
     const receiverId =
         result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId
 
-    ws.emitEvent({
-        targetId: String(result.box.id),
-        event: 'message:new',
-        data: {
-            messageId: String(result.row.id),
-            boxId: String(result.box.id),
-            senderName: userInfo.fullName,
-            body: result.row.body,
-            senderId: result.row.senderId,
-            receiverId,
-            createdAt: result.row.createdAt,
-        },
-    })
-
-    ws.emitEvent({
-        targetId: String(receiverId),
-        event: 'chat:unread:count',
-        data: {
-            boxId: String(result.box.id),
-            lastMessage: result.row.body,
-            unreadReceiverCount: result.box.unreadReceiverCount,
-            unreadSenderCount: result.box.unreadSenderCount,
-        },
-    })
+    Promise.allSettled([
+        ws.publish.emitEvent({
+            targetId: String(result.box.id),
+            event: 'message:new',
+            data: {
+                messageId: String(result.row.id),
+                boxId: String(result.box.id),
+                senderName: userInfo.fullName,
+                body: result.row.body,
+                senderId: result.row.senderId,
+                receiverId,
+                createdAt: result.row.createdAt,
+            },
+        }),
+        ws.publish.emitEvent({
+            targetId: String(receiverId),
+            event: 'chat:unread:count',
+            data: {
+                boxId: String(result.box.id),
+                lastMessage: result.row.body,
+                unreadReceiverCount: result.box.unreadReceiverCount,
+                unreadSenderCount: result.box.unreadSenderCount,
+            },
+        }),
+    ])
 
     return { message: 'Thành công' }
 }
@@ -86,19 +86,6 @@ export async function recallMessage(params: {
 
     const receiverId =
         result.box.receiverId === params.userInfo.id ? result.box.senderId : result.box.receiverId
-
-    ws.emitEvent({
-        targetId: String(result.box.id),
-        event: 'message:recalled',
-        data: {
-            boxId: String(result.box.id),
-            messageId: String(result.message.id),
-            body: result.message.body,
-            senderId: result.message.senderId,
-            receiverId: receiverId,
-            updatedAt: result.message.updatedAt,
-        },
-    })
 
     return {
         message: 'Thành công',

@@ -4,7 +4,7 @@ import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.
 import { MessageResponse } from '../../../model/common.js'
 import { SeatCreateBody } from '../../../model/body/seat/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
-import { auth } from '../../../app/jwt/index.js'
+import { jwt } from '../../../app/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -12,7 +12,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await auth.requireStaffProfileRole(
+        await jwt.auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin]

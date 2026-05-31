@@ -1,4 +1,3 @@
-import { ws } from '../../app/index.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { ChatBoxId } from '../../database/chat/box/type.js'
 import { dal } from '../../database/index.js'
@@ -6,6 +5,7 @@ import { ChatBoxBody } from '../../model/body/chat/index.js'
 import { ChatBoxQuery } from '../../model/query/chat/index.js'
 import { utils } from '../../utils/index.js'
 import { UserInfo } from '../../model/common.js'
+import { ws } from '../../app/index.js'
 
 export async function createBox(params: { userInfo: UserInfo; body: ChatBoxBody }) {
     const { userInfo, body } = params
@@ -15,7 +15,7 @@ export async function createBox(params: { userInfo: UserInfo; body: ChatBoxBody 
         createdBy: userInfo.id,
     })
 
-    ws.emitEvent({
+    await ws.publish.emitEvent({
         targetId: String(result.receiverId),
         event: 'chat:new',
         data: {

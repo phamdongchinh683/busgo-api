@@ -1,5 +1,5 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
-import { auth } from '../../../app/jwt/index.js'
+import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { StripeGetPaymentMethodsResponse } from '../../../service/stripe/type.js'
@@ -9,7 +9,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
+        const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
         return bus.payment.stripe.listPaymentMethods(userInfo)
     },
 

@@ -1,5 +1,5 @@
 import { api, endpoint, bearer, tags } from '../../../app/api.js'
-import { auth } from '../../../app/jwt/index.js'
+import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { PaymentMethodResponse } from '../../../model/body/payment/index.js'
@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
+        const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
         const ip = request.headers['x-forwarded-for']?.toString().split(',')[0] ?? request.ip
         return bus.payment.payment.createPayment(request.query, userInfo.id, ip)
     },

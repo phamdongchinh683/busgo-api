@@ -1,5 +1,5 @@
 import { api, bearer, endpoint, tags } from '../../../../../app/api.js'
-import { auth } from '../../../../../app/jwt/index.js'
+import { jwt } from '../../../../../app/index.js'
 import { bus } from '../../../../../business/index.js'
 import { ChatBoxIdParam } from '../../../../../model/params/chat/index.js'
 import { ChatMessageQuery } from '../../../../../model/query/chat/index.js'
@@ -10,7 +10,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        await auth.requiredAuthenticate(request.headers)
+        await jwt.auth.requiredAuthenticate(request.headers)
         return bus.chat.message.getMessages(
             {
                 boxId: request.params.id,

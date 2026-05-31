@@ -1,5 +1,5 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
-import { auth } from '../../../../app/jwt/index.js'
+import { jwt } from '../../../../app/index.js'
 import { bus } from '../../../../business/index.js'
 import { StripeAttachPaymentMethodRequest } from '../../../../service/stripe/type.js'
 import { MessageResponse } from '../../../../model/common.js'
@@ -9,7 +9,7 @@ const __filename = new URL('', import.meta.url).pathname
 api.route({
     ...endpoint(__filename),
     handler: async request => {
-        const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
+        const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
         return bus.payment.stripe.setDefault(userInfo, request.body.paymentMethodId)
     },
 

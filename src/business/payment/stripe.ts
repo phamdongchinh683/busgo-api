@@ -2,7 +2,7 @@ import { UserInfo } from '../../model/common.js'
 import { service } from '../../service/index.js'
 import { dal } from '../../database/index.js'
 import { HttpErr } from '../../app/index.js'
-import { auth } from '../../app/jwt/index.js'
+import { jwt } from '../../app/index.js'
 import type { BalanceResponse, StripePayoutListRequest } from '../../service/stripe/type.js'
 import { db } from '../../datasource/db.js'
 import { utils } from '../../utils/index.js'
@@ -205,7 +205,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
     return {
         message: 'Thành công',
         url: result.url,
-        token: auth.generateToken({
+        token: jwt.auth.generateToken({
             ...userInfo,
             tokenVersion: userInfo.tokenVersion,
             accountStripeId,

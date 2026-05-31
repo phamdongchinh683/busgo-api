@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from 'fastify'
 import { api, bearer, endpoint, tags } from '../../../../../app/api.js'
-import { auth } from '../../../../../app/jwt/index.js'
+import { jwt } from '../../../../../app/index.js'
 import { bus } from '../../../../../business/index.js'
 import { AuthUserRole } from '../../../../../database/auth/user/type.js'
 import { RevenueExportQuery } from '../../../../../model/query/payment/index.js'
@@ -17,7 +17,7 @@ api.route({
         request: FastifyRequest<{ Querystring: RevenueExportQueryType }>,
         reply: FastifyReply
     ) => {
-        await auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
+        await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
         const buffer = await bus.payment.payment.exportCompanyRevenueExcel(request.query)
         const year = request.query.year ?? new Date().getFullYear()
         const suffix = request.query.type === 'monthly' ? 'monthly' : 'yearly'
