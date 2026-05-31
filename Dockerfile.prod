@@ -8,7 +8,7 @@ ENV YARN_CACHE_FOLDER=/yarn-cache
 COPY package.json yarn.lock .yarnrc.yml ./
 
 RUN --mount=type=cache,target=/yarn-cache \
-    yarn install --immutable
+    yarn install
 
 COPY . .
 
@@ -27,7 +27,7 @@ RUN corepack enable
 COPY package.json yarn.lock .yarnrc.yml ./
 
 RUN --mount=type=cache,target=/yarn-cache \
-    yarn install --immutable
+    yarn install
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
