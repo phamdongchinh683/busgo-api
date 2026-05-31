@@ -26,6 +26,12 @@ function logCacheError(operation: string, key: string, error: unknown) {
     console.error(`Redis cache ${operation} failed for ${key}`, error)
 }
 
+function normalizeTtlSeconds(ttlSeconds: number) {
+    const ttl = Math.floor(ttlSeconds)
+
+    return Number.isFinite(ttl) && ttl > 0 ? ttl : null
+}
+
 export function cacheKey(prefix: string, payload: unknown) {
     const hash = crypto.createHash('sha1').update(stringifyPayload(payload)).digest('hex')
 
@@ -45,11 +51,14 @@ export async function getCache<T>(key: string): Promise<T | null> {
 }
 
 export async function setCache(key: string, value: unknown, ttlSeconds = 60) {
+    const ttl = normalizeTtlSeconds(ttlSeconds)
+    if (ttl === null) return
+
     try {
         const serialized = JSON.stringify(value)
         if (serialized === undefined) return
 
-        await redis.set(key, serialized, 'EX', ttlSeconds)
+        await redis.set(key, serialized, 'EX', ttl)
     } catch (error) {
         logCacheError('set', key, error)
     }
@@ -102,6 +111,10 @@ export async function cacheQuery<T>({
     ttl,
     queryFn,
 }: CacheQueryOptions<T>): Promise<T> {
+    if (normalizeTtlSeconds(ttl ?? 60) === null) {
+        return queryFn()
+    }
+
     const key = cacheKey(prefix, query)
 
     const cached = await getCache<T>(key)
