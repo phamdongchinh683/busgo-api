@@ -11,7 +11,10 @@ api.route({
 
     handler: async request => {
         const userInfo = await auth.requireRoles(request.headers, [AuthUserRole.enum.operator])
-        return bus.auth.profile.updateProfile(userInfo.id, request.body)
+        return bus.auth.profile.updateProfile(userInfo.id, {
+            ...request.body,
+            companyId: userInfo.companyId,
+        })
     },
 
     schema: {
