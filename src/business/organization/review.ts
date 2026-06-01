@@ -4,9 +4,28 @@ import { BusCompanyReviewBody } from '../../model/body/review/index.js'
 import { utils } from '../../utils/index.js'
 import { BusCompanyReviewFilter } from '../../model/query/review/index.js'
 import { clearTripScheduleListCache } from '../operation/trip-schedule.js'
+import { HttpErr } from '../../app/index.js'
+import { OperationTripStatus } from '../../database/operation/trip/type.js'
 
 export async function createOne(params: { userId: AuthUserId; body: BusCompanyReviewBody }) {
     const { userId, body } = params
+
+    const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
+        userId,
+        ticketId: body.ticketId,
+    })
+
+    if (!bookingInfo) {
+        throw new HttpErr.Forbidden('Bạn không sở hữu vé này.')
+    }
+
+    if (bookingInfo.tripId !== body.tripId) {
+        throw new HttpErr.BadRequest('Vé không thuộc về chuyến đi này.')
+    }
+
+    if (bookingInfo.tripStatus !== OperationTripStatus.enum.completed) {
+        throw new HttpErr.BadRequest('Chuyến đi chưa hoàn thành, bạn chỉ có thể đánh giá sau khi chuyến kết thúc.')
+    }
 
     const trip = await dal.operation.trip.query.findById(body.tripId)
 
