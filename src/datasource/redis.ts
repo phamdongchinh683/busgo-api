@@ -1,26 +1,33 @@
 import { Redis, type RedisOptions } from 'ioredis'
 
+const isProduction = process.env.APP_ENV === 'production'
+
+const redisUrl = process.env.REDIS_URL ?? ''
+const useTLS = redisUrl.startsWith('rediss://')
+
 const redisOptions: RedisOptions = {
-    maxRetriesPerRequest: 1,
-    enableReadyCheck: false,
+    maxRetriesPerRequest: 3,
+    enableReadyCheck: true,
     lazyConnect: false,
-    connectTimeout: 3000,
+    connectTimeout: isProduction ? 10000 : 5000,
+    commandTimeout: isProduction ? 5000 : 3000,
     retryStrategy(times) {
-        return Math.min(times * 100, 1000)
+        return Math.min(times * 150, 3000)
     },
-    keepAlive: 10000,
+    keepAlive: 30000,
+    ...(useTLS && {
+        tls: {
+            rejectUnauthorized: false,
+        },
+    }),
 }
 
-export const redis = process.env.REDIS_URL
-    ? new Redis(process.env.REDIS_URL, redisOptions)
-    : new Redis({
-          ...redisOptions,
-          host: process.env.REDIS_HOST || '127.0.0.1',
-          port: Number(process.env.REDIS_PORT || 6379),
-          password: process.env.REDIS_PASSWORD,
-          db: Number(process.env.REDIS_DB || 0),
-      })
+export const redis = new Redis(redisUrl, redisOptions)
 
 redis.on('error', error => {
     console.error('Redis connection error', error)
+})
+
+redis.on('connect', () => {
+    console.log(`Connected to Redis`)
 })

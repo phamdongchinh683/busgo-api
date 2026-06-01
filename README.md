@@ -92,9 +92,14 @@ Done! The API is now running at **http://localhost:3000**
 | `HOST`       | Server bind address (usually `0.0.0.0`)          |
 | `PORT`       | Server bind port (usually `3000`)                |
 
-### Important Optional
+### Redis (via REDIS_URL only)
 
-- `REDIS_URL` — Enables shared cache, rate limiting, and locks
+- `REDIS_URL` — **Required** to enable Redis features (cache, rate limiting, chat realtime). Must be a full connection string from your managed Redis provider.
+  - Upstash / Redis Cloud example: `rediss://default:your-password@your-host:6379`
+  - The code only supports connecting via `REDIS_URL` (no more separate REDIS_HOST/PORT variables).
+
+### Other Important Variables
+
 - `APP_ENV=local` — Disables SSL for local Postgres, enables Swagger UI
 - `CRON_SECRET` — Protects internal `/job/*` scheduled task endpoints
 
@@ -175,8 +180,10 @@ Always run migrations after pulling changes that include new migration files.
 ## Production & Deployment
 
 - Production image: `Dockerfile.prod`
-- Full stack: `docker-compose.prod.yml` (includes 2 API replicas + Postgres + Redis + monitoring)
+- Full stack: `docker-compose.prod.yml` (includes 2 API replicas + Postgres + monitoring). **Redis container has been removed** — use a managed Redis service (see `REDIS_URL`).
 - CI/CD: `Jenkinsfile` (builds image, runs migrations, deploys via compose)
+
+**Required for production:** Set `REDIS_URL=rediss://...` (from Upstash or similar managed Redis). The app now **only** connects to Redis using `REDIS_URL`.
 
 The legacy GitHub Actions workflow has been removed.
 

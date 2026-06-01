@@ -85,12 +85,12 @@ pipeline {
                     set -e
 
                     $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" \
-                    up -d --no-recreate db redis dozzle netdata
+                    up -d --no-recreate db dozzle netdata
                 '''
             }
         }
 
-        stage('Wait Database And Redis') {
+        stage('Wait Database') {
             steps {
                 sh '''
                     set -e
@@ -103,20 +103,6 @@ pipeline {
 
                         if [ "$i" -eq 30 ]; then
                             echo "PostgreSQL is not ready"
-                            exit 1
-                        fi
-
-                        sleep 1
-                    done
-
-                    for i in $(seq 1 30); do
-                        if docker exec redis sh -c 'redis-cli -a "$REDIS_PASSWORD" ping' 2>/dev/null | grep -q PONG; then
-                            echo "Redis ready"
-                            break
-                        fi
-
-                        if [ "$i" -eq 30 ]; then
-                            echo "Redis is not ready"
                             exit 1
                         fi
 
