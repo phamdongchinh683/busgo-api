@@ -48,6 +48,7 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             'b.expiredAt',
         ])
         .orderBy('trip.departureDate', 'desc')
+        .orderBy('t.createdAt', 'desc')
         .limit(limit + 1)
         .execute()
 }
