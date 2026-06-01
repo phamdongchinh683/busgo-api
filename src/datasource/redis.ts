@@ -23,11 +23,3 @@ const redisOptions: RedisOptions = {
 }
 
 export const redis = new Redis(redisUrl, redisOptions)
-
-redis.on('error', error => {
-    console.error('Redis connection error', error)
-})
-
-redis.on('connect', () => {
-    console.log(`Connected to Redis`)
-})

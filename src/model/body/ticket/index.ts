@@ -34,6 +34,7 @@ export const TicketsResponse = z.object({
             departureDate: z.date().nullable(),
             tripId: OperationTripId.nullable(),
             tripStatus: OperationTripStatus.nullable(),
+            expiredAt: z.date().nullable(),
         })
     ),
     next: BookingTicketId.nullable(),

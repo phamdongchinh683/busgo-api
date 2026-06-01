@@ -20,7 +20,6 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
         .leftJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .where(eb => {
             const cond = []
-            cond.push(eb('trip.status', '!=', OperationTripStatus.enum.cancelled))
             cond.push(eb('b.userId', '=', userId))
             if (next) {
                 cond.push(eb('t.id', '>', next))
@@ -46,6 +45,7 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             'b.totalAmount',
             'b.status',
             'trip.status as tripStatus',
+            'b.expiredAt',
         ])
         .orderBy('trip.departureDate', 'desc')
         .limit(limit + 1)
@@ -212,6 +212,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'b.id as bookingId',
             'b.status',
             'trip.departureDate',
+            'b.expiredAt'
         ])
         .orderBy('trip.departureDate', 'desc')
         .limit(limit + 1)
