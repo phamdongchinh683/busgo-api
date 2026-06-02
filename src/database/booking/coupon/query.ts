@@ -83,6 +83,9 @@ export function findAllSupportCoupons(filter: CouponSupportFilter) {
                 const isActive = status === 'true'
                 filters.push(eb('c.isActive', '=', isActive))
             }
+            if (filter.companyId) {
+                filters.push(eb('c.companyId', '=', filter.companyId))
+            }
             return eb.and(filters)
         })
 

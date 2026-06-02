@@ -19,6 +19,7 @@ export type CouponFilter = z.infer<typeof CouponFilter>
 
 export const CouponSupportFilter = z.object({
     next: BookingCouponId.optional(),
+    companyId: OrganizationBusCompanyId.optional(),
     limit: z.coerce.number().optional().default(10),
     date: z.coerce.date().optional(),
     type: BookingDiscountType.optional(),
