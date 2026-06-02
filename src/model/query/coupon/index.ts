@@ -11,6 +11,7 @@ export const CouponCheckCodeQuery = z.object({
 export type CouponCheckCodeQuery = z.infer<typeof CouponCheckCodeQuery>
 
 export const CouponFilter = z.object({
+    companyId: OrganizationBusCompanyId.optional(),
     next: BookingCouponId.optional(),
     orderTotal: z.coerce.number(),
 })

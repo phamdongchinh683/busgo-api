@@ -8,7 +8,7 @@ import {
 import { utils } from '../../../utils/index.js'
 
 export function findAll(q: CouponFilter) {
-    const { next, orderTotal } = q
+    const { next, orderTotal, companyId } = q
     const now = utils.time.getNow().toDate()
 
     let query = db
@@ -16,7 +16,6 @@ export function findAll(q: CouponFilter) {
         .selectAll()
         .where(eb => {
             const filters: Expression<SqlBool>[] = []
-
             filters.push(eb('c.startDate', '<=', now).or(eb('c.startDate', 'is', null)))
             filters.push(eb('c.endDate', '>=', now).or(eb('c.endDate', 'is', null)))
             filters.push(eb('c.isActive', '=', true))
@@ -27,6 +26,9 @@ export function findAll(q: CouponFilter) {
                 ])
             )
             filters.push(eb('c.minOrderAmount', '<=', orderTotal))
+            if (companyId) {
+                filters.push(eb('c.companyId', '=', companyId))
+            }
             return eb.and(filters)
         })
 
