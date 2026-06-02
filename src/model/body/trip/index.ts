@@ -11,7 +11,7 @@ import {
 import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
-import { BookingStatus } from '../../../database/booking/booking/type.js'
+import { BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { AuthUserId } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
@@ -149,6 +149,8 @@ export const TripPassengerResponse = z.object({
             status: BookingStatus,
             ticketStatus: BookingTicketStatus,
             pickup: z.string().nullable(),
+            bookingType: BookingType,
+            totalAmount: z.number(),
             dropoff: z.string().nullable(),
         })
     ),

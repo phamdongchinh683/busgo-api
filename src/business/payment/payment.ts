@@ -4,10 +4,12 @@ import { PaymentMethodRequest } from '../../model/query/payment/index.js'
 import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
-import { BookingId } from '../../database/booking/booking/type.js'
+import { BookingId, BookingType } from '../../database/booking/booking/type.js'
 import { db } from '../../datasource/db.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
+import { Transaction } from 'kysely'
+import { Database } from '../../datasource/type.js'
 import {
     PaymentFilter,
     PeriodPaymentQuery,
@@ -26,8 +28,12 @@ export function stripeAccountStatusCacheKey(userInfo: StripeCacheOwner) {
     return stripeCacheKey(STRIPE_ACCOUNT_STATUS_CACHE_PREFIX, userInfo)
 }
 
-async function preparePayment(bookingId: BookingId, method: PaymentMethod | null) {
-    let payment = await dal.payment.payment.query.getPayment(bookingId)
+async function preparePayment(
+    bookingId: BookingId,
+    method: PaymentMethod | null,
+    tx?: Transaction<Database>
+) {
+    const payment = await dal.payment.payment.query.getPayment(bookingId, undefined, tx)
 
     if (payment) {
         if (payment.status === PaymentStatus.enum.success) {
@@ -47,18 +53,34 @@ async function preparePayment(bookingId: BookingId, method: PaymentMethod | null
             )
         }
 
-        return payment
+        if (payment.method === method) {
+            return payment
+        }
+
+        return dal.payment.payment.cmd.upsertPayment(
+            {
+                bookingId,
+                transactionCode: utils.random.generateRandomNumber(12).toString(),
+                method,
+                status: PaymentStatus.enum.pending,
+                amount: payment.amount,
+            },
+            tx
+        )
     }
 
-    const amount = (await dal.booking.booking.query.getAmountByBookingId(bookingId)).totalAmount
+    const amount = (await dal.booking.booking.query.getAmountByBookingId(bookingId, tx)).totalAmount
 
-    return dal.payment.payment.cmd.upsertPayment({
-        bookingId,
-        transactionCode: utils.random.generateRandomNumber(12).toString(),
-        method,
-        status: PaymentStatus.enum.pending,
-        amount,
-    })
+    return dal.payment.payment.cmd.upsertPayment(
+        {
+            bookingId,
+            transactionCode: utils.random.generateRandomNumber(12).toString(),
+            method,
+            status: PaymentStatus.enum.pending,
+            amount,
+        },
+        tx
+    )
 }
 
 export async function createPayment(params: PaymentMethodRequest, userId: AuthUserId, ip: string) {
@@ -71,6 +93,16 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 
     if (!bookingInfo) {
         throw new HttpErr.Forbidden('Bạn không có quyền tạo thanh toán cho đặt vé này.')
+    }
+
+    if (
+        bookingInfo.bookingType === BookingType.enum.round_trip &&
+        method === PaymentMethod.enum.cash
+    ) {
+        throw new HttpErr.UnprocessableEntity(
+            'Đặt vé khứ hồi chỉ hỗ trợ thanh toán qua VNPay hoặc Thẻ.',
+            'ROUND_TRIP_CASH_PAYMENT_NOT_ALLOWED'
+        )
     }
 
     switch (method) {
@@ -89,9 +121,11 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 }
 
 export async function createCashPayment(params: PaymentMethodRequest) {
-    const payment = await preparePayment(params.id, PaymentMethod.enum.cash)
-
-    await dal.booking.booking.cmd.updateExpiredBooking(params.id)
+    const payment = await db.transaction().execute(async tx => {
+        const result = await preparePayment(params.id, PaymentMethod.enum.cash, tx)
+        await dal.booking.booking.cmd.updateExpiredBooking(params.id, tx)
+        return result
+    })
 
     return {
         message: 'Vui lòng thanh toán khi lên xe.',

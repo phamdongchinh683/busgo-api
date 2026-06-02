@@ -18,9 +18,9 @@ export async function createPaymentTransaction(
     return trx.insertInto('payment.payment').values(data).returningAll().executeTakeFirstOrThrow()
 }
 
-export async function upsertPayment(params: PaymentTableInsert) {
+export async function upsertPayment(params: PaymentTableInsert, trx?: Transaction<Database>) {
     const data = _.omitBy(params, v => _.isNil(v)) as PaymentTableInsert
-    return db
+    return (trx ?? db)
         .insertInto('payment.payment')
         .values(data)
         .onConflict(oc => oc.column('bookingId').doUpdateSet(data))

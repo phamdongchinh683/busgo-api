@@ -15,8 +15,8 @@ export async function countAll(trx?: Transaction<Database>) {
     return r.total
 }
 
-export async function getAmountByBookingId(bookingId: BookingId) {
-    return db
+export async function getAmountByBookingId(bookingId: BookingId, trx?: Transaction<Database>) {
+    return (trx ?? db)
         .selectFrom('booking.booking as b')
         .select('b.totalAmount')
         .where('b.id', '=', bookingId)
