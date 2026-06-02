@@ -127,17 +127,26 @@ export async function resultAmountRoundTrip(
     }
 }
 
-export async function createOne(body: CouponBody) {
+export async function createOne(body: CouponBody & { companyId: OrganizationBusCompanyId }) {
     const data = _.omitBy(body, v => _.isNil(v)) as BookingCouponTableInsert
     return db.insertInto('booking.coupon').values(data).returningAll().executeTakeFirstOrThrow()
 }
 
-export async function updateOne(id: BookingCouponId, body: CouponBody) {
+export async function updateOne(
+    id: BookingCouponId,
+    body: CouponBody & { companyId: OrganizationBusCompanyId }
+) {
     const data = _.omitBy(body, v => _.isNil(v)) as BookingCouponTableUpdate
     return db
         .updateTable('booking.coupon as c')
         .set(data)
-        .where('c.id', '=', id)
+        .where(eb => {
+            const cond = []
+            cond.push(eb('c.id', '=', id))
+            cond.push(eb('c.companyId', '=', body.companyId))
+            return eb.and(cond)
+        })
+
         .returningAll()
         .executeTakeFirstOrThrow()
 }

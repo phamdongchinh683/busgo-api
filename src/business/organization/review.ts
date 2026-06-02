@@ -24,7 +24,9 @@ export async function createOne(params: { userId: AuthUserId; body: BusCompanyRe
     }
 
     if (bookingInfo.tripStatus !== OperationTripStatus.enum.completed) {
-        throw new HttpErr.BadRequest('Chuyến đi chưa hoàn thành, bạn chỉ có thể đánh giá sau khi chuyến kết thúc.')
+        throw new HttpErr.BadRequest(
+            'Chuyến đi chưa hoàn thành, bạn chỉ có thể đánh giá sau khi chuyến kết thúc.'
+        )
     }
 
     const trip = await dal.operation.trip.query.findById(body.tripId)

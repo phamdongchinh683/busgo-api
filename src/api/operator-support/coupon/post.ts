@@ -12,12 +12,12 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireStaffProfileRole(
             request.headers,
             [AuthUserRole.enum.operator],
             [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
         )
-        return bus.booking.coupon.createCoupon(request.body)
+        return bus.booking.coupon.createCoupon({ ...request.body, companyId: userInfo.companyId })
     },
 
     schema: {

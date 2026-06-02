@@ -49,6 +49,9 @@ export async function findOneByCode(params: CouponCheckCodeQuery) {
             if (params.id) {
                 cond.push(eb('c.id', '=', params.id))
             }
+            if (params.companyId) {
+                cond.push(eb('c.companyId', '=', params.companyId))
+            }
             if (params.code) {
                 cond.push(eb('c.code', '=', params.code))
             }

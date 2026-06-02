@@ -13,6 +13,7 @@ import { OrganizationBusCompanyId } from '../../database/organization/bus_compan
 import { OperationRouteId } from '../../database/operation/route/type.js'
 import { OperationTripScheduleId } from '../../database/operation/trip-schedule/type.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
+import { BookingCouponTableInsert } from '../../database/booking/coupon/table.js'
 
 export async function getCouponByCode(params: CouponCheckCodeQuery) {
     const coupon = await dal.booking.coupon.cmd.getCouponByCode(params)
@@ -161,13 +162,16 @@ export async function getCouponsSupport(filter: CouponSupportFilter) {
     return { coupons: data, next: next }
 }
 
-export async function createCoupon(body: CouponBody) {
+export async function createCoupon(body: CouponBody & { companyId: OrganizationBusCompanyId }) {
     return {
         coupon: await dal.booking.coupon.cmd.createOne(body),
     }
 }
 
-export async function updateCoupon(id: BookingCouponId, body: CouponBody) {
+export async function updateCoupon(
+    id: BookingCouponId,
+    body: CouponBody & { companyId: OrganizationBusCompanyId }
+) {
     return {
         coupon: await dal.booking.coupon.cmd.updateOne(id, body),
     }

@@ -1,6 +1,7 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import { BookingCouponId, BookingDiscountType } from './type.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export interface BookingCouponTable extends Timestamps {
     id: GeneratedAlways<BookingCouponId>
@@ -14,6 +15,7 @@ export interface BookingCouponTable extends Timestamps {
     startDate: Date | null
     endDate: Date | null
     isActive: boolean
+    companyId: OrganizationBusCompanyId
 }
 
 export type BookingCouponTableInsert = Insertable<BookingCouponTable>

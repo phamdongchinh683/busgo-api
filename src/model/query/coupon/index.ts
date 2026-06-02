@@ -1,8 +1,11 @@
 import z from 'zod'
 import { BookingCouponId, BookingDiscountType } from '../../../database/booking/coupon/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+
 export const CouponCheckCodeQuery = z.object({
     code: z.string().optional(),
     id: BookingCouponId.optional(),
+    companyId: OrganizationBusCompanyId.optional(),
     orderTotal: z.coerce.number(),
 })
 export type CouponCheckCodeQuery = z.infer<typeof CouponCheckCodeQuery>

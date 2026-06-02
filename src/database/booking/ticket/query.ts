@@ -111,12 +111,7 @@ export async function findPassengersByDriverAndTripId(
             const cond = []
             cond.push(eb('trip.id', '=', tripId))
             cond.push(eb('trip.driverId', '=', driverId))
-            cond.push(
-                eb('b.status', 'in', [
-                    BookingStatus.enum.paid,
-                    BookingStatus.enum.pending,
-                ])
-            )
+            cond.push(eb('b.status', 'in', [BookingStatus.enum.paid, BookingStatus.enum.pending]))
             cond.push(
                 eb('t.status', 'in', [
                     BookingTicketStatus.enum.paid,
@@ -210,7 +205,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'b.id as bookingId',
             'b.status',
             'trip.departureDate',
-            'b.expiredAt'
+            'b.expiredAt',
         ])
         .orderBy('trip.departureDate', 'desc')
         .limit(limit + 1)
