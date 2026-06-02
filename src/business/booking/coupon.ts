@@ -14,9 +14,26 @@ import { OperationRouteId } from '../../database/operation/route/type.js'
 import { OperationTripScheduleId } from '../../database/operation/trip-schedule/type.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
 import { BookingCouponTableInsert } from '../../database/booking/coupon/table.js'
+import {
+    clearCouponCache,
+    COUPON_CACHE_TTL_SECONDS,
+    couponLookupCachePayload,
+    couponLookupCachePrefix,
+    couponPublicListCachePrefix,
+    couponSupportListCachePrefix,
+    hydrateCoupon,
+    hydrateCouponsResponse,
+} from './coupon-cache.js'
 
 export async function getCouponByCode(params: CouponCheckCodeQuery) {
-    const coupon = await dal.booking.coupon.cmd.getCouponByCode(params)
+    const coupon = hydrateCoupon(
+        await utils.cache.cacheQuery({
+            prefix: couponLookupCachePrefix(params.companyId),
+            query: couponLookupCachePayload(params),
+            ttl: COUPON_CACHE_TTL_SECONDS,
+            queryFn: () => dal.booking.coupon.cmd.getCouponByCode(params),
+        })
+    )
 
     validateCoupon(coupon, params.orderTotal)
 
@@ -30,13 +47,22 @@ export async function getCouponByCode(params: CouponCheckCodeQuery) {
 }
 
 export async function getCoupons(filter: CouponFilter) {
-    const rows = await dal.booking.coupon.cmd.findAllCoupons(filter)
-    const hasNextPage = rows.length > 10
-    const data = hasNextPage ? rows.slice(0, 10) : rows
-    return {
-        coupons: data,
-        next: hasNextPage ? data[data.length - 1]?.id : null,
-    }
+    const response = await utils.cache.cacheQuery({
+        prefix: couponPublicListCachePrefix(filter.companyId),
+        query: filter,
+        ttl: COUPON_CACHE_TTL_SECONDS,
+        queryFn: async () => {
+            const rows = await dal.booking.coupon.cmd.findAllCoupons(filter)
+            const hasNextPage = rows.length > 10
+            const data = hasNextPage ? rows.slice(0, 10) : rows
+            return {
+                coupons: data,
+                next: hasNextPage ? data[data.length - 1]?.id : null,
+            }
+        },
+    })
+
+    return hydrateCouponsResponse(response)
 }
 
 export function validateCoupon(coupon: CouponResponse, orderTotal: number) {
@@ -157,14 +183,29 @@ export async function resultAmountOneWay(
 }
 
 export async function getCouponsSupport(filter: CouponSupportFilter) {
-    const rows = await dal.booking.coupon.query.findAllSupportCoupons(filter)
-    const { data, next } = utils.common.paginateByCursor(rows, filter.limit)
-    return { coupons: data, next: next }
+    const response = await utils.cache.cacheQuery({
+        prefix: couponSupportListCachePrefix(filter.companyId),
+        query: filter,
+        ttl: COUPON_CACHE_TTL_SECONDS,
+        queryFn: async () => {
+            const rows = await dal.booking.coupon.query.findAllSupportCoupons(filter)
+            const { data, next } = utils.common.paginateByCursor(rows, filter.limit)
+            return {
+                coupons: data,
+                next: next === null ? null : BookingCouponId.parse(next),
+            }
+        },
+    })
+
+    return hydrateCouponsResponse(response)
 }
 
 export async function createCoupon(body: CouponBody & { companyId: OrganizationBusCompanyId }) {
+    const coupon = await dal.booking.coupon.cmd.createOne(body)
+    await clearCouponCache(coupon.companyId)
+
     return {
-        coupon: await dal.booking.coupon.cmd.createOne(body),
+        coupon,
     }
 }
 
@@ -172,7 +213,10 @@ export async function updateCoupon(
     id: BookingCouponId,
     body: CouponBody & { companyId: OrganizationBusCompanyId }
 ) {
+    const coupon = await dal.booking.coupon.cmd.updateOne(id, body)
+    await clearCouponCache(coupon.companyId)
+
     return {
-        coupon: await dal.booking.coupon.cmd.updateOne(id, body),
+        coupon,
     }
 }

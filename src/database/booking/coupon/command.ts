@@ -14,6 +14,7 @@ import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js
 import { db } from '../../../datasource/db.js'
 import { BookingCouponTableInsert, BookingCouponTableUpdate } from './table.js'
 import _ from 'lodash'
+import { clearCouponCache } from '../../../business/booking/coupon-cache.js'
 
 export async function findAllCoupons(filter: CouponFilter) {
     return dal.booking.coupon.query.findAll(filter)
@@ -151,28 +152,23 @@ export async function updateOne(
         .executeTakeFirstOrThrow()
 }
 
-export function upCountUsedQuantity(
+export async function upCountUsedQuantity(
     id: BookingCouponId,
     type: '+' | '-',
     trx?: Transaction<Database>
 ) {
-    if (type === '+') {
-        return (trx ?? db)
-            .updateTable('booking.coupon')
-            .set({
-                usedQuantity: sql`used_quantity + 1`,
-            })
-            .where('id', '=', id)
-            .returningAll()
-            .executeTakeFirstOrThrow()
-    } else if (type === '-') {
-        return (trx ?? db)
-            .updateTable('booking.coupon')
-            .set({
-                usedQuantity: sql`used_quantity - 1`,
-            })
-            .where('id', '=', id)
-            .returningAll()
-            .executeTakeFirstOrThrow()
-    }
+    const usedQuantity =
+        type === '+' ? sql<number>`used_quantity + 1` : sql<number>`used_quantity - 1`
+    const coupon = await (trx ?? db)
+        .updateTable('booking.coupon')
+        .set({
+            usedQuantity,
+        })
+        .where('id', '=', id)
+        .returningAll()
+        .executeTakeFirstOrThrow()
+
+    await clearCouponCache(coupon.companyId)
+
+    return coupon
 }
