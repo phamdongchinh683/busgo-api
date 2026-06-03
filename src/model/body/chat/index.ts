@@ -17,6 +17,25 @@ export const ChatMessageBody = z.object({
 
 export type ChatMessageBody = z.infer<typeof ChatMessageBody>
 
+export const AiChatMessage = z.object({
+    role: z.enum(['system', 'user', 'assistant']),
+    content: z.string().trim().min(1),
+})
+
+export type AiChatMessage = z.infer<typeof AiChatMessage>
+
+export const AiChatBody = z.object({
+    message: z.string().trim().min(1),
+})
+
+export type AiChatBody = z.infer<typeof AiChatBody>
+
+export const AiChatResponse = z.object({
+    message: z.string(),
+})
+
+export type AiChatResponse = z.infer<typeof AiChatResponse>
+
 export const ChatMessageResponse = z.object({
     messages: z.array(
         z.object({

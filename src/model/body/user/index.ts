@@ -75,7 +75,7 @@ export const UserListQuery = z.object({
     companyId: OrganizationBusCompanyId.optional(),
     email: Email.optional(),
     phone: Phone.nullable().optional(),
-    type : UserLoginProvider.optional(),
+    type: UserLoginProvider.optional(),
     limit: z.coerce.number().min(1).optional().default(10),
     next: AuthUserId.optional(),
 })

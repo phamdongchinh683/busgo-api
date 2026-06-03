@@ -219,16 +219,7 @@ export async function getAuthUser(params: {
 }
 
 export function findAll(query: UserListQuery) {
-    const {
-        limit,
-        next,
-        status,
-        role,
-        companyId,
-        email,
-        phone,
-        type
-    } = query
+    const { limit, next, status, role, companyId, email, phone, type } = query
     return db
         .selectFrom('auth.user as u')
         .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')

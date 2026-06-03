@@ -435,7 +435,8 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
             oc.column('email').doUpdateSet({
                 email: params.data.email,
                 facebookId: sql<
-                    string | null>`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
+                    string | null
+                >`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
                 googleId: sql<string | null>`COALESCE(auth.user.google_id, excluded.google_id)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
