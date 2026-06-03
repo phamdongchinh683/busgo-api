@@ -17,6 +17,8 @@ const decoder = createDecoder()
 export async function verifyToken(params: { payload: AuthFacebookBody }): Promise<AuthResponse> {
     const { payload } = params
     const userData = await getFacebookUserData({ payload })
+
+    console.log('Facebook user data:', userData)
     if (!userData.facebookId)
         throw new HttpErr.UnprocessableEntity(
             'Không tìm thấy mã định danh tài khoản Facebook.',
