@@ -455,7 +455,7 @@ type GoogleAuthUserTableInsert = AuthUserTableInsert & {
 
 export async function authUpsertByFacebook(params: { data: FacebookAuthUserTableInsert }) {
     try {
-        return db
+        return await db
             .insertInto('auth.user')
             .values(params.data)
             .onConflict(oc =>
@@ -483,7 +483,7 @@ export async function authUpsertByFacebook(params: { data: FacebookAuthUserTable
 
 export async function authUpsertByGoogle(params: { data: GoogleAuthUserTableInsert }) {
     try {
-        return db
+        return await db
             .insertInto('auth.user')
             .values(params.data)
             .onConflict(oc =>
