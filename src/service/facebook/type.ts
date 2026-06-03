@@ -2,6 +2,7 @@ import z from 'zod'
 
 export const FacebookIdTokenPayload = z.object({
     email: z.email().optional(),
+    email_verified: z.boolean().optional(),
     family_name: z.string().optional(),
     given_name: z.string().optional(),
     sub: z.string().optional(),

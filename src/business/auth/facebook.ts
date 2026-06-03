@@ -3,12 +3,13 @@ import { AuthFacebookBody, AuthResponse } from '../../model/body/auth/index.js'
 import { service } from '../../service/index.js'
 import { createDecoder } from 'fast-jwt'
 import { FacebookIdTokenPayload } from '../../service/facebook/type.js'
-import { signInByEmail } from './social.js'
+import { signInByFacebook } from './social.js'
 
 interface FacebookUserData {
     email?: null | string
     facebookId?: null | string
     firstName?: null | string
+    isEmailVerified?: boolean
     lastName?: null | string
 }
 
@@ -18,21 +19,17 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
     const { payload } = params
     const userData = await getFacebookUserData({ payload })
 
-    console.log('Facebook user data:', userData)
     if (!userData.facebookId)
         throw new HttpErr.UnprocessableEntity(
             'Không tìm thấy mã định danh tài khoản Facebook.',
             'INVALID_FACEBOOK_ACCOUNT'
         )
-    if (!userData.email)
-        throw new HttpErr.UnprocessableEntity(
-            'Không tìm thấy email. Vui lòng cấp quyền truy cập email trong Facebook Login.',
-            'EMAIL_NOT_FOUND'
-        )
 
-    return signInByEmail({
+    return signInByFacebook({
         email: userData.email,
+        facebookId: userData.facebookId,
         firstName: userData.firstName,
+        isEmailVerified: userData.isEmailVerified,
         lastName: userData.lastName,
     })
 }
@@ -49,6 +46,7 @@ async function getFacebookUserData(params: {
             email: info.email,
             facebookId: info.id,
             firstName: info.first_name,
+            isEmailVerified: Boolean(info.email),
             lastName: info.last_name,
         }
     }
@@ -58,6 +56,7 @@ async function getFacebookUserData(params: {
             email: info.email,
             facebookId: info.sub,
             firstName: info.given_name,
+            isEmailVerified: info.email_verified ?? Boolean(info.email),
             lastName: info.family_name,
         }
     }

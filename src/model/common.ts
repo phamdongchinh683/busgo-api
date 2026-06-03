@@ -31,7 +31,7 @@ export type ContactInfo = z.infer<typeof ContactInfo>
 
 export const UserInfo = z.object({
     id: AuthUserId,
-    email: Email,
+    email: Email.nullable(),
     phone: Phone.nullable(),
     role: AuthUserRole,
     fullName: z.string(),

@@ -134,8 +134,13 @@ export async function countAll() {
     return r.total
 }
 
-export function getOne(params: { email?: string; phone?: string; id?: AuthUserId }) {
-    const { email, phone, id } = params
+export function getOne(params: {
+    email?: string
+    phone?: string
+    id?: AuthUserId
+    facebookId?: string
+}) {
+    const { email, phone, id, facebookId } = params
     return db
         .selectFrom('auth.user as u')
         .leftJoin('auth.staff_profile', 'u.id', 'auth.staff_profile.userId')
@@ -146,10 +151,12 @@ export function getOne(params: { email?: string; phone?: string; id?: AuthUserId
             'u.password',
             'u.email',
             'u.phone',
+            'u.facebookId',
             'u.role',
             'u.status',
             'u.tokenVersion',
             'u.accountStripeId',
+            'u.isEmailVerified',
             'u.lastChangeContact',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
@@ -160,15 +167,21 @@ export function getOne(params: { email?: string; phone?: string; id?: AuthUserId
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (id) cond.push(eb('u.id', '=', id))
+            if (facebookId) cond.push(eb('u.facebookId', '=', facebookId))
             return eb.and(cond)
         })
         .executeTakeFirst()
 }
 
-export async function getAuthUser(params: { email?: string; phone?: string; id?: AuthUserId }) {
-    const { email, phone, id } = params
+export async function getAuthUser(params: {
+    email?: string
+    phone?: string
+    id?: AuthUserId
+    facebookId?: string
+}) {
+    const { email, phone, id, facebookId } = params
 
-    if (!email && !phone && !id) {
+    if (!email && !phone && !id && !facebookId) {
         return undefined
     }
 
@@ -180,10 +193,12 @@ export async function getAuthUser(params: { email?: string; phone?: string; id?:
             'u.password',
             'u.email',
             'u.phone',
+            'u.facebookId',
             'u.role',
             'u.status',
             'u.tokenVersion',
             'u.accountStripeId',
+            'u.isEmailVerified',
             'u.lastChangeContact',
         ])
         .where(eb => {
@@ -191,6 +206,7 @@ export async function getAuthUser(params: { email?: string; phone?: string; id?:
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (id) cond.push(eb('u.id', '=', id))
+            if (facebookId) cond.push(eb('u.facebookId', '=', facebookId))
             return eb.and(cond)
         })
         .executeTakeFirst()

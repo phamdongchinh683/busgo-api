@@ -5,7 +5,7 @@ const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? ''
 export const stripe = new Stripe(STRIPE_SECRET_KEY, {})
 
 export async function createCustomer(params: {
-    email: string
+    email?: null | string
     phone: string
     name: string
     metadata: Record<string, string>
@@ -13,7 +13,7 @@ export async function createCustomer(params: {
     const { email, phone, name, metadata } = params
 
     return stripe.customers.create({
-        email,
+        email: email ?? undefined,
         phone,
         name,
         metadata,

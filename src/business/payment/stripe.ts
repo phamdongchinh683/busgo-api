@@ -178,7 +178,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
 
     if (!accountStripeId) {
         const account = await service.stripe.connect.createConnectAccount({
-            email: userInfo.email,
+            email: userInfo.email ?? undefined,
         })
 
         const newTokenVersion = userInfo.tokenVersion + 1

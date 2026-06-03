@@ -55,6 +55,7 @@ export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
             id: AuthUserId,
+            email: Email.nullable(),
             staffProfileRole: AuthStaffProfileRole.nullable(),
         }).omit({ password: true })
     ),
@@ -79,6 +80,7 @@ export const UserResponseMessage = z.object({
     ...MessageResponse.shape,
     user: UserBody.extend({
         id: AuthUserId,
+        email: Email.nullable(),
     }).omit({ password: true }),
 })
 

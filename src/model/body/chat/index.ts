@@ -25,7 +25,7 @@ export const ChatMessageResponse = z.object({
             senderId: AuthUserId,
             fullName: z.string(),
             phone: Phone.nullable(),
-            email: Email,
+            email: Email.nullable(),
             createdAt: z.date(),
         })
     ),

@@ -5,7 +5,7 @@ import { z } from 'zod'
 export const DriverResponse = z.object({
     id: AuthUserId,
     fullName: z.string(),
-    email: Email,
+    email: Email.nullable(),
     phone: Phone.nullable(),
     role: AuthUserRole,
     status: AuthUserStatus,

@@ -69,7 +69,7 @@ export const StaffListResponse = z.object({
         ProfileUpdateBody.extend({
             id: AuthStaffProfileId,
             fullName: z.string(),
-            email: Email,
+            email: Email.nullable(),
             phone: Phone.nullable(),
             userId: AuthUserId,
             role: AuthStaffProfileRole,
@@ -84,7 +84,7 @@ export type StaffListResponse = z.infer<typeof StaffListResponse>
 export const ProfileAccountResponse = z.object({
     user: z.object({
         fullName: z.string(),
-        email: Email,
+        email: Email.nullable(),
         phone: Phone.nullable(),
         status: AuthUserStatus,
         accountStripeId: z.string().nullable(),

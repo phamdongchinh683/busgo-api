@@ -137,7 +137,7 @@ export async function findPassengersByDriverAndTripId(
             'fs.address as pickup',
             'ts.address as dropoff',
             'b.bookingType',
-            'b.totalAmount'
+            'b.totalAmount',
         ])
         .orderBy('seat.seatNumber')
         .limit(limit + 1)

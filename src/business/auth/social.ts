@@ -5,42 +5,68 @@ import type { AuthResponse } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
 import { buildAuthResponse } from './session.js'
 
+type AuthUser = NonNullable<Awaited<ReturnType<typeof dal.auth.user.query.getAuthUser>>>
+
 interface SocialSignInUser {
     email: string
     firstName?: null | string
+    isEmailVerified?: boolean
     lastName?: null | string
 }
 
-const notFoundMessage = 'Không tìm thấy người dùng hoặc tài khoản chưa được kích hoạt.'
+interface FacebookSignInUser {
+    email?: null | string
+    facebookId: string
+    firstName?: null | string
+    isEmailVerified?: boolean
+    lastName?: null | string
+}
 
 export async function signInByEmail(userData: SocialSignInUser): Promise<AuthResponse> {
     const user = await dal.auth.user.cmd.authUpsertByEmail({
         data: {
             email: userData.email,
             password: utils.password.hashPassword(userData.email),
-            fullName: [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim(),
+            fullName: getFullName(userData),
             phone: null,
             isPhoneVerified: false,
+            isEmailVerified: userData.isEmailVerified ?? false,
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
         },
     })
 
+    return buildSocialAuthResponse(user)
+}
+
+export async function signInByFacebook(userData: FacebookSignInUser): Promise<AuthResponse> {
+    const user = await dal.auth.user.cmd.authUpsertByFacebook({
+        data: {
+            email: userData.email ?? null,
+            facebookId: userData.facebookId,
+            password: utils.password.hashPassword(userData.email ?? userData.facebookId),
+            fullName: getFullName(userData),
+            phone: null,
+            isPhoneVerified: false,
+            isEmailVerified: userData.isEmailVerified ?? Boolean(userData.email),
+            role: AuthUserRole.enum.customer,
+            status: AuthUserStatus.enum.active,
+        },
+    })
+
+    return buildSocialAuthResponse(user)
+}
+
+function getFullName(userData: { firstName?: null | string; lastName?: null | string }) {
+    return [userData.firstName, userData.lastName].filter(Boolean).join(' ').trim()
+}
+
+async function buildSocialAuthResponse(user: AuthUser): Promise<AuthResponse> {
     if (!canSignIn(user)) {
-        throw new HttpErr.NotFound(notFoundMessage)
+        throw new HttpErr.Forbidden('Tài khoản của bạn không có quyền đăng nhập vào ứng dụng.')
     }
 
-    if (user.role === AuthUserRole.enum.customer) {
-        return buildAuthResponse(user)
-    }
-
-    const authUser = await dal.auth.user.query.getAuthUser({ email: user.email })
-
-    if (!authUser || !canSignIn(authUser)) {
-        throw new HttpErr.NotFound(notFoundMessage)
-    }
-
-    return buildAuthResponse(authUser)
+    return buildAuthResponse(user)
 }
 
 function canSignIn(user: { role: AuthUserRole; status: AuthUserStatus }) {

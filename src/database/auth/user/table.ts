@@ -6,13 +6,15 @@ export interface AuthUserTable extends Timestamps {
     id: GeneratedAlways<AuthUserId>
     password: string
     fullName: string
-    email: string
+    email: string | null
     phone: string | null
+    facebookId: string | null
     role: AuthUserRole
     status: AuthUserStatus
     tokenVersion: ColumnType<number, number | undefined, number>
     accountStripeId: string | null
     isPhoneVerified: ColumnType<boolean, boolean | undefined, boolean>
+    isEmailVerified: ColumnType<boolean, boolean | undefined, boolean>
     lastChangeContact: ColumnType<Date | null, Date | null | undefined, Date | null>
 }
 

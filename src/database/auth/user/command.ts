@@ -432,9 +432,28 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
         .insertInto('auth.user')
         .values(params.data)
         .onConflict(oc =>
-            oc.column('email').doUpdateSet(eb => ({
+            oc.column('email').doUpdateSet({
                 email: params.data.email,
-            }))
+                facebookId: sql<
+                    string | null
+                >`COALESCE(excluded.facebook_id, auth.user.facebook_id)`,
+                isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
+            })
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
+
+export async function authUpsertByFacebook(params: { data: AuthUserTableInsert }) {
+    return db
+        .insertInto('auth.user')
+        .values(params.data)
+        .onConflict(oc =>
+            oc.column('facebookId').doUpdateSet({
+                email: sql<string | null>`COALESCE(excluded.email, auth.user.email)`,
+                fullName: sql<string>`COALESCE(NULLIF(excluded.full_name, 'Facebook User'), auth.user.full_name, excluded.full_name)`,
+                isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
+            })
         )
         .returningAll()
         .executeTakeFirstOrThrow()

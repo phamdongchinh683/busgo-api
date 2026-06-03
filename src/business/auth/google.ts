@@ -19,6 +19,7 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
     return signInByEmail({
         email: info.email,
         firstName: info.given_name,
+        isEmailVerified: info.email_verified === 'true',
         lastName: info.family_name,
     })
 }
