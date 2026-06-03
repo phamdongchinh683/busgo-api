@@ -139,8 +139,9 @@ export function getOne(params: {
     phone?: string
     id?: AuthUserId
     facebookId?: string
+    googleId?: string
 }) {
-    const { email, phone, id, facebookId } = params
+    const { email, phone, id, facebookId, googleId } = params
     return db
         .selectFrom('auth.user as u')
         .leftJoin('auth.staff_profile', 'u.id', 'auth.staff_profile.userId')
@@ -152,6 +153,7 @@ export function getOne(params: {
             'u.email',
             'u.phone',
             'u.facebookId',
+            'u.googleId',
             'u.role',
             'u.status',
             'u.tokenVersion',
@@ -168,6 +170,7 @@ export function getOne(params: {
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (id) cond.push(eb('u.id', '=', id))
             if (facebookId) cond.push(eb('u.facebookId', '=', facebookId))
+            if (googleId) cond.push(eb('u.googleId', '=', googleId))
             return eb.and(cond)
         })
         .executeTakeFirst()
@@ -178,10 +181,11 @@ export async function getAuthUser(params: {
     phone?: string
     id?: AuthUserId
     facebookId?: string
+    googleId?: string
 }) {
-    const { email, phone, id, facebookId } = params
+    const { email, phone, id, facebookId, googleId } = params
 
-    if (!email && !phone && !id && !facebookId) {
+    if (!email && !phone && !id && !facebookId && !googleId) {
         return undefined
     }
 
@@ -194,6 +198,7 @@ export async function getAuthUser(params: {
             'u.email',
             'u.phone',
             'u.facebookId',
+            'u.googleId',
             'u.role',
             'u.status',
             'u.tokenVersion',
@@ -207,13 +212,23 @@ export async function getAuthUser(params: {
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (id) cond.push(eb('u.id', '=', id))
             if (facebookId) cond.push(eb('u.facebookId', '=', facebookId))
+            if (googleId) cond.push(eb('u.googleId', '=', googleId))
             return eb.and(cond)
         })
         .executeTakeFirst()
 }
 
 export function findAll(query: UserListQuery) {
-    const { limit, next, status, role, companyId, email, phone } = query
+    const {
+        limit,
+        next,
+        status,
+        role,
+        companyId,
+        email,
+        phone,
+        type
+    } = query
     return db
         .selectFrom('auth.user as u')
         .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
@@ -232,6 +247,8 @@ export function findAll(query: UserListQuery) {
             }
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
+            if (type === 'facebook') cond.push(eb('u.facebookId', 'is not', null))
+            if (type === 'google') cond.push(eb('u.googleId', 'is not', null))
             if (next) cond.push(eb('u.id', '>', next))
             return eb.and(cond)
         })
@@ -240,6 +257,8 @@ export function findAll(query: UserListQuery) {
             'u.fullName',
             'u.email',
             'u.phone',
+            'u.facebookId',
+            'u.googleId',
             'u.role',
             'u.status',
             'sp.role as staffProfileRole',

@@ -51,11 +51,16 @@ export const UserUpdatePasswordBody = z.object({
 
 export type UserUpdatePasswordBody = z.infer<typeof UserUpdatePasswordBody>
 
+export const UserLoginProvider = z.enum(['google', 'facebook'])
+export type UserLoginProvider = z.infer<typeof UserLoginProvider>
+
 export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
             id: AuthUserId,
             email: Email.nullable(),
+            facebookId: z.string().nullable(),
+            googleId: z.string().nullable(),
             staffProfileRole: AuthStaffProfileRole.nullable(),
         }).omit({ password: true })
     ),
@@ -70,6 +75,7 @@ export const UserListQuery = z.object({
     companyId: OrganizationBusCompanyId.optional(),
     email: Email.optional(),
     phone: Phone.nullable().optional(),
+    type : UserLoginProvider.optional(),
     limit: z.coerce.number().min(1).optional().default(10),
     next: AuthUserId.optional(),
 })

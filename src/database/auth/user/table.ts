@@ -9,6 +9,7 @@ export interface AuthUserTable extends Timestamps {
     email: string | null
     phone: string | null
     facebookId: string | null
+    googleId: string | null
     role: AuthUserRole
     status: AuthUserStatus
     tokenVersion: ColumnType<number, number | undefined, number>

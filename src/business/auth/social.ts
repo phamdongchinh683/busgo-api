@@ -14,6 +14,10 @@ interface SocialSignInUser {
     lastName?: null | string
 }
 
+interface GoogleSignInUser extends SocialSignInUser {
+    googleId: string
+}
+
 interface FacebookSignInUser {
     email?: null | string
     facebookId: string
@@ -26,6 +30,24 @@ export async function signInByEmail(userData: SocialSignInUser): Promise<AuthRes
     const user = await dal.auth.user.cmd.authUpsertByEmail({
         data: {
             email: userData.email,
+            password: utils.password.hashPassword(userData.email),
+            fullName: getFullName(userData),
+            phone: null,
+            isPhoneVerified: false,
+            isEmailVerified: userData.isEmailVerified ?? false,
+            role: AuthUserRole.enum.customer,
+            status: AuthUserStatus.enum.active,
+        },
+    })
+
+    return buildSocialAuthResponse(user)
+}
+
+export async function signInByGoogle(userData: GoogleSignInUser): Promise<AuthResponse> {
+    const user = await dal.auth.user.cmd.authUpsertByGoogle({
+        data: {
+            email: userData.email,
+            googleId: userData.googleId,
             password: utils.password.hashPassword(userData.email),
             fullName: getFullName(userData),
             phone: null,

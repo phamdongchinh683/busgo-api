@@ -435,8 +435,8 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
             oc.column('email').doUpdateSet({
                 email: params.data.email,
                 facebookId: sql<
-                    string | null
-                >`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
+                    string | null>`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
+                googleId: sql<string | null>`COALESCE(auth.user.google_id, excluded.google_id)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
         )
@@ -446,6 +446,11 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
 
 type FacebookAuthUserTableInsert = AuthUserTableInsert & {
     facebookId: string
+}
+
+type GoogleAuthUserTableInsert = AuthUserTableInsert & {
+    email: string
+    googleId: string
 }
 
 export async function authUpsertByFacebook(params: { data: FacebookAuthUserTableInsert }) {
@@ -468,6 +473,33 @@ export async function authUpsertByFacebook(params: { data: FacebookAuthUserTable
             error.code === '23505' &&
             error.constraint === 'user_email_key' &&
             params.data.email
+        ) {
+            return authUpsertByEmail(params)
+        }
+
+        throw error
+    }
+}
+
+export async function authUpsertByGoogle(params: { data: GoogleAuthUserTableInsert }) {
+    try {
+        return db
+            .insertInto('auth.user')
+            .values(params.data)
+            .onConflict(oc =>
+                oc.column('googleId').doUpdateSet({
+                    email: sql<string | null>`COALESCE(auth.user.email, excluded.email)`,
+                    fullName: sql<string>`COALESCE(NULLIF(auth.user.full_name, ''), NULLIF(excluded.full_name, ''), auth.user.full_name)`,
+                    isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
+                })
+            )
+            .returningAll()
+            .executeTakeFirstOrThrow()
+    } catch (error) {
+        if (
+            error instanceof DatabaseError &&
+            error.code === '23505' &&
+            error.constraint === 'user_email_key'
         ) {
             return authUpsertByEmail(params)
         }
