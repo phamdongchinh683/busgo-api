@@ -1,7 +1,7 @@
 import { db } from '../../../datasource/db.js'
 import { Database } from '../../../datasource/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
-import { OperationTripId, OperationTripStatus } from '../../operation/trip/type.js'
+import { OperationTripId } from '../../operation/trip/type.js'
 import {
     PassengerTicketFilter,
     TicketFilter,
@@ -22,7 +22,7 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             const cond = []
             cond.push(eb('b.userId', '=', userId))
             if (next) {
-                cond.push(eb('t.id', '>', next))
+                cond.push(eb('t.id', '<', next))
             }
             if (q.type) {
                 cond.push(eb('b.bookingType', '=', q.type))
@@ -47,8 +47,7 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             'trip.status as tripStatus',
             'b.expiredAt',
         ])
-        .orderBy('trip.departureDate', 'desc')
-        .orderBy('t.createdAt', 'desc')
+        .orderBy('t.id', 'desc')
         .limit(limit + 1)
         .execute()
 }
@@ -190,7 +189,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             }
 
             if (next) {
-                cond.push(eb('t.id', '>', next))
+                cond.push(eb('t.id', '<', next))
             }
 
             return eb.and(cond)
@@ -209,7 +208,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'trip.departureDate',
             'b.expiredAt',
         ])
-        .orderBy('trip.departureDate', 'desc')
+        .orderBy('t.id', 'desc')
         .limit(limit + 1)
         .execute()
 }
