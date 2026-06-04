@@ -1020,7 +1020,7 @@ async function handleCouponStep(params: {
         return {
             message: [
                 error instanceof Error
-                    ? `Mã ${code} chưa dùng được: ${error.message}`
+                    ? `Mã ${code} chưa dùng được: 'không khả dụng`
                     : `Mã ${code} chưa dùng được.`,
                 'Bạn nhập mã khác, hoặc nhắn "không có" để bỏ qua.',
             ].join('\n'),
@@ -1230,7 +1230,7 @@ function getPaymentGuidanceMessage(message: string) {
         return 'Bạn vào Profile > Vé > Đã giữ chỗ, mở vé này rồi chọn thanh toán thẻ. Vé đang được giữ 10 phút.'
     }
 
-    return 'Chat hiện chưa tạo link thanh toán trực tiếp. Bạn vào Profile > Vé > Đã giữ chỗ, mở vé đang giữ và chọn VNPay, thẻ hoặc tiền mặt khi lên xe.'
+    return 'Mình sẽ không hỗ trợ thanh toán trực tiếp. Bạn vào Profile > Vé của tôi > Chọn đang giữ chỗ chọn phương thức thanh toán VNPay, thẻ hoặc tiền mặt khi lên xe.'
 }
 
 function isActiveBookingState(state: AiChatState) {
@@ -2481,7 +2481,7 @@ async function getCouponContext(message: string, numeric: NumericEntities) {
                 : {}),
         })
 
-        return `Ma giam gia hop le: giam=${result.discountAmount}, tongSauGiam=${result.finalTotal}`
+        return `Ma giam gia hop le: giam=${result.discountAmount }, tongSauGiam=${result.finalTotal}`
     }
 
     if (numeric.orderTotal) {
