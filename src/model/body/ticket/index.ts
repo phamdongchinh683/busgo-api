@@ -64,7 +64,7 @@ export const TicketResponse = z.object({
 export type TicketResponse = z.infer<typeof TicketResponse>
 
 export const TicketStatusBody = z.object({
-    status: BookingTicketStatus,
+    ticketStatus: BookingTicketStatus,
 })
 
 export type TicketStatusBody = z.infer<typeof TicketStatusBody>

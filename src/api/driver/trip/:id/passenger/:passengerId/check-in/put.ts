@@ -17,7 +17,7 @@ api.route({
         const { passengerId, id } = request.params
         return bus.booking.ticket.checkInTicket({
             id: passengerId,
-            status: request.body.status,
+            status: request.body.ticketStatus,
             tripId: id,
         })
     },
