@@ -8,10 +8,12 @@ import { OperationTripId, OperationTripStatus } from '../../database/operation/t
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { BookingStatus } from '../../database/booking/booking/type.js'
 import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
+import { applyTicketNaturalLanguageFilter } from './ticket-search.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {
-    const tickets = await dal.booking.ticket.query.findAll(q, userId)
-    const { data, next } = utils.common.paginateByCursor(tickets, q.limit)
+    const filter = applyTicketNaturalLanguageFilter(q)
+    const tickets = await dal.booking.ticket.query.findAll(filter, userId)
+    const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
 
     return {
         tickets: data,
@@ -61,8 +63,9 @@ export async function getTicketsSupport(
     q: TicketSupportFilter,
     companyId: OrganizationBusCompanyId
 ) {
-    const tickets = await dal.booking.ticket.query.findAllSupport(q, companyId)
-    const { data, next } = utils.common.paginateByCursor(tickets, q.limit)
+    const filter = applyTicketNaturalLanguageFilter(q)
+    const tickets = await dal.booking.ticket.query.findAllSupport(filter, companyId)
+    const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
 
     return {
         tickets: data,

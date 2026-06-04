@@ -9,6 +9,7 @@ export const TicketFilter = z.object({
     next: BookingTicketId.optional(),
     type: BookingType.optional(),
     status: BookingTicketStatus.optional(),
+    search: z.string().trim().optional(),
 })
 
 export type TicketFilter = z.infer<typeof TicketFilter>

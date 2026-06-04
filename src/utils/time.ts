@@ -19,6 +19,25 @@ export const formatCalendarDate = (date: Date, pattern = 'DD/MM/YYYY') => {
     return dayjs(date).tz(APP_TIMEZONE).format(pattern)
 }
 
+export const getAppCalendarDate = (params: { day: number; month: number; year: number }) => {
+    const month = String(params.month).padStart(2, '0')
+    const day = String(params.day).padStart(2, '0')
+
+    return dayjs
+        .tz(`${params.year}-${month}-${day} 12:00:00`, 'YYYY-MM-DD HH:mm:ss', APP_TIMEZONE)
+        .toDate()
+}
+
+export const getRelativeAppCalendarDate = (daysFromToday: number) => {
+    const target = getNow().add(daysFromToday, 'day')
+
+    return getAppCalendarDate({
+        year: target.year(),
+        month: target.month() + 1,
+        day: target.date(),
+    })
+}
+
 export const getNext = (params: { milliseconds: number }) => {
     return getNow().add(params.milliseconds, 'milliseconds').toDate()
 }

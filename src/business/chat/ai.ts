@@ -83,6 +83,14 @@ export async function reply(params: { userInfo: UserInfo; message: string; state
         return response
     }
 
+    const companionResponse = getCompanionResponse(params.message, state)
+    if (companionResponse) {
+        return {
+            message: companionResponse,
+            ...(state ? { state } : {}),
+        }
+    }
+
     const context = await buildCustomerAssistantContext({ ...params, state })
     const response = await service.openai.chat({
         message: params.message,
@@ -438,6 +446,123 @@ async function safeBookingFlow(
             state,
         }
     }
+}
+
+function getCompanionResponse(message: string, state?: AiChatState) {
+    if (hasBusinessIntent(message, state)) {
+        return undefined
+    }
+
+    if (isThanksMessage(message)) {
+        return 'Không có gì. Khi cần tìm chuyến, xem vé, thanh toán hoặc hủy vé, bạn nhắn mình là được.'
+    }
+
+    if (isGreetingMessage(message)) {
+        return 'Mình đây. Bạn muốn tìm chuyến, xem vé, thanh toán hay hủy vé?'
+    }
+
+    if (isHelpMessage(message)) {
+        return 'Mình hỗ trợ được tìm chuyến, chọn điểm đón/trả, chọn ghế, áp mã giảm giá, giữ vé, xem vé và hủy vé. Bạn muốn mình giúp việc nào trước?'
+    }
+
+    if (isConfusedMessage(message)) {
+        return 'Không sao, mình đi từng bước với bạn. Nếu muốn đặt vé, bạn chỉ cần nhắn nơi đi, nơi đến và ngày đi.'
+    }
+
+    if (isWorriedMessage(message)) {
+        return 'Mình nghe bạn. Phần đặt vé cứ để mình dẫn từng bước; bạn muốn mình giúp tìm chuyến hay kiểm tra vé trước?'
+    }
+}
+
+function hasBusinessIntent(message: string, state?: AiChatState) {
+    const normalizedMessage = normalize(message)
+    const currentState = state ?? { stage: 'idle' as const }
+    const tripSearch = extractTripSearchParams(message)
+
+    return (
+        isBookingFlowMessage(normalizedMessage, currentState) ||
+        shouldFetchTripSchedules(normalizedMessage, tripSearch) ||
+        shouldFetchPickupStops(normalizedMessage) ||
+        shouldAskForDropoff(normalizedMessage, currentState) ||
+        shouldAskForSeat(normalizedMessage, currentState) ||
+        shouldFetchCoupon(normalizedMessage) ||
+        shouldFetchTicket(normalizedMessage) ||
+        isPaymentFlowMessage(normalizedMessage)
+    )
+}
+
+function isGreetingMessage(message: string) {
+    const normalizedMessage = normalizeSearch(message)
+    return (
+        ['chao', 'chao ban', 'hello', 'hi', 'alo', 'ban oi', 'admin oi', 'tro ly oi'].includes(
+            normalizedMessage
+        ) || containsAny(normalizedMessage, ['xin chao', 'chào bạn', 'hello busgo'])
+    )
+}
+
+function isThanksMessage(message: string) {
+    return containsAny(message, [
+        'cam on',
+        'cảm ơn',
+        'thanks',
+        'thank you',
+        'ok cam on',
+        'ok cảm ơn',
+        'duoc roi',
+        'được rồi',
+        'tot qua',
+        'tốt quá',
+    ])
+}
+
+function isHelpMessage(message: string) {
+    return containsAny(message, [
+        'giup voi',
+        'giúp với',
+        'ho tro toi',
+        'hỗ trợ tôi',
+        'ho tro minh',
+        'hỗ trợ mình',
+        'can ban giup',
+        'cần bạn giúp',
+        'lam gi duoc',
+        'làm gì được',
+        'ban lam duoc gi',
+        'bạn làm được gì',
+    ])
+}
+
+function isConfusedMessage(message: string) {
+    return containsAny(message, [
+        'khong hieu',
+        'không hiểu',
+        'roi qua',
+        'rối quá',
+        'kho qua',
+        'khó quá',
+        'khong biet lam sao',
+        'không biết làm sao',
+        'toi khong biet',
+        'tôi không biết',
+        'minh khong biet',
+        'mình không biết',
+    ])
+}
+
+function isWorriedMessage(message: string) {
+    return containsAny(message, [
+        'lo qua',
+        'lo quá',
+        'so qua',
+        'sợ quá',
+        'met qua',
+        'mệt quá',
+        'bun qua',
+        'buồn quá',
+        'stress',
+        'can nguoi giup',
+        'cần người giúp',
+    ])
 }
 
 async function listSchedules(search: TripSearchParams) {
@@ -968,6 +1093,16 @@ function isResetFlowMessage(message: string) {
         'đặt lại',
         'lam lai',
         'làm lại',
+        'lam tu dau',
+        'làm từ đầu',
+        'bat dau lai',
+        'bắt đầu lại',
+        'xoa lua chon',
+        'xóa lựa chọn',
+        'doi tuyen',
+        'đổi tuyến',
+        'doi chuyen',
+        'đổi chuyến',
         'dat ve moi',
         'đặt vé mới',
         'dat ve khac',
@@ -992,6 +1127,12 @@ function isCancelBookingFlowMessage(message: string, state: AiChatState) {
         'không đặt nữa',
         'bo qua',
         'bỏ qua',
+        'thoi',
+        'thôi',
+        'dung lai',
+        'dừng lại',
+        'khong can nua',
+        'không cần nữa',
         'thoat dat ve',
         'thoát đặt vé',
         'huy luong',
@@ -1002,40 +1143,68 @@ function isCancelBookingFlowMessage(message: string, state: AiChatState) {
 }
 
 function isPaymentFlowMessage(message: string) {
-    return containsAny(message, [
-        'thanh toan',
-        'thanh toán',
-        'pay',
-        'payment',
-        'vnpay',
-        'the',
-        'thẻ',
-        'card',
-        'stripe',
-        'cash',
-        'tien mat',
-        'tiền mặt',
-        'tra tien',
-        'trả tiền',
-        'tiep',
-        'tiếp',
-    ])
+    return (
+        containsAny(message, [
+            'thanh toan',
+            'thanh toán',
+            'tra bang',
+            'trả bằng',
+            'tra tien',
+            'trả tiền',
+            'tinh tien',
+            'tính tiền',
+            'chuyen khoan',
+            'chuyển khoản',
+            'quet the',
+            'quẹt thẻ',
+            'pay',
+            'payment',
+            'vnpay',
+            'thanh toan the',
+            'thanh toán thẻ',
+            'tra bang the',
+            'trả bằng thẻ',
+            'card',
+            'stripe',
+            'cash',
+            'tien mat',
+            'tiền mặt',
+            'tiep',
+            'tiếp',
+            'hoan tat',
+            'hoàn tất',
+            'xong ve',
+            'xong vé',
+        ]) || containsAnyWord(message, ['the', 'thẻ'])
+    )
 }
 
 function isSkipCouponMessage(message: string) {
-    return containsAny(message, [
-        'khong',
-        'không',
-        'khong co',
-        'không có',
-        'bo qua',
-        'bỏ qua',
-        'skip',
-        'khong dung ma',
-        'không dùng mã',
-        'khong co ma',
-        'không có mã',
-    ])
+    return (
+        containsAny(message, [
+            'khong',
+            'không',
+            'khong co',
+            'không có',
+            'bo qua',
+            'bỏ qua',
+            'skip',
+            'thoi',
+            'thôi',
+            'khoi',
+            'khỏi',
+            'khong can',
+            'không cần',
+            'de sau',
+            'để sau',
+            'cu tiep tuc',
+            'cứ tiếp tục',
+            'khong dung ma',
+            'không dùng mã',
+            'khong co ma',
+            'không có mã',
+        ]) || containsAnyWord(message, ['no'])
+    )
 }
 
 function getPaymentGuidanceMessage(message: string) {
@@ -1047,7 +1216,17 @@ function getPaymentGuidanceMessage(message: string) {
         return 'Bạn vào Profile > Vé > Đã giữ chỗ, mở vé này rồi chọn VNPay để mở trang thanh toán. Vé đang được giữ 10 phút.'
     }
 
-    if (containsAny(message, ['the', 'thẻ', 'card', 'stripe'])) {
+    if (
+        containsAny(message, [
+            'thanh toan the',
+            'thanh toán thẻ',
+            'tra bang the',
+            'trả bằng thẻ',
+            'card',
+            'stripe',
+        ]) ||
+        containsAnyWord(message, ['the', 'thẻ'])
+    ) {
         return 'Bạn vào Profile > Vé > Đã giữ chỗ, mở vé này rồi chọn thanh toán thẻ. Vé đang được giữ 10 phút.'
     }
 
@@ -1125,8 +1304,26 @@ function isBookingFlowMessage(message: string, state: AiChatState) {
     return containsAny(message, [
         'dat ve',
         'đặt vé',
+        'mua ve',
+        'mua vé',
+        'book ve',
+        'book vé',
+        'giu cho',
+        'giữ chỗ',
+        'dat cho',
+        'đặt chỗ',
         'tim chuyen',
         'tìm chuyến',
+        'kiem chuyen',
+        'kiếm chuyến',
+        'tim xe',
+        'tìm xe',
+        'kiem xe',
+        'kiếm xe',
+        'co xe',
+        'có xe',
+        'lich xe',
+        'lịch xe',
         'nha xe',
         'nhà xe',
         'chuyen xe',
@@ -1143,8 +1340,6 @@ function isBookingFlowMessage(message: string, state: AiChatState) {
         'tạo vé',
         'den',
         'đến',
-        'toi',
-        'tới',
     ])
 }
 
@@ -1155,14 +1350,42 @@ function shouldAskForPickup(message: string, state: AiChatState) {
 function shouldAskForDropoff(message: string, state: AiChatState) {
     return (
         state.stage === 'dropoff_listed' ||
-        containsAny(message, ['diem tra', 'điểm trả', 'dropoff', 'tra o dau'])
+        containsAny(message, [
+            'diem tra',
+            'điểm trả',
+            'dropoff',
+            'tra o dau',
+            'trả ở đâu',
+            'xuong o dau',
+            'xuống ở đâu',
+            'diem xuong',
+            'điểm xuống',
+            'ben xuong',
+            'bến xuống',
+            'tra khach',
+            'trả khách',
+        ])
     )
 }
 
 function shouldAskForSeat(message: string, state: AiChatState) {
     return (
         state.stage === 'seat_listed' ||
-        containsAny(message, ['ghe', 'ghế', 'seat', 'cho ngoi', 'chỗ ngồi'])
+        containsAny(message, [
+            'ghe',
+            'ghế',
+            'seat',
+            'cho ngoi',
+            'chỗ ngồi',
+            'chon cho',
+            'chọn chỗ',
+            'giuong',
+            'giường',
+            'nam',
+            'nằm',
+            'con cho',
+            'còn chỗ',
+        ])
     )
 }
 
@@ -1210,6 +1433,9 @@ function matchScheduleOption(message: string, options: AiChatScheduleOption[]) {
     ) {
         return findScheduleByTime(options, 'desc')
     }
+
+    const timeRangeIndex = findScheduleByTimeRange(options, normalizedMessage)
+    if (timeRangeIndex !== undefined) return timeRangeIndex
 
     const choiceIndex = extractChoiceIndex(message, options.length)
     if (choiceIndex !== undefined) return choiceIndex
@@ -1290,6 +1516,10 @@ function extractChoiceIndex(message: string, totalOptions: number) {
         containsAny(normalizedMessage, [
             'cuoi cung',
             'cuối cùng',
+            'cai cuoi',
+            'cái cuối',
+            'muc cuoi',
+            'mục cuối',
             'sau cung',
             'sau cùng',
             'diem cuoi',
@@ -1303,11 +1533,11 @@ function extractChoiceIndex(message: string, totalOptions: number) {
     }
 
     const wordChoices: Array<[string[], number]> = [
-        [['dau tien', 'đầu tiên', 'thu nhat', 'thứ nhất', 'first'], 0],
-        [['thu hai', 'thứ hai', 'second'], 1],
-        [['thu ba', 'thứ ba', 'third'], 2],
-        [['thu tu', 'thứ tư', 'fourth'], 3],
-        [['thu nam', 'thứ năm', 'fifth'], 4],
+        [['dau tien', 'đầu tiên', 'cai dau', 'cái đầu', 'thu nhat', 'thứ nhất', 'first'], 0],
+        [['thu hai', 'thứ hai', 'cai hai', 'cái hai', 'second'], 1],
+        [['thu ba', 'thứ ba', 'cai ba', 'cái ba', 'third'], 2],
+        [['thu tu', 'thứ tư', 'cai bon', 'cái bốn', 'fourth'], 3],
+        [['thu nam', 'thứ năm', 'cai nam', 'cái năm', 'fifth'], 4],
     ]
 
     for (const [patterns, index] of wordChoices) {
@@ -1343,6 +1573,30 @@ function findScheduleByTime(options: AiChatScheduleOption[], order: 'asc' | 'des
         .sort((left, right) => left.time.localeCompare(right.time))
 
     return order === 'asc' ? sorted[0]?.index : sorted[sorted.length - 1]?.index
+}
+
+function findScheduleByTimeRange(options: AiChatScheduleOption[], message: string) {
+    const ranges: Array<[string[], number, number]> = [
+        [['sang', 'sáng', 'buoi sang', 'buổi sáng', 'morning'], 5, 11],
+        [['trua', 'trưa', 'buoi trua', 'buổi trưa', 'noon'], 11, 13],
+        [['chieu', 'chiều', 'buoi chieu', 'buổi chiều', 'afternoon'], 13, 18],
+        [['buoi toi', 'buổi tối', 'evening'], 18, 22],
+        [['dem', 'đêm', 'khuya', 'night'], 22, 24],
+    ]
+
+    for (const [patterns, startHour, endHour] of ranges) {
+        if (!containsAny(message, patterns)) continue
+
+        const matched = options
+            .map((item, index) => ({
+                index,
+                hour: Number(formatTime(item.departureTime).slice(0, 2)),
+            }))
+            .filter(item => item.hour >= startHour && item.hour < endHour)
+            .sort((left, right) => left.hour - right.hour)
+
+        if (matched.length > 0) return matched[0].index
+    }
 }
 
 function extractTimeText(message: string) {
@@ -1402,7 +1656,7 @@ function getTextMatchScore(label: string, selection: string) {
 function getSelectionText(message: string) {
     return normalizeSearch(message)
         .replace(
-            /\b(?:toi|tui|minh|em|anh|chi|cho|giup|muon|can|lay|chon|lua|lua chon|diem|diem don|diem tra|don|tra|xuong|o|tai|nha xe|chuyen|ghe|so|muc|option|ve|di)\b/g,
+            /\b(?:toi|tui|minh|em|anh|chi|cho|giup|muon|can|lay|chon|lua|lua chon|cai|nay|do|diem|diem don|diem tra|don|tra|xuong|o|tai|nha xe|chuyen|ghe|so|muc|option|ve|di)\b/g,
             ' '
         )
         .replace(/\s+/g, ' ')
@@ -1423,6 +1677,9 @@ function getMeaningfulTokens(value: string) {
         'can',
         'chon',
         'lay',
+        'cai',
+        'nay',
+        'do',
         'diem',
         'don',
         'tra',
@@ -1667,8 +1924,6 @@ function buildIntentSummary(message: string) {
             'đi từ',
             'den',
             'đến',
-            'toi',
-            'tới',
         ])
     ) {
         intents.push('Khach hoi tim chuyen. Neu thieu noi di/noi den/ngay di thi hoi tiep.')
@@ -1687,28 +1942,60 @@ function shouldFetchTripSchedules(message: string, tripSearch: TripSearchParams)
     const hasTripIntent = containsAny(message, [
         'dat ve',
         'đặt vé',
+        'mua ve',
+        'mua vé',
+        'book ve',
+        'book vé',
+        'giu cho',
+        'giữ chỗ',
+        'dat cho',
+        'đặt chỗ',
         'book',
         'booking',
         'chuyen',
         'chuyến',
         'lich trinh',
         'lịch trình',
+        'lich xe',
+        'lịch xe',
         'xe',
+        'nha xe',
+        'nhà xe',
+        'co xe',
+        'có xe',
+        'tim xe',
+        'tìm xe',
+        'kiem xe',
+        'kiếm xe',
         'di ',
         'đi ',
         'di tu',
         'đi từ',
         'den',
         'đến',
-        'toi',
-        'tới',
     ])
 
     return hasTripIntent && Boolean(tripSearch.from || tripSearch.to || tripSearch.date)
 }
 
 function shouldFetchPickupStops(message: string) {
-    return containsAny(message, ['diem don', 'điểm đón', 'pickup', 'don o dau', 'đón ở đâu'])
+    return containsAny(message, [
+        'diem don',
+        'điểm đón',
+        'pickup',
+        'don o dau',
+        'đón ở đâu',
+        'len xe o dau',
+        'lên xe ở đâu',
+        'diem len',
+        'điểm lên',
+        'ben len',
+        'bến lên',
+        'tram don',
+        'trạm đón',
+        'noi don',
+        'nơi đón',
+    ])
 }
 
 function shouldFetchCoupon(message: string) {
@@ -1719,11 +2006,35 @@ function shouldFetchCoupon(message: string) {
         'mã giảm',
         'khuyen mai',
         'khuyến mãi',
+        'uu dai',
+        'ưu đãi',
+        'giam gia',
+        'giảm giá',
+        'promo',
+        'promotion',
+        'sale',
     ])
 }
 
 function shouldFetchTicket(message: string) {
-    return containsAny(message, ['ve', 'vé', 'ticket', 'booking', 'don dat', 'đơn đặt'])
+    return containsAny(message, [
+        've',
+        'vé',
+        'ticket',
+        'booking',
+        'don dat',
+        'đơn đặt',
+        've cua toi',
+        'vé của tôi',
+        've da dat',
+        'vé đã đặt',
+        've dang giu',
+        'vé đang giữ',
+        'lich su ve',
+        'lịch sử vé',
+        'chuyen sap di',
+        'chuyến sắp đi',
+    ])
 }
 
 function containsAny(value: string, patterns: string[]) {
@@ -1731,16 +2042,32 @@ function containsAny(value: string, patterns: string[]) {
     return patterns.some(pattern => normalizedValue.includes(normalizeSearch(pattern)))
 }
 
+function containsAnyWord(value: string, patterns: string[]) {
+    const normalizedValue = normalizeSearch(value)
+
+    return patterns.some(pattern => {
+        const normalizedPattern = escapeRegExp(normalizeSearch(pattern))
+        return new RegExp(`(^|\\s)${normalizedPattern}(?=\\s|$)`).test(normalizedValue)
+    })
+}
+
+function escapeRegExp(value: string) {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 function extractTripSearchParams(message: string): TripSearchParams {
     const normalized = message.replace(/\s+/g, ' ').trim()
-    const withoutIntent = normalized
+    const withoutIntent = stripTripSearchNoise(normalized)
         .replace(
             /^(?:tôi\s+muốn|toi\s+muon|mình\s+muốn|minh\s+muon|muốn|muon|cho\s+tôi|cho\s+toi|cho\s+mình|cho\s+minh|đặt\s+vé|dat\s+ve|book)\s+/iu,
             ''
         )
-        .replace(/^(?:đặt\s+vé|dat\s+ve|book)\s+/iu, '')
+        .replace(/^(?:đặt\s+vé|dat\s+ve|mua\s+vé|mua\s+ve|book\s+vé|book\s+ve|book)\s+/iu, '')
         .trim()
 
+    const reverseRouteMatch = withoutIntent.match(
+        /(?:đi|di)\s+(.+?)\s+(?:từ|tu)\s+(.+?)(?:\s+(?:ngày|ngay|hôm|hom|lúc|luc)|[,.]|$)/iu
+    )
     const routeMatch =
         withoutIntent.match(
             /(?:đi\s+)?(?:từ|tu)\s+(.+?)\s+(?:đến|den|tới|toi)\s+(.+?)(?:\s+(?:ngày|ngay|hôm|hom|lúc|luc)|[,.]|$)/iu
@@ -1750,37 +2077,84 @@ function extractTripSearchParams(message: string): TripSearchParams {
         ) ??
         withoutIntent.match(
             /(.+?)\s+(?:đến|den|tới|toi)\s+(.+?)(?:\s+(?:ngày|ngay|hôm|hom|lúc|luc)|[,.]|$)/iu
+        ) ??
+        withoutIntent.match(
+            /(.+?)\s*(?:->|=>| to )\s*(.+?)(?:\s+(?:ngày|ngay|hôm|hom|lúc|luc)|[,.]|$)/iu
         )
 
     return {
-        from: cleanupLocation(routeMatch?.[1]),
-        to: cleanupLocation(routeMatch?.[2]),
+        from: cleanupLocation(reverseRouteMatch?.[2] ?? routeMatch?.[1]),
+        to: cleanupLocation(reverseRouteMatch?.[1] ?? routeMatch?.[2]),
         date: extractDate(message),
     }
 }
 
+function stripTripSearchNoise(value: string) {
+    return value
+        .replace(/^(?:mai|mốt|mot|kia)\s+(?=(?:đi|di|từ|tu)\b)/iu, '')
+        .replace(/\s+(?:mai|mốt|mot|kia)$/iu, '')
+        .replace(
+            /\b(?:hôm nay|hom nay|bữa nay|bua nay|ngày mai|ngay mai|ngày mốt|ngay mot|ngày kia|ngay kia|tuần sau|tuan sau|cuối tuần|cuoi tuan)\b/giu,
+            ' '
+        )
+        .replace(
+            /\b(?:sáng|sang|trưa|trua|chiều|chieu|tối|toi|đêm|dem|khuya)\s+(?:nay|mai|mốt|mot|kia)\b/giu,
+            ' '
+        )
+        .replace(/\b(?:lúc|luc)?\s*\d{1,2}\s*(?:h|giờ|gio)(?:\d{1,2})?\b/giu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+}
+
 function cleanupLocation(value?: string) {
     if (!value) return undefined
-    return value.replace(/\b(ngày|ngay|hôm nay|hom nay|ngày mai|ngay mai)\b.*$/iu, '').trim()
+    return value
+        .replace(/\b(ngày|ngay|hôm nay|hom nay|ngày mai|ngay mai)\b.*$/iu, '')
+        .replace(/^(?:xe|vé|ve|chuyến|chuyen|tuyến|tuyen)\s+/iu, '')
+        .trim()
 }
 
 function extractDate(message: string) {
     const normalized = normalize(message)
 
-    if (containsAny(normalized, ['hom nay', 'hôm nay'])) {
-        return utils.time.getNow().startOf('day').toDate()
+    if (containsAny(normalized, ['hom nay', 'hôm nay', 'bua nay', 'bữa nay', 'today'])) {
+        return utils.time.getRelativeAppCalendarDate(0)
     }
 
-    if (containsAny(normalized, ['ngay mai', 'ngày mai', 'tomorrow'])) {
-        return utils.time.getNow().add(1, 'day').startOf('day').toDate()
+    if (
+        containsAny(normalized, [
+            'ngay mai',
+            'ngày mai',
+            'sang mai',
+            'sáng mai',
+            'chieu mai',
+            'chiều mai',
+            'toi mai',
+            'tối mai',
+            'dem mai',
+            'đêm mai',
+            'tomorrow',
+        ]) ||
+        normalizeSearch(message).match(/\b(?:di|dat|book|ve|chuyen|xe)\b.*\bmai\b/)
+    ) {
+        return utils.time.getRelativeAppCalendarDate(1)
     }
 
     if (containsAny(normalized, ['ngay mot', 'ngày mốt', 'ngay kia', 'ngày kia'])) {
-        return utils.time.getNow().add(2, 'day').startOf('day').toDate()
+        return utils.time.getRelativeAppCalendarDate(2)
+    }
+
+    const weekdayDate = extractWeekdayDate(message)
+    if (weekdayDate) {
+        return weekdayDate
+    }
+
+    if (containsAny(normalized, ['cuoi tuan', 'cuối tuần', 'weekend'])) {
+        return getNextWeekdayDate(6, false)
     }
 
     if (containsAny(normalized, ['tuan sau', 'tuần sau', 'next week'])) {
-        return utils.time.getNow().add(7, 'day').startOf('day').toDate()
+        return utils.time.getRelativeAppCalendarDate(7)
     }
 
     const vietnameseDateMatch = normalizeSearch(message).match(
@@ -1795,12 +2169,20 @@ function extractDate(message: string) {
               )
             : utils.time.getNow().year()
 
-        return new Date(year, Number(vietnameseDateMatch[2]) - 1, Number(vietnameseDateMatch[1]))
+        return utils.time.getAppCalendarDate({
+            year,
+            month: Number(vietnameseDateMatch[2]),
+            day: Number(vietnameseDateMatch[1]),
+        })
     }
 
     const isoMatch = message.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/)
     if (isoMatch) {
-        return new Date(Number(isoMatch[1]), Number(isoMatch[2]) - 1, Number(isoMatch[3]))
+        return utils.time.getAppCalendarDate({
+            year: Number(isoMatch[1]),
+            month: Number(isoMatch[2]),
+            day: Number(isoMatch[3]),
+        })
     }
 
     const slashMatch = message.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/)
@@ -1808,10 +2190,45 @@ function extractDate(message: string) {
         const year = slashMatch[3]
             ? Number(slashMatch[3].length === 2 ? `20${slashMatch[3]}` : slashMatch[3])
             : utils.time.getNow().year()
-        return new Date(year, Number(slashMatch[2]) - 1, Number(slashMatch[1]))
+        return utils.time.getAppCalendarDate({
+            year,
+            month: Number(slashMatch[2]),
+            day: Number(slashMatch[1]),
+        })
     }
 
     return undefined
+}
+
+function extractWeekdayDate(message: string) {
+    const normalizedMessage = normalizeSearch(message)
+    const weekdayMatch =
+        normalizedMessage.match(/\b(?:thu|thứ)\s*([2-7])\b/) ??
+        normalizedMessage.match(/\bt([2-7])\b/)
+
+    if (weekdayMatch) {
+        return getNextWeekdayDate(
+            Number(weekdayMatch[1]) - 1,
+            containsAny(message, ['tuan sau', 'tuần sau'])
+        )
+    }
+
+    if (containsAny(message, ['chu nhat', 'chủ nhật', 'cn', 'sunday'])) {
+        return getNextWeekdayDate(0, containsAny(message, ['tuan sau', 'tuần sau']))
+    }
+}
+
+function getNextWeekdayDate(targetDay: number, forceNextWeek: boolean) {
+    const now = utils.time.getNow()
+
+    if (forceNextWeek) {
+        const daysUntilNextMonday = (1 - now.day() + 7) % 7 || 7
+        const daysFromMonday = targetDay === 0 ? 6 : targetDay - 1
+        return utils.time.getRelativeAppCalendarDate(daysUntilNextMonday + daysFromMonday)
+    }
+
+    const daysAhead = (targetDay - now.day() + 7) % 7 || 7
+    return utils.time.getRelativeAppCalendarDate(daysAhead)
 }
 
 function extractNumericEntities(message: string): NumericEntities {
