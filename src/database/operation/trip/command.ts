@@ -10,6 +10,7 @@ import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { HttpErr } from '../../../app/index.js'
+import { utils } from '../../../utils/index.js'
 
 export async function getManyByFilter(params: TripFilter) {
     return dal.operation.trip.query.findAllByFilter(params)
@@ -42,7 +43,7 @@ export async function findByScheduleIdAndDepartureDate(
             cond.push(eb('t.departureDate', '=', params.departureDate))
             return eb.and(cond)
         })
-        .select(['t.id', 't.status', 'ts.companyId', 'ts.departureTime'])
+        .select(['t.id', 't.status', 't.departureDate', 'ts.companyId', 'ts.departureTime'])
         .executeTakeFirst()
 }
 
@@ -53,7 +54,11 @@ export async function createTripTransaction({ scheduleId, departureDate, company
             trx
         )
         if (existingTrip) {
-            assertTripIsBookable(existingTrip.status)
+            assertTripIsBookable({
+                status: existingTrip.status,
+                departureDate: existingTrip.departureDate,
+                departureTime: existingTrip.departureTime,
+            })
             return {
                 id: existingTrip.id,
                 companyId: existingTrip.companyId,
@@ -70,6 +75,11 @@ export async function createTripTransaction({ scheduleId, departureDate, company
                 'TRIP_SCHEDULE_COMPANY_MISMATCH'
             )
         }
+        assertTripIsBookable({
+            status: OperationTripStatus.enum.scheduled,
+            departureDate,
+            departureTime: schedule.departureTime,
+        })
 
         const vehicle = await dal.organization.vehicle.cmd.randomVehicle(schedule.companyId, trx)
 
@@ -83,7 +93,6 @@ export async function createTripTransaction({ scheduleId, departureDate, company
             },
             trx
         )
-        assertTripIsBookable(trip.status)
 
         return {
             id: trip.id,
@@ -92,11 +101,22 @@ export async function createTripTransaction({ scheduleId, departureDate, company
     })
 }
 
-function assertTripIsBookable(status: OperationTripStatus) {
-    if (status !== OperationTripStatus.enum.scheduled) {
+function assertTripIsBookable(params: {
+    status: OperationTripStatus
+    departureDate: Date
+    departureTime: string
+}) {
+    if (params.status !== OperationTripStatus.enum.scheduled) {
         throw new HttpErr.UnprocessableEntity(
             'Chuyến đi đã bắt đầu, hoàn thành nên bạn không thể đặt vé cho ngày hôm nay.',
             'TRIP_NOT_BOOKABLE'
+        )
+    }
+
+    if (utils.time.isPastDepartureDateTime(params)) {
+        throw new HttpErr.UnprocessableEntity(
+            'Chuyến đi đã quá giờ khởi hành nên bạn không thể đặt vé cho ngày hôm nay.',
+            'TRIP_DEPARTURE_TIME_PASSED'
         )
     }
 }

@@ -19,6 +19,23 @@ export const formatCalendarDate = (date: Date, pattern = 'DD/MM/YYYY') => {
     return dayjs(date).tz(APP_TIMEZONE).format(pattern)
 }
 
+export const normalizeClockTime = (value: string) => {
+    const [hour = '0', minute = '0', second = '0'] = value.split(':')
+
+    return `${hour.padStart(2, '0')}:${minute.padStart(2, '0')}:${second.padStart(2, '0')}`
+}
+
+export const isPastDepartureDateTime = (params: { departureDate: Date; departureTime: string }) => {
+    const now = getNow()
+    const today = now.format('YYYY-MM-DD')
+    const departureDate = formatCalendarDate(params.departureDate, 'YYYY-MM-DD')
+
+    if (departureDate < today) return true
+    if (departureDate > today) return false
+
+    return normalizeClockTime(params.departureTime) <= now.format('HH:mm:ss')
+}
+
 export const getAppCalendarDate = (params: { day: number; month: number; year: number }) => {
     const month = String(params.month).padStart(2, '0')
     const day = String(params.day).padStart(2, '0')

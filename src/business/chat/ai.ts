@@ -232,6 +232,7 @@ async function handleCustomerBookingFlow(params: {
     }
 
     if (state.selectedSchedule && shouldResolveScheduleDate(state)) {
+        const selectedSchedule = state.selectedSchedule
         let departureDate = state.departureDate
         const messageDate = extractDate(params.message)
         if (messageDate) {
@@ -239,6 +240,21 @@ async function handleCustomerBookingFlow(params: {
         }
 
         if (departureDate) {
+            if (
+                utils.time.isPastDepartureDateTime({
+                    departureDate,
+                    departureTime: selectedSchedule.departureTime,
+                })
+            ) {
+                return safeBookingFlow(state, () =>
+                    listSchedulesAfterExpiredSelection({
+                        state,
+                        departureDate,
+                        departureTime: selectedSchedule.departureTime,
+                    })
+                )
+            }
+
             return safeBookingFlow(state, () =>
                 listPickupStops({
                     ...state,
@@ -272,8 +288,24 @@ async function handleCustomerBookingFlow(params: {
 
         // Allow providing date even when asked for pickup (natural "hôm nay", "ngày mai" etc)
         if (state.selectedSchedule && !state.departureDate) {
+            const selectedSchedule = state.selectedSchedule
             const departureDate = extractDate(params.message)
             if (departureDate) {
+                if (
+                    utils.time.isPastDepartureDateTime({
+                        departureDate,
+                        departureTime: selectedSchedule.departureTime,
+                    })
+                ) {
+                    return safeBookingFlow(state, () =>
+                        listSchedulesAfterExpiredSelection({
+                            state,
+                            departureDate,
+                            departureTime: selectedSchedule.departureTime,
+                        })
+                    )
+                }
+
                 return safeBookingFlow(state, () =>
                     listPickupStops({
                         ...state,
@@ -390,18 +422,13 @@ async function handleCustomerBookingFlow(params: {
 
         const departureDate = extractDate(params.message)
         if (departureDate) {
-            const nextState: AiChatState = {
-                ...state,
-                departureDate,
-            }
-
-            return {
-                message: [
-                    `Mình đã ghi nhận ngày đi ${formatDisplayDate(departureDate)}.`,
-                    `Bạn chọn nhà xe nào?\n${formatScheduleOptions(state.scheduleOptions)}`,
-                ].join('\n'),
-                state: nextState,
-            }
+            return safeBookingFlow(state, () =>
+                listSchedules({
+                    from: state.from,
+                    to: state.to,
+                    date: departureDate,
+                })
+            )
         }
 
         if (shouldFetchPickupStops(normalizedMessage)) {
@@ -668,7 +695,40 @@ async function selectSchedule(params: {
         }
     }
 
+    if (
+        utils.time.isPastDepartureDateTime({
+            departureDate,
+            departureTime: selectedSchedule.departureTime,
+        })
+    ) {
+        return listSchedulesAfterExpiredSelection({
+            state,
+            departureDate,
+            departureTime: selectedSchedule.departureTime,
+        })
+    }
+
     return listPickupStops(state)
+}
+
+async function listSchedulesAfterExpiredSelection(params: {
+    state: AiChatState
+    departureDate: Date
+    departureTime: string
+}) {
+    const result = await listSchedules({
+        from: params.state.from ?? params.state.selectedSchedule?.fromLocation,
+        to: params.state.to ?? params.state.selectedSchedule?.toLocation,
+        date: params.departureDate,
+    })
+
+    return {
+        message: [
+            `Chuyến lúc ${formatTime(params.departureTime)} đã quá giờ khởi hành ngày ${formatDisplayDate(params.departureDate)}.`,
+            result.message,
+        ].join('\n'),
+        state: result.state,
+    }
 }
 
 async function listPickupStops(state: AiChatState) {
