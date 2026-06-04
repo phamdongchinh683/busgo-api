@@ -1,0 +1,1491 @@
+BUSGO API - FLOWS CHO CAC ROLE CON LAI
+======================================
+
+File nay bo sung cho customer-flow.txt.
+
+Ghi chu chung
+-------------
+- Role chinh trong auth.user.role:
+  - super_admin
+  - operator
+  - driver
+  - customer
+- Operator co staff_profile.role:
+  - company_admin
+  - dispatcher
+  - support
+- Token la Bearer JWT. Cac endpoint co security bearer can token hop le.
+- Login operator/driver/customer dung POST /auth/sign-in.
+- Login super-admin dung POST /super-admin/sign-in.
+- Route duoc sinh tu file trong src/api.
+
+
+1. Map quyen theo prefix
+------------------------
+
+/super-admin/*
+- Can auth.user.role = super_admin.
+- Quan ly cong ty, user, company admin, dashboard, promotion news, stripe balance/payout.
+
+/operator-admin/*
+- Chu yeu can auth.user.role = operator va staffProfileRole = company_admin.
+- Quan ly cong ty cua minh, staff, driver, vehicle, seat, payment, revenue, Stripe Connect.
+- Rieng POST /operator-admin/sign-up khong can token; tao request company_admin inactive.
+
+/operator-dispatcher/*
+- Can operator + dispatcher hoac company_admin tuy endpoint.
+- Quan ly route, station, trip price, trip schedule, stopping point, trip.
+- Dispatcher chi co mot so endpoint read driver/vehicle.
+- Rieng POST /operator-dispatcher/sign-up khong can token; tao request dispatcher inactive.
+
+/operator-support/*
+- Can operator + support hoac company_admin tuy endpoint.
+- Quan ly ticket support va coupon.
+- Rieng POST /operator-support/sign-up khong can token; tao request support inactive.
+
+/driver/*
+- Can auth.user.role = driver, tru POST /driver/sign-up.
+- Driver xem trip, route, passenger list, check-in khach, doi trang thai trip, xem stat.
+
+/operator/profile/*
+- Can auth.user.role = operator.
+- Dung chung cho company_admin, dispatcher, support.
+
+/auth/*
+- Phan lon dung chung cho user da dang nhap.
+- sign-in, send OTP, reset password, notification, FCM device, social login.
+
+
+2. Flow Super Admin
+-------------------
+
+Super-admin khoi tao va quan tri he thong:
+
+POST /super-admin/sign-in
+  -> GET /super-admin/dashboard
+  -> POST /super-admin/bus-company
+  -> POST /super-admin/company-admin
+  -> GET /super-admin/company-admin
+  -> PUT /super-admin/company-admin/:userId
+  -> GET /super-admin/user
+  -> dashboard revenue/user/booking
+  -> promotion news
+  -> balance / payout
+
+
+2.1 Auth super-admin
+--------------------
+
+POST /super-admin/sign-in
+- Login rieng cho super_admin.
+- Body:
+  {
+    email?: string,
+    phone?: string,
+    password: string
+  }
+- Business:
+  - Tim user theo email/phone.
+  - User phai active.
+  - User phai co role super_admin.
+  - Verify password.
+  - Tra token 30 ngay.
+- Response:
+  {
+    message: "Thanh cong",
+    token,
+    user
+  }
+
+
+2.2 Dashboard super-admin
+-------------------------
+
+GET /super-admin/dashboard
+- Tong quan he thong.
+- Response:
+  {
+    overview: {
+      totalUsers,
+      totalBookings,
+      totalRevenue,
+      totalCompanies
+    }
+  }
+
+GET /super-admin/dashboard/user
+- Query:
+  {
+    type: "monthly" | "yearly",
+    year?: number,
+    status?: "active" | "inactive" | "banned",
+    role?: "operator" | "driver" | "customer" | "super_admin"
+  }
+- Tra series count user theo thang/nam.
+
+GET /super-admin/dashboard/booking
+- Query:
+  {
+    type: "monthly" | "yearly",
+    year?: number,
+    status?: BookingStatus
+  }
+- Tra series booking theo thang/nam.
+
+GET /super-admin/dashboard/revenue
+- Query:
+  {
+    type: "monthly" | "yearly",
+    year?: number,
+    method?: "vnpay" | "cash" | "stripe",
+    status?: "pending" | "success" | "failed" | "refunded"
+  }
+- Tra series revenue theo thang/nam.
+
+GET /super-admin/dashboard/revenue/export
+- Query:
+  {
+    type: "monthly" | "yearly",
+    year?: number,
+    method: "vnpay" | "cash" | "stripe"
+  }
+- Tra file Excel.
+- Filename dang: company-revenue-{year}-{monthly|yearly}-{method}.xlsx.
+
+
+2.3 Quan ly cong ty xe
+----------------------
+
+Flow tao cong ty:
+
+POST /super-admin/bus-company
+  -> tao bus_company reviewCount=0, reviewAvgStars=0
+  -> clear cache company list va trip schedule list
+  -> POST /super-admin/company-admin
+  -> company_admin active cho cong ty do
+
+POST /super-admin/bus-company
+- Body:
+  {
+    name: string, min 5,
+    hotline: phone,
+    logoUrl: string,
+    address: string,
+    latitude: number,
+    longitude: number
+  }
+- Response:
+  { company }
+
+GET /super-admin/bus-company
+- Query:
+  {
+    limit?: 1..100, default 10,
+    name?: string,
+    next?: companyId
+  }
+- Response:
+  {
+    companies: [
+      {
+        id,
+        name,
+        hotline,
+        logoUrl,
+        address,
+        latitude,
+        longitude,
+        reviewCount,
+        reviewAvgStars
+      }
+    ],
+    next
+  }
+
+PUT /super-admin/bus-company/:id
+- Update partial BusCompanyBody.
+
+DELETE /super-admin/bus-company/:id
+- Delete company.
+- Clear cache company list va trip schedule list.
+
+
+2.4 Quan ly company admin
+-------------------------
+
+POST /super-admin/company-admin
+- Tao company_admin active truc tiep.
+- Body:
+  {
+    fullName,
+    contactInfo: { email, phone },
+    password,
+    companyId
+  }
+- Business:
+  - Tao auth.user role operator, status active.
+  - Tao staff_profile role company_admin, status active, companyId.
+  - Tao notification welcome cho user moi.
+- Response:
+  { message: "Thanh cong" }
+
+GET /super-admin/company-admin
+- Query:
+  {
+    limit?: 1..100,
+    companyId?: number,
+    next?: userId
+  }
+- Response:
+  {
+    admins: [
+      {
+        id,
+        fullName,
+        email,
+        phone,
+        status,
+        role,
+        companyId,
+        companyName
+      }
+    ],
+    next
+  }
+
+PUT /super-admin/company-admin/:userId
+- Update UserUpdateBody:
+  {
+    fullName?: string,
+    email?: string,
+    phone?: string,
+    status?: "active" | "inactive" | "banned"
+  }
+
+PUT /super-admin/company-admin/:userId/password
+- Body:
+  { password }
+- Hash password moi va update.
+- Response co tra password plain trong code hien tai.
+
+
+2.5 Quan ly user chung
+----------------------
+
+POST /super-admin/user
+- Tao user bat ky role.
+- Body:
+  {
+    fullName,
+    email,
+    phone,
+    status,
+    password,
+    role
+  }
+- Business:
+  - Hash password.
+  - Insert user.
+  - Tra token va user theo logic signUp.
+
+GET /super-admin/user
+- Query:
+  {
+    status?: active|inactive|banned,
+    role?: operator|driver|customer|super_admin,
+    companyId?: number,
+    email?: string,
+    phone?: string,
+    type?: "google" | "facebook",
+    limit?: number,
+    next?: userId
+  }
+
+PUT /super-admin/user/:userId
+- Update fullName/email/phone/status.
+- Clear driver list cache neu co lien quan.
+
+PUT /super-admin/user/:userId/password
+- Doi password user bat ky.
+
+DELETE /super-admin/user/:userId
+- Delete user va clear token-version cache.
+
+POST /auth/verify-account
+- Super-admin verify account.
+- Body:
+  {
+    id: userId,
+    status: "active" | "inactive" | "banned"
+  }
+- Code hien tai update staff_profile truoc roi auth.user.
+
+
+2.6 Promotion news
+------------------
+
+POST /super-admin/promotion-new
+- Body:
+  {
+    title: string,
+    content: string,
+    imageUrl?: string | null,
+    isActive?: boolean,
+    startDate?: "MM-DD" | null,
+    endDate?: "MM-DD" | null
+  }
+- Business:
+  - Tao promotion_new gan userId cua super-admin.
+  - Clear cache public promotion list.
+
+PUT /super-admin/promotion-new/:id
+- Update promotion news.
+- Clear cache list.
+
+GET /public/promotion-new
+- Public list.
+- Query:
+  {
+    limit?: 1..100,
+    status?: "true" | "false",
+    next?: id
+  }
+
+
+2.7 Balance va payout cua super-admin
+-------------------------------------
+
+GET /super-admin/balance
+- Lay Stripe connected account balance theo accountStripeId trong token.
+- Response:
+  { available: [...], pending: [...] }
+
+GET /super-admin/balance/payout
+- Query:
+  {
+    limit?: 10..100,
+    next?: string,
+    status?: paid|pending|in_transit|canceled|failed
+  }
+- List Stripe payouts.
+
+POST /super-admin/balance/withdraw
+- Body:
+  { amount: number, min 500000 }
+- Business:
+  - Can accountStripeId.
+  - Lay ty gia USD/VND tu open.er-api.com, cache 5 phut.
+  - Convert VND -> USD cents.
+  - Check balance available usd.
+  - Tao Stripe payout.
+  - Clear balance cache.
+
+
+3. Flow Operator Common
+-----------------------
+
+POST /auth/sign-in
+  -> token co role operator, staffProfileRole, companyId
+  -> GET /operator/profile
+  -> PUT /operator/profile
+  -> cac prefix theo staffProfileRole:
+     - company_admin: /operator-admin, /operator-dispatcher, /operator-support
+     - dispatcher: /operator-dispatcher
+     - support: /operator-support
+
+GET /operator/profile
+- Can role operator.
+- Tra staff_profile cua user hien tai.
+
+PUT /operator/profile
+- Can role operator.
+- Body:
+  {
+    fullName?: string,
+    status?: active|inactive|banned,
+    companyId?: number | null,
+    staffCode?: string | null,
+    position?: string | null,
+    department?: string | null,
+    identityNumber?: string | null,
+    hireDate?: date | null
+  }
+- Business:
+  - Update staff_profile theo userId.
+  - companyId luon lay tu token userInfo.companyId.
+
+
+4. Flow Company Admin / Operator Admin
+--------------------------------------
+
+Company admin setup cong ty:
+
+POST /operator-admin/sign-up
+  -> super-admin nhan notification verify
+  -> super-admin hoac verify endpoint active account
+  -> POST /auth/sign-in
+  -> GET/PUT /operator-admin/me
+  -> POST /operator-admin/stripe/account
+  -> tao vehicle + seat
+  -> tao route/station/price/schedule qua dispatcher endpoints
+  -> quan ly staff/driver/payment/revenue
+
+
+4.1 Dang ky company admin
+-------------------------
+
+POST /operator-admin/sign-up
+- Public endpoint.
+- Body:
+  {
+    fullName,
+    contactInfo: { email, phone },
+    password,
+    companyId
+  }
+- Business:
+  - Tao user role operator, status inactive.
+  - Tao staff_profile role company_admin, status inactive.
+  - Notify super-admin device dau tien.
+- Response:
+  { message: "Yeu cau tao tai khoan moi da duoc gui den quan tri vien cap cao" }
+
+POST /operator-admin/account/verify
+- Can company_admin.
+- Body:
+  { id: userId, status: active|inactive|banned }
+- Business theo code:
+  - Update staff_profile.status voi userId va companyId cua admin.
+  - Update auth.user.status.
+  - Clear driver list cache theo company.
+- Ghi chu:
+  - Driver sign-up tao company_driver, khong tao staff_profile.
+  - Endpoint verify nay update staff_profile truoc, nen flow verify driver co kha nang lech voi code hien tai.
+
+
+4.2 Company profile
+-------------------
+
+GET /operator-admin/me
+- Can company_admin.
+- Lay bus_company theo companyId trong token.
+
+PUT /operator-admin/me
+- Can company_admin.
+- Update partial BusCompanyBody cua cong ty minh.
+- Clear company/trip schedule cache.
+
+GET /file/upload/admin-company/presigned
+- Can company_admin.
+- Tao Cloudinary presigned upload folder "company" voi id = companyId.
+
+
+4.3 Staff management
+--------------------
+
+GET /operator-admin/staff
+- Can company_admin.
+- Query:
+  {
+    limit?: number,
+    next?: staffProfileId,
+    role?: dispatcher|support|company_admin,
+    status?: active|inactive|banned
+  }
+- List staff trong companyId cua admin.
+
+PUT /operator-admin/staff/:userId
+- Can company_admin.
+- Update UserUpdateBody cua user staff.
+
+PUT /operator-admin/staff/:userId/role
+- Can company_admin.
+- Body la string:
+  "dispatcher" | "support" | "company_admin"
+- Update staff_profile.role.
+
+POST /operator-dispatcher/sign-up
+- Public endpoint cho dispatcher tu dang ky.
+- Body giong AuthCompanyAdminSignUpBody, co companyId.
+- Business:
+  - Tao operator inactive.
+  - Tao staff_profile role dispatcher inactive.
+  - Notify company admin cua company.
+
+POST /operator-support/sign-up
+- Public endpoint cho support tu dang ky.
+- Business giong dispatcher nhung role support.
+
+
+4.4 Driver management
+---------------------
+
+GET /operator-admin/driver
+- Can company_admin.
+- Query:
+  {
+    phone?: string,
+    status?: active|inactive|banned,
+    limit?: number,
+    next?: userId
+  }
+- Response:
+  {
+    drivers: [
+      {
+        id,
+        fullName,
+        email,
+        phone,
+        role,
+        status,
+        cancelledTripCount,
+        completedTripCount
+      }
+    ],
+    next
+  }
+- Cache 1 gio theo company.
+
+GET /operator-admin/driver/stat/:userId
+- Can company_admin.
+- Tra monthly stats cua driver:
+  year, month, completedTripCount, cancelledTripCount.
+
+POST /driver/sign-up
+- Public endpoint driver tu dang ky.
+- Body:
+  {
+    fullName,
+    contactInfo: { email, phone },
+    password,
+    companyId
+  }
+- Business:
+  - Tao user role driver, status inactive.
+  - Tao company_driver userId + companyId.
+  - Tao notification cho company_admin.
+  - Tao driver_monthly_stat thang hien tai = 0.
+  - Clear driver list cache.
+
+
+4.5 Vehicle va seat
+-------------------
+
+GET /operator-admin/vehicle
+- Can company_admin.
+- Query:
+  {
+    type?: "seat" | "bed",
+    status?: "active" | "maintenance" | "inactive",
+    limit?: number,
+    next?: vehicleId
+  }
+- List vehicle cua company.
+
+POST /operator-admin/vehicle
+- Can company_admin.
+- Body:
+  {
+    plateNumber,
+    type: "seat" | "bed",
+    totalSeats,
+    status
+  }
+- companyId lay tu token, khong tin body companyId.
+- Clear vehicle list cache.
+
+PUT /operator-admin/vehicle/:id
+- Can company_admin.
+- Update vehicle, force companyId = token companyId.
+
+POST /operator-admin/seat
+- Can company_admin.
+- Body:
+  {
+    vehicleId,
+    seatCount: "24" | "36"
+  }
+- Business:
+  - Neu vehicle da co ghe thi chan: "Xe nay da duoc cau hinh ghe."
+  - Tao ghe theo pattern:
+    - nua dau suffix A type 1
+    - nua sau suffix B type 2
+
+DELETE /operator-admin/vehicle/:id/seat
+- Can company_admin.
+- Xoa tat ca seat theo vehicleId.
+
+
+4.6 Payment, revenue, Stripe cua company admin
+----------------------------------------------
+
+GET /operator-admin/payment
+- Can company_admin.
+- Query:
+  {
+    transactionCode?: string,
+    status?: pending|success|failed|refunded,
+    method?: vnpay|cash|stripe,
+    limit?: 1..100,
+    next?: paymentId
+  }
+- Business:
+  - Chi lay payment co ticket/trip/vehicle thuoc companyId cua admin.
+
+PUT /operator-admin/payment/:code
+- Can company_admin.
+- Theo code hien tai: updateByTransactionCode -> updatePaymentStatusFailed.
+- Flow:
+  - payment failed.
+  - booking cancelled.
+  - ticket cancelled.
+  - xoa seat_segment.
+- Dung cho huy/fail payment theo transactionCode.
+
+GET /operator-admin/revenue
+- Can company_admin.
+- Tra total revenue success cua cong ty.
+
+POST /operator-admin/stripe/account
+- Can company_admin.
+- Tao hoac lay Stripe connected account.
+- Tao account link onboarding.
+- Update user.accountStripeId va tokenVersion neu moi tao.
+- Clear token-version va Stripe status cache.
+- Response:
+  {
+    message,
+    url,
+    token
+  }
+
+GET /stripe/connect/status
+- Can authenticated user bat ky.
+- Lay chargesEnabled, payoutsEnabled, currentlyDue theo accountStripeId.
+
+GET /operator-admin/stripe/balance
+- Can company_admin.
+- Lay Stripe balance cua connected account.
+
+POST /operator-admin/stripe/balance/withdraw
+- Can company_admin.
+- Body:
+  { amount: number, min 500000 }
+- Convert VND -> USD cents, check balance, tao payout.
+
+
+5. Flow Dispatcher
+------------------
+
+Dispatcher lap van hanh tuyen:
+
+POST /operator-dispatcher/sign-up
+  -> company_admin verify account
+  -> POST /auth/sign-in
+  -> tao station
+  -> tao route
+  -> tao trip schedule
+  -> tao stopping points
+  -> tao trip price template
+  -> xem trips theo schedule
+  -> update trip neu can
+
+
+5.1 Route
+---------
+
+GET /operator-dispatcher/route
+- Can company_admin hoac dispatcher.
+- Query:
+  {
+    limit?: number,
+    next?: routeId
+  }
+- List route.
+
+POST /operator-dispatcher/route
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    fromLocation,
+    toLocation,
+    distanceKm,
+    durationMinutes
+  }
+- Business:
+  - Upsert theo fromLocation + toLocation.
+  - Clear route cache va trip schedule cache.
+
+PUT /operator-dispatcher/route/:id
+- Can company_admin hoac dispatcher.
+- Update partial route.
+- Clear cache.
+
+
+5.2 Station
+-----------
+
+GET /operator-dispatcher/station
+- Can company_admin hoac dispatcher.
+- Query:
+  {
+    city?: string,
+    limit?: number,
+    next?: stationId
+  }
+- List station cua companyId trong token.
+
+POST /operator-dispatcher/station
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    address,
+    city
+  }
+- Business:
+  - Upsert theo companyId + address + city.
+  - Clear station cache va pickup-stops cache.
+
+
+5.3 Trip price template
+-----------------------
+
+GET /operator-dispatcher/trip-price-template
+- Can company_admin hoac dispatcher.
+- Query:
+  {
+    routeId?: number,
+    limit?: number,
+    next?: tripPriceTemplateId
+  }
+- List bang gia cua companyId trong token.
+
+POST /operator-dispatcher/trip-price-template
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    routeId,
+    fromStationId,
+    toStationId,
+    price,
+    status
+  }
+- companyId lay tu token.
+- Business:
+  - Upsert theo companyId + routeId + fromStationId + toStationId.
+  - Clear trip-price-template cache.
+
+PUT /operator-dispatcher/trip-price-template/:id
+- Can company_admin hoac dispatcher.
+- Update price template, force companyId = token companyId.
+
+DELETE /operator-dispatcher/trip-price-template/:id
+- Can company_admin hoac dispatcher.
+- Delete price template va clear cache.
+
+
+5.4 Trip schedule
+-----------------
+
+GET /operator-dispatcher/trip-schedule
+- Can company_admin hoac dispatcher.
+- Query:
+  {
+    limit?: 10..100,
+    next?: scheduleId,
+    orderBy: "asc" | "desc"
+  }
+- Business:
+  - Chi list schedule cua companyId trong token.
+  - Omit from/to/date tren endpoint nay.
+
+POST /operator-dispatcher/trip-schedule
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    routeId,
+    companyId,
+    departureTime,
+    startDate,
+    endDate,
+    status
+  }
+- Business:
+  - user.companyId phai khop body.companyId.
+  - Upsert schedule; neu da ton tai companyId + routeId thi loi TRIP_SCHEDULE_ALREADY_EXISTS.
+  - Clear trip schedule list cache.
+
+PUT /operator-dispatcher/trip-schedule/:id
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    departureTime?: string,
+    startDate: date,
+    endDate: date,
+    status?: boolean
+  }
+- Chi update schedule cua companyId trong token.
+- Clear schedule list cache va pickup-stops cache.
+
+DELETE /operator-dispatcher/trip-schedule/:id
+- Can company_admin hoac dispatcher.
+- Delete schedule va clear cache.
+
+
+5.5 Stopping point
+------------------
+
+GET /operator-dispatcher/trip-schedule/:id/stopping-point
+- Can company_admin hoac dispatcher.
+- Query:
+  {
+    routeId?: number
+  }
+- List stopping points theo schedule, co address/city/stationId/stopOrder/allow flags.
+
+POST /operator-dispatcher/trip-schedule/:id/stopping-point
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    scheduleId,
+    allowPickup,
+    allowDropoff,
+    routeId,
+    stopOrder,
+    stationId
+  }
+- companyId lay tu token.
+- Clear pickup-stops cache cua schedule.
+
+PUT /operator-dispatcher/trip-schedule/:id/stopping-point/:tripStopTemplateId
+- Can company_admin hoac dispatcher.
+- Update stopping point.
+- Set scheduleId = path id.
+- Clear pickup-stops cache neu co scheduleId.
+
+
+5.6 Trip instances
+------------------
+
+GET /operator-dispatcher/trip-schedule/:id/trip
+- Can company_admin hoac dispatcher.
+- Query:
+  {
+    limit?: number,
+    next?: tripId,
+    status?: scheduled|running|completed|cancelled,
+    date?: date,
+    orderBy: asc|desc
+  }
+- List trip theo scheduleId.
+
+PUT /operator-dispatcher/trip-schedule/:id/trip/:tripId
+- Can company_admin hoac dispatcher.
+- Body:
+  {
+    routeId?: number,
+    vehicleId?: number,
+    driverId?: number,
+    scheduleId?: number,
+    departureDate?: date,
+    status?: scheduled|running|completed|cancelled
+  }
+- Update trip theo scheduleId + tripId.
+
+GET /operator-dispatcher/driver
+- Can dispatcher.
+- List driver cua company.
+
+GET /operator-dispatcher/vehicle
+- Can dispatcher.
+- List vehicle cua company.
+
+
+6. Flow Support
+---------------
+
+Support xu ly ve va coupon:
+
+POST /operator-support/sign-up
+  -> company_admin verify account
+  -> POST /auth/sign-in
+  -> GET /operator-support/ticket
+  -> GET /operator-support/ticket/:id
+  -> DELETE /operator-support/ticket/:id neu can huy
+  -> coupon CRUD
+
+
+6.1 Ticket support
+------------------
+
+GET /operator-support/ticket
+- Can support.
+- Query:
+  {
+    limit?: number,
+    next?: ticketId,
+    type?: one_way|round_trip,
+    status?: reserved|paid|cancelled|checked_in,
+    code?: string
+  }
+- Business:
+  - Chi list ticket thuoc companyId trong token.
+  - Join booking/trip/schedule.
+
+GET /operator-support/ticket/:id
+- Can company_admin hoac support.
+- Chi tiet ticket neu ticket thuoc companyId.
+
+DELETE /operator-support/ticket/:id
+- Can company_admin hoac support.
+- Business:
+  - Tim booking theo ticketId.
+  - Khong cho huy neu trip running/completed.
+  - Neu payment cash hoac payment pending hoac booking pending thi khong can check 24h.
+  - Nguoc lai chi huy truoc departureDate it nhat 24 gio.
+  - Cancel tat ca ticket cung booking.
+  - Xoa seat_segment.
+  - booking cancelled.
+  - payment pending -> failed.
+  - payment success vnpay/stripe -> refunded.
+
+
+6.2 Coupon support
+------------------
+
+GET /operator-support/coupon
+- Can company_admin hoac support.
+- Query:
+  {
+    next?: couponId,
+    companyId?: number,
+    limit?: number,
+    date?: date,
+    type?: percent|fixed,
+    status?: string, default "true"
+  }
+- List coupon support.
+
+POST /operator-support/coupon
+- Can company_admin hoac support.
+- Body:
+  {
+    code?: string,
+    discountType?: percent|fixed,
+    discountValue?: number,
+    minOrderAmount?: number,
+    maxDiscountAmount?: number,
+    usedQuantity?: number,
+    totalQuantity?: number,
+    startDate?: date,
+    endDate?: date,
+    isActive?: boolean
+  }
+- companyId lay tu token.
+- Clear coupon cache.
+
+PUT /operator-support/coupon/:id
+- Can company_admin hoac support.
+- Update coupon cua company.
+- Clear coupon cache.
+
+
+7. Flow Driver
+--------------
+
+Driver chay chuyen:
+
+POST /driver/sign-up
+  -> company admin verify/active account
+  -> POST /auth/sign-in
+  -> GET /driver/trip
+  -> PATCH /driver/trip/:id status=running
+  -> GET /driver/trip/:id/route
+  -> GET /driver/trip/:id/passenger
+  -> PUT /driver/trip/:id/passenger/:passengerId/check-in
+  -> PATCH /driver/trip/:id status=completed
+  -> GET /driver/me/stat
+
+
+7.1 Driver sign-up
+------------------
+
+POST /driver/sign-up
+- Public endpoint.
+- Body:
+  {
+    fullName,
+    contactInfo: { email, phone },
+    password,
+    companyId
+  }
+- Business:
+  - Tao auth.user role driver, status inactive.
+  - Tao company_driver.
+  - Notify company admin.
+  - Tao driver monthly stat thang hien tai.
+- Response:
+  { message: "Yeu cau tao tai khoan cho tai xe da duoc gui den quan tri vien cong ty" }
+
+
+7.2 Driver trip list
+--------------------
+
+GET /driver/trip
+- Can driver.
+- Query:
+  {
+    limit?: number,
+    date?: date,
+    status?: scheduled|running|completed|cancelled,
+    next?: tripId,
+    orderBy: asc|desc
+  }
+- Business:
+  - Chi lay trip co driverId = user hien tai.
+  - Neu khong co date, code dung now.toDate() de filter departureDate.
+  - Join route, vehicle, trip_schedule.
+
+GET /driver/trip/:id/route
+- Can driver.
+- Params:
+  { id: tripId }
+- Business:
+  - Chi lay route stops neu trip.driverId = user hien tai.
+  - Tra stops theo stopOrder.
+
+
+7.3 Passenger va check-in
+-------------------------
+
+GET /driver/trip/:id/passenger
+- Can driver.
+- Query:
+  {
+    limit?: number,
+    next?: ticketId,
+    phoneNumber?: string
+  }
+- Business:
+  - Chi list passenger cua trip driver dang phu trach.
+  - Booking status in [pending, paid].
+  - Ticket status in [reserved, paid, checked_in].
+  - Co the filter phoneNumber.
+- Response:
+  {
+    passengers: [
+      {
+        id,
+        fullName,
+        phoneNumber,
+        seatNumber,
+        status,
+        ticketStatus,
+        pickup,
+        bookingType,
+        totalAmount,
+        dropoff
+      }
+    ],
+    next
+  }
+
+PUT /driver/trip/:id/passenger/:passengerId/check-in
+- Can driver.
+- Body:
+  {
+    status: "reserved" | "paid" | "cancelled" | "checked_in"
+  }
+- Business:
+  - Update ticket theo passengerId va tripId.
+  - Neu ticket status = checked_in:
+    - booking.status = paid.
+    - payment.status = success.
+  - Neu ticket status = cancelled:
+    - booking.status = cancelled.
+    - payment.status = failed.
+
+
+7.4 Driver update trip status
+-----------------------------
+
+PATCH /driver/trip/:id
+- Can driver.
+- Body:
+  {
+    status: "scheduled" | "running" | "completed" | "cancelled"
+  }
+- Business:
+  - Update trip.status va set driverId = user hien tai.
+  - Neu status = completed:
+    - Check con passenger active chua check-in khong.
+    - Active passenger la booking pending/paid va ticket reserved/paid.
+    - Neu con thi loi TRIP_HAS_UNCHECKED_PASSENGERS.
+    - Neu khong con thi tang completedTripCount thang cua departureDate.
+  - Neu status = cancelled:
+    - Tang cancelledTripCount thang cua departureDate.
+
+GET /driver/me/stat
+- Can driver.
+- Tra stat thang hien tai, tao row neu chua co.
+
+
+8. Common Auth APIs
+-------------------
+
+POST /auth/sign-in
+- Login cho customer/operator/driver, khong cho super_admin qua route nay.
+- Body:
+  {
+    email?: string,
+    phone?: string,
+    password
+  }
+- Rate limit: 10 request / 30s.
+- User phai active.
+
+POST /auth/send-otp
+- Public endpoint.
+- Body:
+  {
+    field: "email" | "phone",
+    value: string
+  }
+- Rate limit: 3 request / 2m.
+- Business:
+  - OTP cache 120s theo field+value.
+  - Luu DB expiresAt = now + 2 phut.
+  - Production: email qua email sender, phone qua Infobip.
+  - Non-production chi tra message success.
+
+PUT /auth/reset-password
+- Public endpoint theo code, schema co security bearer nhung handler khong auth.
+- Body:
+  {
+    otp,
+    email?: string,
+    phone?: string,
+    password
+  }
+- OTP "555555" bypass.
+- Update password theo email hoac phone.
+
+PUT /auth/password
+- Can authenticated user.
+- Body:
+  {
+    oldPassword,
+    newPassword
+  }
+- Verify old password roi update password moi.
+
+POST /auth/logout
+- Can authenticated user.
+- Tang tokenVersion de vo hieu token hien tai/cac token cu.
+
+POST /auth/google/verify-token
+- Public endpoint.
+- Body:
+  { idToken }
+- Verify Google token, upsert customer user active.
+
+POST /auth/facebook/verify-token
+- Public endpoint.
+- Body:
+  { accessToken, idToken }
+- Verify Facebook token, upsert customer user active.
+
+GET /auth/user
+- Can authenticated user bat ky.
+- Goi listUsers giong super-admin list user.
+- Ghi chu: endpoint nay khong restrict super_admin trong handler, chi requiredAuthenticate.
+
+
+9. Notification va FCM device
+-----------------------------
+
+POST /auth/device/fcm-token
+- Can authenticated user.
+- Body:
+  { fcmToken }
+- Luu device token theo user, clear device cache.
+
+GET /auth/device/fcm-token
+- Can authenticated user.
+- List FCM devices cua user, cache 1 gio.
+
+DELETE /auth/device/fcm-token/:id
+- Can authenticated user.
+- Delete device token va clear cache.
+
+GET /auth/notification
+- Can authenticated user.
+- Query:
+  {
+    limit?: 10..100,
+    status?: number,
+    next?: notificationId
+  }
+- status neu co duoc map: 1 -> isRead true, 0 -> isRead false.
+
+PUT /auth/notification/:id/read
+- Can authenticated user.
+- Mark notification as read theo id va userId.
+
+POST /auth/notification
+- Can authenticated user.
+- Body:
+  {
+    userId,
+    title,
+    body,
+    data?: string | null
+  }
+- Production se push FCM neu user co device.
+
+
+10. Chat APIs
+-------------
+
+POST /chat/box
+- Can authenticated user.
+- Body:
+  {
+    receiverId,
+    message
+  }
+- Business:
+  - Tao hoac update chat.box theo cap sender/receiver.
+  - Tao message dau tien.
+  - Tang unread counter cho receiver.
+  - Emit websocket event chat:new.
+
+GET /chat/box
+- Can authenticated user.
+- Query:
+  {
+    limit: 10..100,
+    next?: boxId
+  }
+- List box cua user, order unreadReceiverCount desc.
+
+POST /chat/box/:id/message
+- Can authenticated user.
+- Body:
+  { message }
+- Business:
+  - Insert message.
+  - Update lastMessage, message counters, unread counters.
+  - Emit message:new va chat:unread:count.
+
+GET /chat/box/:id/message
+- Can authenticated user.
+- Query:
+  {
+    message?: string,
+    limit: 10..100,
+    next?: messageId
+  }
+- Sort newest first; next page dung id < next.
+
+PUT /chat/box/:id/message/:messageId
+- Can authenticated user.
+- Recall message:
+  - chi update message theo id, boxId, senderId trong params user.
+  - body thanh "Tin nhan nay da bi thu hoi".
+
+PUT /chat/box/:id/unread-count
+- Can authenticated user.
+- Mark read:
+  - Neu viewer la receiver thi unreadReceiverCount = 0.
+  - Neu viewer la sender thi unreadSenderCount = 0.
+
+POST /chat/ai
+- Can authenticated user.
+- Body:
+  { message }
+- Rate limit: 30 request / 1m.
+- Goi service.openai.chat va tra message.
+
+
+11. Upload, public, Stripe system, cron
+---------------------------------------
+
+GET /file/upload/auth/presigned
+- Can authenticated user.
+- Query:
+  {
+    folder,
+    id
+  }
+- Tao Cloudinary presigned upload.
+
+GET /file/upload/super-admin/presigned
+- Can super_admin.
+- Query giong auth presigned.
+
+GET /file/upload/admin-company/presigned
+- Can company_admin.
+- Tao presigned upload folder company, id = companyId.
+
+GET /public/company
+- Public list bus company.
+- Query giong BusCompanyListQuery.
+
+GET /public/promotion-new
+- Public list promotion news.
+
+GET /stripe/connect/callback
+- Stripe account onboarding callback.
+- Redirect ve STRIPE_CLIENT_RETURN_URL?status=success&provider=stripe.
+
+GET /stripe/connect/status
+- Can authenticated user bat ky.
+- Neu user khong co accountStripeId:
+  {
+    chargesEnabled: false,
+    payoutsEnabled: false,
+    currentlyDue: []
+  }
+- Neu co thi retrieve Stripe account va cache 60s.
+
+POST /stripe/webhook
+- Public Stripe webhook.
+- Can stripe-signature va raw body.
+- Event handled:
+  - payment_intent.succeeded
+  - payment_intent.payment_failed
+- Success/fail update payment, booking, ticket, seat_segment nhu file customer-flow.txt.
+
+POST /job/expire-booking
+- Can header x-cron-secret hop le.
+- Business:
+  - Lay toi da 200 booking pending co expiredAt < now.
+  - booking -> expired.
+  - pending payment -> failed.
+  - ticket != checked_in -> cancelled.
+  - xoa seat_segment cua ticket cancelled.
+
+POST /job/departure-reminder
+- Can x-cron-secret.
+- Business:
+  - Tim booking paid/ticket paid hoac cash pending/reserved.
+  - Trip scheduled, departureDate la hom nay.
+  - Departure >= now + 2 hours.
+  - Chua co notification departure-reminder cho booking/trip.
+  - Tao notification.
+
+POST /job/cleanup-trip
+- Can x-cron-secret.
+- Delete trips co departure_date < CURRENT_DATE.
+
+
+12. Trang thai quan trong
+-------------------------
+
+AuthUserRole:
+- super_admin
+- operator
+- driver
+- customer
+
+AuthStaffProfileRole:
+- company_admin
+- dispatcher
+- support
+
+AuthUserStatus:
+- active
+- inactive
+- banned
+
+VehicleStatus:
+- active
+- maintenance
+- inactive
+
+VehicleType:
+- seat
+- bed
+
+TripStatus:
+- scheduled
+- running
+- completed
+- cancelled
+
+BookingStatus:
+- pending
+- paid
+- cancelled
+- expired
+
+TicketStatus:
+- reserved
+- paid
+- cancelled
+- checked_in
+
+PaymentStatus:
+- pending
+- success
+- failed
+- refunded
+
+
+13. Checklist setup mot cong ty day du
+--------------------------------------
+
+1. Super-admin tao bus company:
+   POST /super-admin/bus-company
+
+2. Super-admin tao company admin active:
+   POST /super-admin/company-admin
+
+3. Company admin dang nhap:
+   POST /auth/sign-in
+
+4. Company admin cap nhat thong tin cong ty:
+   PUT /operator-admin/me
+
+5. Company admin link Stripe:
+   POST /operator-admin/stripe/account
+   -> user mo url onboarding
+   -> GET /stripe/connect/status de check charges/payouts.
+
+6. Company admin tao xe:
+   POST /operator-admin/vehicle
+
+7. Company admin tao ghe cho xe:
+   POST /operator-admin/seat
+
+8. Dispatcher/company admin tao station:
+   POST /operator-dispatcher/station
+
+9. Dispatcher/company admin tao route:
+   POST /operator-dispatcher/route
+
+10. Dispatcher/company admin tao schedule:
+    POST /operator-dispatcher/trip-schedule
+
+11. Dispatcher/company admin tao stopping point:
+    POST /operator-dispatcher/trip-schedule/:id/stopping-point
+
+12. Dispatcher/company admin tao price template cho tung chang:
+    POST /operator-dispatcher/trip-price-template
+
+13. Driver dang ky:
+    POST /driver/sign-up
+
+14. Company admin active account driver:
+    POST /operator-admin/account/verify
+    Ghi chu: can test lai vi code verify dang update staff_profile truoc.
+
+15. Customer co the search/booking/pay theo customer-flow.txt.
+
+16. Driver check trip/passenger va van hanh:
+    GET /driver/trip
+    PATCH /driver/trip/:id status=running
+    PUT /driver/trip/:id/passenger/:passengerId/check-in
+    PATCH /driver/trip/:id status=completed

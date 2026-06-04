@@ -1,0 +1,893 @@
+BUSGO API - CUSTOMER FLOW
+=========================
+
+Ghi chu chung
+-------------
+- Route duoc sinh theo file trong src/api.
+- Tat ca API /customer ben duoi deu can Bearer token role customer, tru:
+  POST /customer/sign-up.
+- Login khong nam trong /customer, ma dung POST /auth/sign-in.
+- Thanh toan cua customer dung route rieng: POST /payment/method.
+
+
+1. Flow tong the
+----------------
+
+Customer sign-up/login
+  -> GET /customer/profile
+  -> GET /customer/trip-schedule
+  -> GET /customer/trip-schedule/:id/pickup
+  -> GET /customer/trip-schedule/:id/dropoff
+  -> POST /customer/trip-schedule/prepare
+  -> GET /customer/trip/:id/seat
+  -> GET /customer/coupon/check (optional)
+  -> POST /customer/booking
+  -> POST /payment/method
+  -> GET /customer/ticket hoac GET /customer/ticket/:id
+  -> DELETE /customer/ticket/:id hoac POST /customer/ticket/rating
+
+  Hoac dung AI Chat (khuyen khich cho UX nhanh):
+  -> POST /chat/ai (nhieu luot, gui kem state)
+     (ho tro tu nhien: "Da Nang di Sai Gon ngay mai" -> chon chuyen -> diem don/tra -> ghe -> tao booking)
+     Sau khi booking_created thi chuyen sang POST /payment/method nhu binh thuong.
+
+
+2. Auth va profile
+------------------
+
+POST /customer/sign-up
+- Tao tai khoan customer.
+- Body:
+  {
+    fullName: string, min 7,
+    contactInfo: {
+      email: string,
+      phone: string, 10-13 chu so
+    },
+    password: string
+  }
+- Password can co chu hoa, chu thuong, so, ky tu dac biet (# @ $ % & ! * ? ^ _),
+  va khong co khoang trang.
+- Business:
+  - Hash password.
+  - Tao user role customer, status active.
+  - Neu email/phone da ton tai thi tra loi EMAIL_ALREADY_EXISTS hoac PHONE_ALREADY_EXISTS.
+- Response:
+  {
+    message: "Thanh cong",
+    token: string,
+    user: UserInfo
+  }
+
+POST /auth/sign-in
+- Login chung cho cac role, customer cung dung endpoint nay.
+- Body:
+  {
+    email?: string,
+    phone?: string,
+    password: string
+  }
+- Business:
+  - Tim user theo email hoac phone.
+  - User phai active.
+  - Verify password.
+  - Tra JWT het han sau 30 ngay.
+
+GET /customer/profile
+- Lay profile customer.
+- Business:
+  - Kiem tra Bearer token role customer.
+  - Tim user theo id.
+  - Neu user chua co accountStripeId thi tao Stripe Customer va luu lai vao user.
+- Response:
+  {
+    user: {
+      fullName,
+      email,
+      phone,
+      status,
+      accountStripeId
+    }
+  }
+
+POST /customer/profile/contact/identity/verify
+- Verify OTP truoc khi doi email/phone.
+- Body:
+  {
+    field: "email" | "phone",
+    value: string,
+    otp: string, 6 ky tu
+  }
+- Business:
+  - User phai ton tai va thong tin cu phai khop token.
+  - Neu lastChangeContact chua qua 12 gio thi chan voi CONTACT_INFO_CHANGE_COOLDOWN.
+  - Verify OTP theo email/phone moi.
+  - OTP "555555" duoc bypass trong code.
+- Response:
+  { message: "Thanh cong" }
+
+PUT /customer/profile/contact
+- Doi email hoac phone.
+- Body giong API verify identity.
+- Business:
+  - Khong cho doi sang email/phone trung voi hien tai.
+  - Verify OTP.
+  - Update field moi, lastChangeContact.
+  - Set isEmailVerified hoac isPhoneVerified.
+  - Tang tokenVersion de vo hieu token cu.
+  - Tra token moi.
+- Response:
+  {
+    message: "Thanh cong",
+    token: string,
+    user: UserInfo
+  }
+
+
+3. Tim lich trinh, diem don/tra, ghe
+------------------------------------
+
+GET /customer/trip-schedule
+- Tim danh sach lich trinh dang active.
+- Query:
+  {
+    limit?: number, default 10, min 10, max 100,
+    next?: scheduleId,
+    from?: string,
+    to?: string,
+    date?: date,
+    orderBy: "asc" | "desc"
+  }
+- Business:
+  - Chi lay trip_schedule status = true.
+  - Neu co from/to thi match route.fromLocation / route.toLocation.
+  - Neu co date:
+    - startDate <= date <= endDate.
+    - Neu date la hom nay thi chi lay departureTime > gio hien tai.
+  - Sap xep theo departureTime va reviewAvgStars.
+  - Cursor pagination bang next.
+- Response:
+  {
+    trip: [
+      {
+        id,
+        departureTime,
+        name,
+        logoUrl,
+        hotline,
+        fromLocation,
+        toLocation,
+        distanceKm,
+        startDate,
+        endDate,
+        companyId,
+        durationMinutes,
+        totalStars
+      }
+    ],
+    next
+  }
+
+GET /customer/trip-schedule/:id/pickup
+- Lay danh sach diem don cua schedule.
+- Params:
+  { id: scheduleId }
+- Business:
+  - Lay cac trip_stop_template co allowPickup = true.
+  - Cache 5 phut theo schedule id.
+- Response:
+  {
+    tripStops: [
+      { address, city, stationId, stopOrder }
+    ]
+  }
+
+GET /customer/trip-schedule/:id/dropoff
+- Lay danh sach diem tra sau diem don da chon.
+- Params:
+  { id: scheduleId }
+- Query:
+  {
+    fromStationId: number,
+    stopOrder: number
+  }
+- Business:
+  - Lay cac stop co allowDropoff = true.
+  - Chi lay stopOrder > stopOrder cua diem don.
+  - Join trip_price_template de tra gia cho chuyen fromStationId -> stationId.
+- Response:
+  {
+    tripStops: [
+      { address, city, stationId, stopOrder, price }
+    ]
+  }
+
+POST /customer/trip-schedule/prepare
+- Tao hoac lay trip cu the theo schedule va ngay khoi hanh.
+- Body:
+  {
+    scheduleId: number,
+    companyId: number,
+    departureDate: date
+  }
+- Business:
+  - departureDate phai la hom nay hoac tuong lai.
+  - Neu trip da ton tai theo scheduleId + departureDate:
+    - Chi cho book neu status = scheduled.
+    - Tra trip id va companyId.
+  - Neu chua co trip:
+    - Kiem tra schedule active va date nam trong startDate/endDate.
+    - companyId phai khop schedule.
+    - Chon random vehicle cua company.
+    - Tao trip status scheduled.
+- Loi chinh:
+  - TRIP_SCHEDULE_COMPANY_MISMATCH.
+  - TRIP_NOT_BOOKABLE.
+- Response:
+  {
+    id: tripId,
+    companyId
+  }
+
+GET /customer/trip/:id/seat
+- Lay ghe con trong tren trip va chang da chon.
+- Params:
+  { id: tripId }
+- Query:
+  {
+    stopOrderPickup: number,
+    stopOrderDropoff: number
+  }
+- Business:
+  - Lay vehicleId cua trip.
+  - Loai cac ghe da co seat_segment overlap voi chang:
+    existingPickup < requestedDropoff
+    va existingDropoff > requestedPickup.
+  - Sap xep theo tang/type va seatNumber.
+- Response:
+  {
+    seats: [
+      { id, seatNumber, type }
+    ]
+  }
+
+
+4. Coupon
+---------
+
+GET /customer/coupon
+- List coupon public.
+- Query:
+  {
+    companyId?: number,
+    next?: couponId,
+    orderTotal: number
+  }
+- Business:
+  - Lay coupon theo filter, cache public list.
+  - Tra toi da 10 item moi page.
+- Response:
+  {
+    coupons: [
+      {
+        id,
+        code,
+        discountType,
+        discountValue,
+        minOrderAmount,
+        maxDiscountAmount,
+        totalQuantity,
+        usedQuantity,
+        startDate,
+        endDate,
+        isActive
+      }
+    ],
+    next
+  }
+
+GET /customer/coupon/check
+- Check coupon va tinh tien sau giam.
+- Query:
+  {
+    code?: string,
+    id?: couponId,
+    companyId?: number,
+    orderTotal: number
+  }
+- Business validate:
+  - Coupon da den ngay bat dau.
+  - Coupon chua het han.
+  - Coupon dang active.
+  - usedQuantity < totalQuantity.
+  - orderTotal >= minOrderAmount.
+  - Neu percent thi discount = orderTotal * discountValue / 100,
+    co gioi han maxDiscountAmount neu co.
+  - Neu fixed thi discount = min(discountValue, orderTotal).
+- Response:
+  {
+    id,
+    discountAmount,
+    finalTotal
+  }
+
+
+5. Booking
+----------
+
+POST /customer/booking
+- Tao booking va giu ghe.
+- Body one-way:
+  {
+    couponId?: number,
+    type: "one_way",
+    outBound: {
+      tripId,
+      seatId,
+      fromStationId,
+      companyId,
+      toStationId
+    }
+  }
+- Body round-trip:
+  {
+    couponId?: number,
+    type: "round_trip",
+    outBound: BookingTicketRequest,
+    returnBound: BookingTicketRequest
+  }
+- Business one-way:
+  - Tinh gia theo companyId, fromStationId, toStationId.
+  - Apply coupon neu co.
+  - Tao booking status pending, expiredAt = now + 10 phut.
+  - Tao 1 ticket status reserved.
+  - Tao seat_segment de giu ghe.
+- Business round-trip:
+  - Check conflict ghe outbound.
+  - Check conflict ghe returnBound.
+  - Tinh tong tien 2 chieu.
+  - Apply coupon tren tong tien neu co.
+  - Tao booking status pending, expiredAt = now + 10 phut.
+  - Tao 2 ticket status reserved.
+  - Tao 2 seat_segment.
+- Loi chinh:
+  - TRIP_PRICE_NOT_FOUND.
+  - SEAT_CONFLICT_OUTBOUND.
+  - SEAT_CONFLICT_RETURNBOUND.
+- Response:
+  {
+    id: bookingId,
+    expiredAt,
+    message: "Ve cua ban se duoc giu trong 10 phut. Vui long chon phuong thuc thanh toan."
+  }
+
+
+6. Thanh toan booking
+---------------------
+
+POST /payment/method
+- Tao thanh toan cho booking.
+- Query:
+  {
+    id: bookingId,
+    method: "vnpay" | "cash" | "stripe"
+  }
+- Business chung:
+  - Customer phai la chu booking.
+  - Neu booking round_trip thi khong cho method cash.
+  - preparePayment:
+    - Neu payment success roi thi chan PAYMENT_ALREADY_CONFIRMED.
+    - Neu payment failed hoac booking/payment expired thi chan PAYMENT_FAILED_OR_EXPIRED.
+    - Neu cung method thi tra lai payment cu.
+    - Neu doi method thi upsert payment pending voi transactionCode moi.
+
+Method cash:
+- Chi cho one-way.
+- Tao/upsert payment method cash, status pending.
+- Set booking.expiredAt = null.
+- Response:
+  {
+    message: "Vui long thanh toan khi len xe.",
+    payment
+  }
+
+Method vnpay:
+- Tao/upsert payment method vnpay, status pending.
+- Tao paymentUrl VNPay:
+  - amount * 100.
+  - expire sau 10 phut.
+  - vnp_TxnRef = transactionCode.
+- Response:
+  {
+    message: "Thanh cong",
+    paymentUrl
+  }
+
+VNPay return:
+- Endpoint: GET /payment/vnpay/return
+- Verify IPN params.
+- Neu success:
+  - payment.status = success.
+  - booking.status = paid.
+  - ticket.status = paid.
+  - Tang usedQuantity cua coupon neu co.
+- Neu fail:
+  - payment.status = failed.
+  - booking.status = cancelled.
+  - ticket.status = cancelled.
+  - Xoa seat_segment.
+
+Method stripe:
+- Tao/upsert payment method stripe, status pending.
+- User phai co accountStripeId.
+- Booking phai tim duoc companyId.
+- Company admin phai co Stripe connected account.
+- Tao Stripe PaymentIntent:
+  - customer = Stripe Customer cua customer.
+  - transfer_data.destination = Stripe account cua company.
+  - application_fee_amount = 15%.
+  - Metadata co transactionCode.
+- Response:
+  {
+    message: "Thanh cong",
+    clientSecret,
+    paymentIntentId,
+    payment
+  }
+
+Stripe webhook:
+- Endpoint: POST /stripe/webhook
+- payment_intent.succeeded:
+  - Lay transactionCode trong metadata.
+  - Update payment success.
+  - Update booking paid.
+  - Update ticket paid.
+  - Tang usedQuantity cua coupon neu co.
+- payment_intent.payment_failed:
+  - Update payment failed.
+  - Update booking cancelled.
+  - Update ticket cancelled.
+  - Xoa seat_segment.
+
+
+7. Stripe payment method cua customer
+-------------------------------------
+
+POST /customer/payment-method/setup-intent
+- Tao Stripe SetupIntent cho customer.
+- Yeu cau user.accountStripeId da ton tai.
+- Response:
+  { clientSecret }
+
+POST /customer/payment-method
+- Attach payment method vao Stripe customer va luu local DB.
+- Body:
+  { paymentMethodId: string }
+- Business:
+  - stripe.paymentMethods.attach(paymentMethodId, customer).
+  - Upsert payment.customer_payment_method:
+    brand, last4, expMonth, expYear, isDefault=false.
+- Response:
+  { message: "Thanh cong" }
+
+GET /customer/payment-method
+- List payment methods local DB cua user.
+- Response:
+  {
+    paymentMethods: [
+      {
+        id,
+        brand,
+        last4,
+        expMonth,
+        expYear,
+        stripeCustomerId,
+        stripePaymentMethodId,
+        isDefault
+      }
+    ]
+  }
+
+PUT /customer/payment-method/default
+- Set default card.
+- Body:
+  { paymentMethodId: string }
+- Business:
+  - Update Stripe Customer invoice_settings.default_payment_method.
+  - Reset default cua user trong DB.
+  - Set payment method duoc chon isDefault=true.
+- Response:
+  { message: "Thanh cong" }
+
+DELETE /customer/payment-method
+- Remove card.
+- Body:
+  { paymentMethodId: string }
+- Business:
+  - Detach payment method tren Stripe.
+  - Xoa record local DB theo userId, stripeCustomerId, stripePaymentMethodId.
+- Response:
+  { message: "Thanh cong" }
+
+
+8. Ticket
+---------
+
+GET /customer/ticket
+- List ticket cua customer.
+- Query:
+  {
+    limit?: number, default 10,
+    next?: ticketId,
+    type?: "one_way" | "round_trip",
+    status?: "reserved" | "paid" | "cancelled" | "checked_in"
+  }
+- Business:
+  - Chi lay ticket thuoc booking cua user hien tai.
+  - Filter theo booking type va ticket status neu co.
+  - Sort departureDate desc, createdAt desc.
+- Response:
+  {
+    tickets: [
+      {
+        id,
+        bookingId,
+        tripId,
+        tripStatus,
+        status,
+        bookingType,
+        originalAmount,
+        discountAmount,
+        totalAmount,
+        departureDate,
+        expiredAt
+      }
+    ],
+    next
+  }
+
+GET /customer/ticket/:id
+- Chi tiet ticket cua customer.
+- Params:
+  { id: ticketId }
+- Business:
+  - Chi tra ticket neu booking.userId la user hien tai.
+  - Join booking, trip, seat, route, vehicle, trip_schedule.
+- Response:
+  {
+    ticket: {
+      id,
+      status,
+      code,
+      bookingType,
+      originalAmount,
+      discountAmount,
+      totalAmount,
+      departureDate,
+      seatNumber,
+      plateNumber,
+      type,
+      fromLocation,
+      toLocation,
+      departureTime
+    }
+  }
+
+DELETE /customer/ticket/:id
+- Huy ticket/booking.
+- Params:
+  { id: ticketId }
+- Business:
+  - Customer phai la chu ticket.
+  - Khong cho huy neu trip running hoac completed.
+  - Neu booking cash, payment pending, hoac booking pending thi co the huy khong can check 24h.
+  - Nguoc lai, chi cho huy truoc departureDate it nhat 24 gio.
+  - Update tat ca ticket trong booking thanh cancelled.
+  - Xoa seat_segment.
+  - Update booking status cancelled.
+  - Payment pending -> failed.
+  - Payment success vnpay -> refunded.
+  - Payment success stripe -> goi Stripe refund, roi set refunded.
+- Response:
+  {
+    message: "Thanh cong",
+    tickets: [
+      { id, status: "cancelled" }
+    ]
+  }
+
+
+9. Rating / review
+------------------
+
+GET /customer/trip-schedule/rating
+- List review cua company.
+- Query:
+  {
+    companyId: number,
+    limit?: number, default 10,
+    star?: 1..5,
+    next?: reviewId
+  }
+- Response:
+  {
+    comments: [
+      {
+        id,
+        reviewerName,
+        rating,
+        comment
+      }
+    ],
+    next
+  }
+
+POST /customer/ticket/rating
+- Customer danh gia cong ty sau chuyen di.
+- Body:
+  {
+    tripId: number,
+    ticketId: number,
+    rating: number, 1..5,
+    comment?: string, max 1000
+  }
+- Business:
+  - Ticket phai thuoc customer hien tai.
+  - ticket.tripId phai khop body.tripId.
+  - Trip phai completed.
+  - Upsert review theo companyId, userId, ticketId.
+  - Clear cache review, company list, trip schedule list.
+- Response:
+  { message: "Thanh cong" }
+
+
+10. Tom tat trang thai quan trong
+---------------------------------
+
+BookingStatus:
+- pending
+- paid
+- cancelled
+- expired
+
+BookingTicketStatus:
+- reserved
+- paid
+- cancelled
+- checked_in
+
+PaymentMethod:
+- vnpay
+- cash
+- stripe
+
+PaymentStatus:
+- pending
+- success
+- failed
+- refunded
+
+Flow trang thai khi booking:
+- POST /customer/booking
+  -> booking pending
+  -> ticket reserved
+  -> seat_segment created
+  -> expiredAt sau 10 phut
+
+Flow thanh toan thanh cong:
+- payment success
+- booking paid
+- ticket paid
+- coupon usedQuantity + 1 neu co coupon
+
+Flow thanh toan that bai:
+- payment failed
+- booking cancelled
+- ticket cancelled
+- seat_segment deleted
+
+Flow huy ve:
+- ticket cancelled
+- tat ca ticket cung booking cancelled
+- booking cancelled
+- seat_segment deleted
+- payment pending -> failed
+- payment success vnpay/stripe -> refunded
+
+
+11. AI Chat - Tro ly dat ve thong minh (POST /chat/ai)
+----------------------------------------------------
+
+Mo ta
+-----
+- API giup customer dat ve qua hoi thoai tu nhien bang tieng Viet (co dau hoac khong dau).
+- Ket hop rule-based (xu ly chinh xac flow dat ve) + fallback OpenAI khi khong match.
+- **Stateful**: Client phai luu "state" tu response va gui lai o moi request tiep theo.
+- Chi ho tro tot nhat cho **one-way** (round-trip co the lam nhung it duoc test).
+- Sau khi tao booking xong, phai dung API thanh toan that (khong tao payment qua chat).
+
+Endpoint & Auth
+---------------
+POST /chat/ai
+
+- Can Bearer token role = customer (dung jwt.auth.requireRoles).
+- Rate limit: max 30 request / 1 phut.
+- Route tu dong sinh tu src/api/chat/ai/post.ts.
+
+Request Body (AiChatBody)
+-------------------------
+{
+  "message": "string bat buoc, trim, min length 1",
+  "state": AiChatState   // optional. Lan dau tien co the bo hoac null
+}
+
+Response (AiChatResponse)
+-------------------------
+{
+  "message": "string - noi dung de hien thi cho user (co the chua \n de xuong dong)",
+  "state": AiChatState   // luu lai de dung cho request tiep theo
+}
+
+Cac stage chinh (AiChatBookingStage)
+------------------------------------
+- "idle"
+- "schedules_listed"     // da co danh sach nha xe
+- "need_date"            // da chon nha xe, chua co ngay di
+- "pickup_listed"
+- "dropoff_listed"
+- "seat_listed"
+- "booking_created"      // DA TAO BOOKING, giu ghe 10 phut. Tu day chi huong dan payment.
+
+Cac truong quan trong trong state
+---------------------------------
+scheduleOptions[], selectedSchedule, pickupOptions[], selectedPickup,
+dropoffOptions[], selectedDropoff, seatOptions[], selectedSeat,
+bookingId, tripId, companyId, scheduleId, fromStationId,
+stopOrderPickup, stopOrderDropoff, departureDate, from, to, ...
+
+Vi du flow hoan chinh (tu van)
+------------------------------
+
+**Turn 1: Bat dau tim chuyen**
+Request:
+{
+  "message": "toi muon dat ve tu Da Nang di Sai Gon ngay mai"
+}
+
+Response (schedules_listed):
+{
+  "message": "Minh tim thay 5 nha xe cho tuyen Da Nang -> Sai Gon ngay 15/10/2025:\n1. Phuong Trang - 07:30 - ... - 4.8 sao\n2. Thanh Buoi - 09:15 - ...\nBan chon nha xe nao va muon di ngay nao?",
+  "state": {
+    "stage": "schedules_listed",
+    "from": "Da Nang",
+    "to": "Sai Gon",
+    "departureDate": "2025-10-15T00:00:00.000Z",
+    "scheduleOptions": [
+      {
+        "scheduleId": 101,
+        "companyId": 7,
+        "name": "Phuong Trang",
+        "fromLocation": "Da Nang",
+        "toLocation": "Sai Gon",
+        "departureTime": "07:30:00",
+        "startDate": "2025-01-01",
+        "endDate": "2025-12-31",
+        "totalStars": 4.8
+      }
+      // ... toi da 5 options
+    ]
+  }
+}
+
+**Turn 2: Chon nha xe**
+Request:
+{
+  "message": "chon 1",
+  "state": <paste nguyen state tu turn 1>
+}
+
+Response (pickup_listed):
+{
+  "message": "Ban chon Phuong Trang luc 07:30 ngay 15/10/2025.\nDiem don hien co:\n1. Ben xe Da Nang, Da Nang\n2. Cau vuot Hoa Phuoc, Da Nang\nBan muon don o diem nao?",
+  "state": {
+    "stage": "pickup_listed",
+    "selectedSchedule": { ... },
+    "scheduleId": 101,
+    "companyId": 7,
+    "pickupOptions": [
+      { "stationId": 201, "stopOrder": 1, "address": "Ben xe Da Nang", "city": "Da Nang" }
+    ],
+    // giu lai tat ca field cu
+  }
+}
+
+**Turn 3 + 4: Chon diem don -> diem tra**
+Tuong tu, dung "1", "2", hoac "diem dau", "re nhat", hoac match dia chi.
+
+**Turn 5: Chon ghe**
+Request:
+{ "message": "ghe 1", "state": <state seat_listed> }
+
+Response (booking_created):
+{
+  "message": "Minh da giu ghe A01 trong 10 phut. Ban chon thanh toan VNPay, the hay tien mat khi len xe?",
+  "state": {
+    "stage": "booking_created",
+    "bookingId": 78901,
+    "selectedSeat": { "seatId": 5501, "seatNumber": "A01", "type": 1 },
+    "tripId": 9999,
+    // ... tat ca thong tin tu truoc
+  }
+}
+
+**Sau khi booking_created (BUOC QUAN TRONG NHAT)**
+- **Khong** tiep tuc dat ve qua chat.
+- Dung `state.bookingId` de goi API that:
+  POST /payment/method?id=78901&method=vnpay     → tra paymentUrl
+  POST /payment/method?id=78901&method=stripe    → tra clientSecret
+  POST /payment/method?id=78901&method=cash      → chi cho one-way
+- Co the van hoi chat ve huong dan thanh toan:
+  message = "thanh toan vnpay"  → server tra huong dan cu the.
+
+Cac lenh dac biet (luon hoat dong)
+----------------------------------
+- "dat lai", "reset", "dat ve moi", "lam lai"          → reset ve stage=idle
+- "khong dat nua", "bo qua", "huy luong", "thoat dat ve" → huy flow hien tai, ve idle
+- "som nhat", "chuyen dau", "chuyen som"               → tu chon lich trinh som nhat
+- "tre nhat", "chuyen cuoi"                            → tu chon lich trinh tre nhat
+- "re nhat", "gia thap" (o buoc dropoff)               → chon diem re nhat neu co gia
+- "1", "chon 2", "muc 3", "ghe A01", "12A"             → chon bang so hoac ten
+
+Huong dan ap dung cho Client (Frontend / Mobile)
+------------------------------------------------
+1. Tao 1 bien state hien tai (useState, useRef, Redux, Pinia, etc.).
+2. Moi lan user gui tin nhan:
+   - Goi POST /chat/ai voi body = { message: userText, state: currentState }
+   - Hien thi response.message cho user.
+   - Luu response.state vao bien currentState (de dung lan sau).
+3. Lan dau tien: khong can gui state.
+4. Khi nhan duoc stage === "booking_created" + bookingId:
+   - Chuyen man hinh sang Payment (truyen bookingId + thong tin tom tat tu state).
+   - Tu day khong can gui them state cho chat (hoac van giu de user hoi them).
+5. Nut "Reset" / "Dat lai": gui message reset hoac chi xoa currentState ve null.
+6. Luu y hien thi: message co the chua ky tu \n → dung white-space: pre-line hoac render nhieu dong.
+
+Vi du code client (vanilla JS / fetch)
+--------------------------------------
+let currentState = null;
+
+async function sendChat(message) {
+  const res = await fetch('http://localhost:3000/chat/ai', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      message,
+      ...(currentState && { state: currentState })
+    })
+  });
+  const data = await res.json();
+  currentState = data.state || null;
+  return data; // { message, state }
+}
+
+Luu y ky thuat
+--------------
+- State co the rat lon (chua danh sach options) → van cu gui nguyen, khong nen loc.
+- Server cung co in-memory session theo userId, nhung **khong nen tin tuong 100%**, luon gui state.
+- API chi tao booking (pending + reserved + seat_segment). Khong tu dong thanh toan.
+- Ve chi duoc giu dung 10 phut sau khi booking_created.
+- Round-trip: co the lam nhung can chon 2 chieu, cash bi chan.
+- Co the dung song song voi flow thuong (GET /customer/trip-schedule, POST /customer/booking).
+
+Tai lieu lien quan
+------------------
+- customer-flow.txt (toan bo flow dat ve thong thuong)
+- src/model/body/chat/index.ts (dinh nghia chinh xac AiChatState, AiChatBody...)
+- src/business/chat/ai.ts (logic day du)
+- src/api/chat/ai/post.ts (route)
+
+Day la tai lieu chinh de frontend/mobile ap dung AI chat vao ung dung.
+

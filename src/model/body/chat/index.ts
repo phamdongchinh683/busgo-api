@@ -3,6 +3,17 @@ import { AuthUserId } from '../../../database/auth/user/type.js'
 import { ChatMessageId } from '../../../database/chat/message/type.js'
 import { Email, Phone } from '../../common.js'
 import { ChatBoxId } from '../../../database/chat/box/type.js'
+import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
+import { OperationTripId } from '../../../database/operation/trip/type.js'
+import { OperationStationId } from '../../../database/operation/station/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationSeatId,
+    OrganizationSeatType,
+} from '../../../database/organization/seat/type.js'
+import { BookingCouponId } from '../../../database/booking/coupon/type.js'
+import { BookingTicketId } from '../../../database/booking/ticket/type.js'
+import { BookingId } from '../../../database/booking/booking/type.js'
 
 export const ChatBoxBody = z.object({
     message: z.string(),
@@ -24,14 +35,90 @@ export const AiChatMessage = z.object({
 
 export type AiChatMessage = z.infer<typeof AiChatMessage>
 
+export const AiChatBookingStage = z.enum([
+    'idle',
+    'schedules_listed',
+    'need_date',
+    'pickup_listed',
+    'dropoff_listed',
+    'seat_listed',
+    'coupon_prompted',
+    'booking_created',
+])
+
+export type AiChatBookingStage = z.infer<typeof AiChatBookingStage>
+
+export const AiChatScheduleOption = z.object({
+    scheduleId: OperationTripScheduleId,
+    companyId: OrganizationBusCompanyId,
+    name: z.string(),
+    fromLocation: z.string(),
+    toLocation: z.string(),
+    departureTime: z.string(),
+    startDate: z.string(),
+    endDate: z.string(),
+    totalStars: z.number().nullable().optional(),
+})
+
+export type AiChatScheduleOption = z.infer<typeof AiChatScheduleOption>
+
+export const AiChatStopOption = z.object({
+    stationId: OperationStationId,
+    stopOrder: z.number().int().nonnegative(),
+    address: z.string(),
+    city: z.string(),
+    price: z.number().optional(),
+})
+
+export type AiChatStopOption = z.infer<typeof AiChatStopOption>
+
+export const AiChatSeatOption = z.object({
+    seatId: OrganizationSeatId,
+    seatNumber: z.string(),
+    type: OrganizationSeatType,
+})
+
+export type AiChatSeatOption = z.infer<typeof AiChatSeatOption>
+
+export const AiChatState = z.object({
+    stage: AiChatBookingStage.optional(),
+    from: z.string().optional(),
+    to: z.string().optional(),
+    departureDate: z.coerce.date().optional(),
+    scheduleOptions: z.array(AiChatScheduleOption).optional(),
+    selectedSchedule: AiChatScheduleOption.optional(),
+    pickupOptions: z.array(AiChatStopOption).optional(),
+    selectedPickup: AiChatStopOption.optional(),
+    dropoffOptions: z.array(AiChatStopOption).optional(),
+    selectedDropoff: AiChatStopOption.optional(),
+    seatOptions: z.array(AiChatSeatOption).optional(),
+    selectedSeat: AiChatSeatOption.optional(),
+    bookingId: BookingId.optional(),
+    expiredAt: z.coerce.date().optional(),
+    companyId: OrganizationBusCompanyId.optional(),
+    couponId: BookingCouponId.optional(),
+    fromStationId: OperationStationId.optional(),
+    orderTotal: z.coerce.number().nonnegative().optional(),
+    scheduleId: OperationTripScheduleId.optional(),
+    stopOrder: z.coerce.number().int().nonnegative().optional(),
+    stopOrderDropoff: z.coerce.number().int().nonnegative().optional(),
+    stopOrderPickup: z.coerce.number().int().nonnegative().optional(),
+    ticketId: BookingTicketId.optional(),
+    tripId: OperationTripId.optional(),
+})
+
+export type AiChatState = z.infer<typeof AiChatState>
+
 export const AiChatBody = z.object({
     message: z.string().trim().min(1),
+    state: AiChatState.optional(),
 })
 
 export type AiChatBody = z.infer<typeof AiChatBody>
 
 export const AiChatResponse = z.object({
     message: z.string(),
+    state: AiChatState.optional(),
 })
 
 export type AiChatResponse = z.infer<typeof AiChatResponse>

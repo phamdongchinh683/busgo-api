@@ -16,7 +16,7 @@ export const getTodayCalendarDateString = () => {
 }
 
 export const formatCalendarDate = (date: Date, pattern = 'DD/MM/YYYY') => {
-    return dayjs.utc(date).format(pattern)
+    return dayjs(date).tz(APP_TIMEZONE).format(pattern)
 }
 
 export const getNext = (params: { milliseconds: number }) => {
