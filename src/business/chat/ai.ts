@@ -1079,7 +1079,7 @@ async function createBookingFromState(params: {
         message: [
             params.couponMessage,
             `Mình đã giữ ghế ${selectedSeat.seatNumber} trong 10 phút.`,
-            'Bạn vào Profile > Vé > Đã giữ chỗ để mở vé này và chọn VNPay, thẻ hoặc tiền mặt khi lên xe.',
+            'Bạn vào Profile > Vé > Đã giữ chỗ để mở vé này và chọn phương thức thanh toán. Vé sẽ tự hủy sau 10 phút nếu chưa được xác nhận.',
         ]
             .filter(Boolean)
             .join('\n'),
@@ -1209,7 +1209,7 @@ function isSkipCouponMessage(message: string) {
 
 function getPaymentGuidanceMessage(message: string) {
     if (containsAny(message, ['cash', 'tien mat', 'tiền mặt'])) {
-        return 'Bạn vào Profile > Vé > Đã giữ chỗ, mở vé này và chọn tiền mặt khi lên xe. Vé vẫn chỉ được giữ 10 phút, nên bạn hoàn tất lựa chọn sớm nhé.'
+        return 'Bạn vào Profile > Vé > Đã giữ chỗ, mở vé này và chọn tiền mặt. Vé vẫn chỉ được giữ 10 phút và sẽ tự hủy nếu chưa được xác nhận.'
     }
 
     if (containsAny(message, ['vnpay'])) {
@@ -2481,7 +2481,7 @@ async function getCouponContext(message: string, numeric: NumericEntities) {
                 : {}),
         })
 
-        return `Ma giam gia hop le: giam=${result.discountAmount }, tongSauGiam=${result.finalTotal}`
+        return `Ma giam gia hop le: giam=${result.discountAmount}, tongSauGiam=${result.finalTotal}`
     }
 
     if (numeric.orderTotal) {
@@ -2557,7 +2557,7 @@ async function getTicketContext(params: { ticketId?: number; userInfo: UserInfo 
                 `amount=${item.totalAmount}`,
                 `tripStatus=${item.tripStatus}`,
                 `departure=${item.departureDate?.toISOString() ?? 'null'}`,
-                `expiredAt=${item.expiredAt?.toISOString() ?? 'null'}`,
+                `expiredAt=${utils.time.getNext({ milliseconds: utils.time.coolDownTime }) ?? 'null'}`,
             ].join(', ')
         )
         .join('\n')
