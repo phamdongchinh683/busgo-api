@@ -1,3 +1,47 @@
+type TemplateParams = Record<string, unknown>
+
+const HTML_ESCAPE_MAP: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+}
+
+function escapeHtml(value: string) {
+    return value.replace(/[&<>"']/g, char => HTML_ESCAPE_MAP[char] ?? char)
+}
+
+function stringifyTemplateValue(value: unknown) {
+    if (value === null || value === undefined) return ''
+    if (typeof value === 'string') return value
+    if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') {
+        return String(value)
+    }
+
+    try {
+        return JSON.stringify(value)
+    } catch {
+        return String(value)
+    }
+}
+
+function getTemplateValue(params: TemplateParams, keyPath: string) {
+    return keyPath.split('.').reduce<unknown>((current, key) => {
+        if (current === null || typeof current !== 'object') return undefined
+        if (!Object.prototype.hasOwnProperty.call(current, key)) return undefined
+        return (current as Record<string, unknown>)[key]
+    }, params)
+}
+
+export function renderHtmlTemplate(params: { template: string; params?: TemplateParams }) {
+    const values = params.params ?? {}
+
+    return params.template.replace(/\{\{\s*([a-zA-Z0-9_.-]+)\s*\}\}/g, (_, keyPath: string) => {
+        return escapeHtml(stringifyTemplateValue(getTemplateValue(values, keyPath)))
+    })
+}
+
 export function otpTemplate(params: { otp: string }) {
     const { otp } = params
 
