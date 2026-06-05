@@ -12,26 +12,26 @@ pipeline {
     environment {
         IMAGE_REPOSITORY = 'phamdongchinh683/busgo-api'
         COMPOSE_FILE = 'docker-compose.prod.yml'
-        COMPOSE_PROJECT_NAME = 'busgo'
+        COMPOSE_PROJECT_NAME = 'busgo-chat-ai'
     }
 
     stages {
-        stage('Checkout Latest Main') {
-    steps {
-        git branch: 'main',
-            credentialsId: 'github-ssh-key',
-            url: 'git@github.com:phamdongchinh683/busgo-api.git'
+        stage('Checkout Chat AI Branch') {
+            steps {
+                git branch: 'chat-ai-training',
+                    credentialsId: 'github-ssh-key',
+                    url: 'git@github.com:phamdongchinh683/busgo-api.git'
 
-        script {
-            env.DEPLOY_IMAGE_TAG = sh(
-                script: 'git rev-parse --short=12 HEAD',
-                returnStdout: true
-            ).trim()
+                script {
+                    env.DEPLOY_IMAGE_TAG = sh(
+                        script: 'git rev-parse --short=12 HEAD',
+                        returnStdout: true
+                    ).trim()
+                }
+
+                echo "Deploy commit: ${DEPLOY_IMAGE_TAG}"
+            }
         }
-
-        echo "Deploy commit: ${DEPLOY_IMAGE_TAG}"
-    }
-}
 
         stage('Prepare') {
             steps {
@@ -79,51 +79,6 @@ pipeline {
             }
         }
 
-        stage('Ensure Core Services') {
-            steps {
-                sh '''
-                    set -e
-
-                    $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" \
-                    up -d --no-recreate db dozzle netdata
-                '''
-            }
-        }
-
-        stage('Wait Database') {
-            steps {
-                sh '''
-                    set -e
-
-                    for i in $(seq 1 30); do
-                        if docker exec postgres pg_isready -U busgo -d busgo >/dev/null 2>&1; then
-                            echo "PostgreSQL ready"
-                            break
-                        fi
-
-                        if [ "$i" -eq 30 ]; then
-                            echo "PostgreSQL is not ready"
-                            exit 1
-                        fi
-
-                        sleep 1
-                    done
-                '''
-            }
-        }
-
-        stage('Run Migration') {
-            steps {
-                sh '''
-                    set -e
-
-                    IMAGE_TAG="${DEPLOY_IMAGE_TAG}" \
-                    $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" \
-                    run --rm --no-deps api1 yarn migrate
-                '''
-            }
-        }
-
         stage('Deploy API') {
             steps {
                 sh '''
@@ -131,7 +86,7 @@ pipeline {
 
                     IMAGE_TAG="${DEPLOY_IMAGE_TAG}" \
                     $COMPOSE_CMD -p "$COMPOSE_PROJECT_NAME" -f "$COMPOSE_FILE" \
-                    up -d --no-deps --force-recreate api1 api2
+                    up -d --force-recreate chat-ai-api1 chat-ai-api2
                 '''
             }
         }
@@ -141,7 +96,7 @@ pipeline {
                 sh '''
                     set -e
 
-                    for port in 3001 3002; do
+                    for port in 3011 3012; do
                         for i in $(seq 1 20); do
                             if curl -fsS "http://127.0.0.1:${port}/health" >/dev/null; then
                                 echo "API port ${port} healthy"

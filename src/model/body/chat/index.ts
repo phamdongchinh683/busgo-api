@@ -123,6 +123,46 @@ export const AiChatResponse = z.object({
 
 export type AiChatResponse = z.infer<typeof AiChatResponse>
 
+const AI_TRAINING_TEXT_MAX_CHARACTERS = 20_000
+const AiTrainingTextContent = z
+    .string()
+    .min(1)
+    .max(AI_TRAINING_TEXT_MAX_CHARACTERS)
+    .refine(value => value.trim().length > 0, {
+        message: 'Training text không được rỗng.',
+    })
+
+export const AiTrainingTextUploadBody = z.union([
+    AiTrainingTextContent,
+    z.object({
+        fileName: z.string().trim().max(120).optional(),
+        content: AiTrainingTextContent,
+    }),
+])
+
+export type AiTrainingTextUploadBody = z.infer<typeof AiTrainingTextUploadBody>
+
+export const AiTrainingTextResponse = z.object({
+    message: z.string(),
+    fileName: z.string(),
+    characters: z.number().int().nonnegative(),
+    bytes: z.number().int().nonnegative(),
+    updatedAt: z.date(),
+})
+
+export type AiTrainingTextResponse = z.infer<typeof AiTrainingTextResponse>
+
+export const AiTrainingTextStatusResponse = z.object({
+    exists: z.boolean(),
+    fileName: z.string(),
+    content: z.string(),
+    characters: z.number().int().nonnegative(),
+    bytes: z.number().int().nonnegative(),
+    updatedAt: z.date().nullable(),
+})
+
+export type AiTrainingTextStatusResponse = z.infer<typeof AiTrainingTextStatusResponse>
+
 export const ChatMessageResponse = z.object({
     messages: z.array(
         z.object({

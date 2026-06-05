@@ -28,8 +28,15 @@ const publicDir = path.resolve(process.cwd(), 'public')
 const isProduction = process.env.APP_ENV === 'production'
 const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 const isTsRuntime = process.argv[1]?.endsWith('.ts') ?? false
+const apiService = process.env.API_SERVICE ?? 'chat-ai'
 
 const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
+const CHAT_AI_SERVICE_ROUTE_FILES = new Set([
+    'chat/ai/post',
+    'chat/ai/training/get',
+    'chat/ai/training/put',
+    'health/get',
+])
 
 type RawWithStripeBody = import('http').IncomingMessage & {
     rawBody?: Buffer
@@ -150,6 +157,22 @@ export const tags = (filename: string): string[] => {
     return [relative(__dirname, filename).replace('../api/', '').split(sep)[0]]
 }
 
+function getApiRouteFileKey(filename: string) {
+    return relative(apiDir, filename)
+        .replace(/\.(ts|js)$/, '')
+        .split(sep)
+        .join('/')
+}
+
+function shouldLoadApiRouteFile(filename: string) {
+    if (apiService === 'full') return true
+    if (apiService === 'chat-ai') {
+        return CHAT_AI_SERVICE_ROUTE_FILES.has(getApiRouteFileKey(filename))
+    }
+
+    throw new Error(`Unsupported API_SERVICE: ${apiService}`)
+}
+
 async function apiRouter() {
     const files: string[] = []
     const allowedExtensions = new Set(isTsRuntime ? ['.ts'] : ['.js'])
@@ -166,7 +189,11 @@ async function apiRouter() {
                     return
                 }
 
-                if (entry.isFile() && allowedExtensions.has(path.extname(entry.name))) {
+                if (
+                    entry.isFile() &&
+                    allowedExtensions.has(path.extname(entry.name)) &&
+                    shouldLoadApiRouteFile(fullPath)
+                ) {
                     files.push(fullPath)
                 }
             })
@@ -247,6 +274,7 @@ async function start() {
         const url = `http://${host}:${port}`
 
         console.log({
+            apiService,
             swagger: isProduction ? `${url}/swagger/json` : `${url}/swagger/docs`,
         })
     } catch (err) {

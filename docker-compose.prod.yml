@@ -1,89 +1,42 @@
 services:
-  api1:
+  chat-ai-api1:
     image: phamdongchinh683/busgo-api:${IMAGE_TAG:-latest}
-    container_name: api1
+    container_name: chat-ai-api1
     labels:
-      - "app=busgo-api"
+      - "app=busgo-chat-ai"
     restart: unless-stopped
-    mem_limit: 768m
+    mem_limit: 512m
     env_file:
       - .env
+    environment:
+      API_SERVICE: ${API_SERVICE:-chat-ai}
     ports:
-      - "127.0.0.1:3001:3000"
+      - "127.0.0.1:3011:3000"
+    volumes:
+      - chat_ai_storage:/app/storage
     networks:
       - internal-net
-    depends_on:
-      - db
 
-  api2:
+  chat-ai-api2:
     image: phamdongchinh683/busgo-api:${IMAGE_TAG:-latest}
-    container_name: api2
+    container_name: chat-ai-api2
     labels:
-      - "app=busgo-api"
+      - "app=busgo-chat-ai"
     restart: unless-stopped
-    mem_limit: 768m
+    mem_limit: 512m
     env_file:
       - .env
+    environment:
+      API_SERVICE: ${API_SERVICE:-chat-ai}
     ports:
-      - "127.0.0.1:3002:3000"
+      - "127.0.0.1:3012:3000"
+    volumes:
+      - chat_ai_storage:/app/storage
     networks:
       - internal-net
-    depends_on:
-      - db
-
-  db:
-    image: postgres:15
-    container_name: postgres
-    restart: unless-stopped
-    mem_limit: 1536m
-    environment:
-      POSTGRES_DB: busgo
-      POSTGRES_USER: busgo
-      POSTGRES_PASSWORD: Chinh123021312412
-    volumes:
-      - db_data:/var/lib/postgresql/data
-    networks:
-      - internal-net
-    ports:
-      - "5433:5432"
-
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: dozzle
-    restart: unless-stopped
-    mem_limit: 128m
-    environment:
-      - DOZZLE_BASE=/logs
-      - DOZZLE_FILTER=label=app=busgo-api
-    ports:
-      - "127.0.0.1:3006:8080"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-
-  netdata:
-    image: netdata/netdata:stable
-    container_name: netdata
-    restart: unless-stopped
-    mem_limit: 256m
-    pid: host
-    network_mode: host
-    cap_add:
-      - SYS_PTRACE
-      - SYS_ADMIN
-    security_opt:
-      - apparmor:unconfined
-    volumes:
-      - netdata_config:/etc/netdata
-      - netdata_lib:/var/lib/netdata
-      - netdata_cache:/var/cache/netdata
-      - /:/host/root:ro,rslave
-      - /var/run/docker.sock:/var/run/docker.sock:ro
 
 volumes:
-  db_data:
-  netdata_config:
-  netdata_lib:
-  netdata_cache:
+  chat_ai_storage:
 
 networks:
   internal-net:

@@ -1,3 +1,7 @@
+import { getTrainingText } from './training.js'
+
+export { getTrainingTextStatus, uploadTrainingText } from './training.js'
+
 const BUSGO_CUSTOMER_ASSISTANT_PROMPT = `
 Bạn là trợ lý AI của BusGo trong ứng dụng đặt vé xe khách.
 
@@ -72,11 +76,20 @@ type ChatCompletionResponse = {
 }
 
 export async function chat(params: { context?: string; message: string }) {
+    const trainingText = await getTrainingText()
     const messages = [
         {
             role: 'system',
             content: BUSGO_CUSTOMER_ASSISTANT_PROMPT,
         },
+        ...(trainingText
+            ? [
+                  {
+                      role: 'system',
+                      content: `Tài liệu huấn luyện bổ sung cho trợ lý, ưu tiên sau luật hệ thống gốc và không nhắc lại tiêu đề này với khách:\n${trainingText}`,
+                  },
+              ]
+            : []),
         ...(params.context
             ? [
                   {

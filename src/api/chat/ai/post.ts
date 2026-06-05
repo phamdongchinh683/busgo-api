@@ -1,8 +1,8 @@
 import { api, bearer, endpoint, tags } from '../../../app/api.js'
 import { jwt } from '../../../app/index.js'
-import { AiChatBody, AiChatResponse } from '../../../model/body/chat/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
+import { AiChatBody, AiChatResponse } from '../../../model/body/chat/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
