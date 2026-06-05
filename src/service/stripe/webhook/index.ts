@@ -1,5 +1,5 @@
 import type Stripe from 'stripe'
-import { stripe } from '../client/index.js'
+import { getStripeClient } from '../client/index.js'
 import { dal } from '../../../database/index.js'
 import { db } from '../../../datasource/db.js'
 import { utils } from '../../../utils/index.js'
@@ -8,7 +8,7 @@ export async function handleWebhook(rawBody: string | Buffer, signature: string)
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? ''
 
     try {
-        const event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret)
+        const event = getStripeClient().webhooks.constructEvent(rawBody, signature, webhookSecret)
 
         switch (event.type) {
             case 'checkout.session.completed':

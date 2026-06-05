@@ -1,10 +1,10 @@
-import { stripe } from '../client/index.js'
+import { getStripeClient } from '../client/index.js'
 import { StripePayoutListRequest } from '../type.js'
 
 export async function createConnectAccount(params: { email?: string }) {
     const { email } = params
 
-    return stripe.accounts.create({
+    return getStripeClient().accounts.create({
         type: 'express',
         country: 'US',
         email: email,
@@ -27,7 +27,7 @@ export async function createConnectAccount(params: { email?: string }) {
 }
 
 export async function linkBankAccount(accountId: string) {
-    return stripe.accountLinks.create({
+    return getStripeClient().accountLinks.create({
         account: accountId,
         type: 'account_onboarding',
         refresh_url: process.env.STRIPE_REFRESH_URL ?? '',
@@ -36,11 +36,11 @@ export async function linkBankAccount(accountId: string) {
 }
 
 export async function callbackRetrieveAccount(accountId: string) {
-    return stripe.accounts.retrieve(accountId)
+    return getStripeClient().accounts.retrieve(accountId)
 }
 
 export async function getConnectedAccountBalance(accountId: string) {
-    return await stripe.balance.retrieve(
+    return await getStripeClient().balance.retrieve(
         {},
         {
             stripeAccount: accountId,
@@ -49,7 +49,7 @@ export async function getConnectedAccountBalance(accountId: string) {
 }
 
 export async function payout(params: { amount: number; accountStripeId: string }) {
-    return stripe.payouts.create(
+    return getStripeClient().payouts.create(
         {
             amount: params.amount,
             currency: 'usd',
@@ -61,7 +61,7 @@ export async function payout(params: { amount: number; accountStripeId: string }
 }
 
 export async function listPayouts(q: StripePayoutListRequest, accountStripeId: string) {
-    return stripe.payouts.list(
+    return getStripeClient().payouts.list(
         {
             starting_after: q.next,
             status: q.status,

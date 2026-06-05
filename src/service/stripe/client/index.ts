@@ -1,8 +1,17 @@
 import Stripe from 'stripe'
 
-const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? ''
+let stripeClient: Stripe | undefined
 
-export const stripe = new Stripe(STRIPE_SECRET_KEY, {})
+export function getStripeClient() {
+    const apiKey = process.env.STRIPE_SECRET_KEY
+
+    if (!apiKey) {
+        throw new Error('Missing STRIPE_SECRET_KEY environment variable.')
+    }
+
+    stripeClient ??= new Stripe(apiKey, {})
+    return stripeClient
+}
 
 export async function createCustomer(params: {
     email?: null | string
@@ -12,7 +21,7 @@ export async function createCustomer(params: {
 }) {
     const { email, phone, name, metadata } = params
 
-    return stripe.customers.create({
+    return getStripeClient().customers.create({
         email: email ?? undefined,
         phone,
         name,
@@ -21,7 +30,7 @@ export async function createCustomer(params: {
 }
 
 export async function addCard(params: { customerId: string; paymentMethodId: string }) {
-    return stripe.paymentMethods.attach(params.paymentMethodId, {
+    return getStripeClient().paymentMethods.attach(params.paymentMethodId, {
         customer: params.customerId,
     })
 }
@@ -30,7 +39,7 @@ export async function setDefaultPaymentMethod(params: {
     customerId: string
     paymentMethodId: string
 }) {
-    return stripe.customers.update(params.customerId, {
+    return getStripeClient().customers.update(params.customerId, {
         invoice_settings: {
             default_payment_method: params.paymentMethodId,
         },
@@ -38,27 +47,27 @@ export async function setDefaultPaymentMethod(params: {
 }
 
 export async function createSetupIntent(params: { customerId: string }) {
-    return stripe.setupIntents.create({
+    return getStripeClient().setupIntents.create({
         customer: params.customerId,
         payment_method_types: ['card'],
     })
 }
 
 export async function attachPaymentMethod(params: { customerId: string; paymentMethodId: string }) {
-    return stripe.paymentMethods.attach(params.paymentMethodId, {
+    return getStripeClient().paymentMethods.attach(params.paymentMethodId, {
         customer: params.customerId,
     })
 }
 
 export async function getPaymentMethods(params: { customerId: string }) {
-    return stripe.paymentMethods.list({
+    return getStripeClient().paymentMethods.list({
         customer: params.customerId,
         type: 'card',
     })
 }
 
 export async function detachPaymentMethod(params: { paymentMethodId: string }) {
-    return stripe.paymentMethods.detach(params.paymentMethodId)
+    return getStripeClient().paymentMethods.detach(params.paymentMethodId)
 }
 
 function getStripePaymentAmounts(amount: number) {
@@ -110,7 +119,7 @@ export async function createPaymentIntentWithCommission(params: StripePaymentWit
     const { usdAmount, applicationFee, exchangeRateVndPerUsd, commissionPercent } =
         getStripePaymentAmounts(amount)
 
-    return stripe.paymentIntents.create({
+    return getStripeClient().paymentIntents.create({
         amount: usdAmount,
         currency: 'usd',
         customer: stripeCustomerId,
@@ -154,7 +163,7 @@ export async function createCheckoutSessionWithCommission(
         applicationFee,
     })
 
-    return stripe.checkout.sessions.create({
+    return getStripeClient().checkout.sessions.create({
         mode: 'payment',
         customer: stripeCustomerId,
         success_url: successUrl,
@@ -183,7 +192,7 @@ export async function createCheckoutSessionWithCommission(
 }
 
 export async function createRefund(params: { paymentIntentId: string }) {
-    return stripe.refunds.create({
+    return getStripeClient().refunds.create({
         payment_intent: params.paymentIntentId,
         refund_application_fee: true,
         reverse_transfer: true,
