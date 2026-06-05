@@ -3,9 +3,9 @@ import { ContactInfo, Email, Otp, Phone, UserInfo } from '../../common.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 
-const regPassword = `^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@\\$%&!\\*\\?\\^_])(?!.*\\s).+$`
+const regPassword = `^(?=.*[a-z])(?=.*\\d)(?=.*[#@\\$%&!\\*\\?\\^_])(?!.*\\s).+$`
 const message =
-    'Mật khẩu phải có chữ hoa, chữ thường, chữ số, một ký tự đặc biệt (# @ $ % & ! * ? ^ _) và không chứa khoảng trắng.'
+    'Mật khẩu phải có chữ thường, chữ số, một ký tự đặc biệt (# @ $ % & ! * ? ^ _) và không chứa khoảng trắng.'
 
 export const AuthPassword = z.string().regex(new RegExp(regPassword), message).default('Abcd12345#')
 export type AuthPassword = z.infer<typeof AuthPassword>

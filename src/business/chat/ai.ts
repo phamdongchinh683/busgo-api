@@ -29,6 +29,8 @@ const MAX_SEAT_OPTIONS = 36
 const SEAT_OPTIONS_PER_LINE = 12
 const BOOKING_FLOW_SESSION_TTL_MS = 30 * 60 * 1000
 const bookingFlowSessions = new Map<number, BookingFlowSession>()
+const TICKET_CANCELLATION_POLICY_CONTEXT =
+    'Chinh sach huy ve: tro ly AI khong ho tro thuc hien huy ve truc tiep va khong noi khach tu huy tren app. Hay tra loi tu nhien rang hien minh chua the huy truc tiep; khach can lien he ho tro vien cua nha xe/cong ty van hanh ve do de duoc kiem tra va huy giup. Ve da thanh toan qua VNPay hoac the chi huy duoc truoc gio khoi hanh it nhat 24 gio. Ve tien mat khong can du 24 gio, nhung van khong huy duoc neu chuyen dang chay hoac da hoan thanh. Ve khu hoi khi huy se huy ca chieu di va chieu ve.'
 
 type ContextBlock = {
     title: string
@@ -481,15 +483,15 @@ function getCompanionResponse(message: string, state?: AiChatState) {
     }
 
     if (isThanksMessage(message)) {
-        return 'Không có gì. Khi cần tìm chuyến, xem vé, thanh toán hoặc hủy vé, bạn nhắn mình là được.'
+        return 'Không có gì. Khi cần tìm chuyến, xem vé, thanh toán hoặc hỏi chính sách hủy vé, bạn nhắn mình là được.'
     }
 
     if (isGreetingMessage(message)) {
-        return 'Mình đây. Bạn muốn tìm chuyến, xem vé, thanh toán hay hủy vé?'
+        return 'Mình đây. Bạn muốn tìm chuyến, xem vé, thanh toán hay hỏi chính sách hủy vé?'
     }
 
     if (isHelpMessage(message)) {
-        return 'Mình hỗ trợ được tìm chuyến, chọn điểm đón/trả, chọn ghế, áp mã giảm giá, giữ vé, xem vé và hủy vé. Bạn muốn mình giúp việc nào trước?'
+        return 'Mình hỗ trợ tìm chuyến, chọn điểm đón/trả, chọn ghế, áp mã giảm giá, giữ vé, xem vé và giải thích chính sách hủy vé. Bạn muốn mình giúp việc nào trước?'
     }
 
     if (isConfusedMessage(message)) {
@@ -1861,6 +1863,13 @@ async function buildCustomerAssistantContext(params: {
             'Khong hien ID noi bo va khong yeu cau khach nhap ID. Neu can khach chon, hay dung so thu tu hien thi, nha xe, gio khoi hanh, dia chi diem don/tra hoac so ghe.',
     })
 
+    if (isTicketCancellationMessage(normalizedMessage)) {
+        blocks.push({
+            title: 'Chinh sach huy ve',
+            content: TICKET_CANCELLATION_POLICY_CONTEXT,
+        })
+    }
+
     if (shouldFetchTripSchedules(normalizedMessage, tripSearch)) {
         blocks.push(
             await safeContext('Lich trinh phu hop', () => getTripScheduleContext(tripSearch))
@@ -1962,9 +1971,9 @@ function buildIntentSummary(message: string) {
         )
     }
 
-    if (containsAny(message, ['huy ve', 'huỷ vé', 'hủy vé', 'cancel'])) {
+    if (isTicketCancellationMessage(message)) {
         intents.push(
-            'Khach co the dang muon huy ve. Khong tu huy ve; can xac nhan ro tren UI/API chinh.'
+            'Khach co the dang muon huy ve. Tro ly AI khong ho tro huy ve truc tiep. Tra loi tu nhien rang khach can lien he ho tro vien cua nha xe/cong ty van hanh ve do de duoc kiem tra va huy giup. Neu noi chinh sach thi neu ro: ve VNPay/the chi huy truoc khoi hanh it nhat 24 gio; ve tien mat khong can du 24 gio; ve khu hoi huy ca chieu di va chieu ve; chuyen dang chay hoac da hoan thanh khong duoc huy.'
         )
     }
 
@@ -2095,6 +2104,10 @@ function shouldFetchTicket(message: string) {
         'chuyen sap di',
         'chuyến sắp đi',
     ])
+}
+
+function isTicketCancellationMessage(message: string) {
+    return containsAny(message, ['huy ve', 'huỷ vé', 'hủy vé', 'cancel'])
 }
 
 function containsAny(value: string, patterns: string[]) {
