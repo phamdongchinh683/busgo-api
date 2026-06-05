@@ -183,7 +183,7 @@ async function handleCustomerBookingFlow(params: {
     if (isResetFlowMessage(normalizedMessage)) {
         return {
             clearSession: true,
-            message: 'Mình đã làm mới luồng đặt vé. Bạn muốn đi từ đâu đến đâu và ngày nào?',
+            message: 'Bạn muốn đi từ đâu đến đâu và ngày nào?',
             state: { stage: 'idle' as const },
         }
     }

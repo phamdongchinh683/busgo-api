@@ -20,6 +20,12 @@ export const ProfileUpdateBody = z.object({
 
 export type ProfileUpdateBody = z.infer<typeof ProfileUpdateBody>
 
+export const ProfileUpdateCustomerBody = z.object({
+    fullName: z.string().min(7),
+})
+
+export type ProfileUpdateCustomerBody = z.infer<typeof ProfileUpdateCustomerBody>
+
 export const ProfileUpdateContactBody = z.discriminatedUnion('field', [
     z.object({
         field: z.literal('email'),
@@ -92,3 +98,10 @@ export const ProfileAccountResponse = z.object({
 })
 
 export type ProfileAccountResponse = z.infer<typeof ProfileAccountResponse>
+
+export const ProfileUpdateCustomerResponse = ProfileAccountResponse.extend({
+    message: z.string(),
+    token: z.string(),
+})
+
+export type ProfileUpdateCustomerResponse = z.infer<typeof ProfileUpdateCustomerResponse>

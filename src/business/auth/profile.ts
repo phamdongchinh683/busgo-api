@@ -7,7 +7,11 @@ import { AuthProfileQuery } from '../../model/query/staff/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { utils } from '../../utils/index.js'
 import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
-import { ProfileUpdateBody, ProfileUpdateContactBody } from '../../model/body/profile/index.js'
+import {
+    ProfileUpdateBody,
+    ProfileUpdateContactBody,
+    ProfileUpdateCustomerBody,
+} from '../../model/body/profile/index.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { jwt } from '../../app/index.js'
@@ -79,6 +83,53 @@ export async function getProfileCustomer(userInfo: UserInfo) {
         user: {
             ...user,
             accountStripeId: accountStripeId,
+        },
+    }
+}
+
+export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileUpdateCustomerBody) {
+    const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
+        fullName: params.fullName,
+        tokenVersion: userInfo.tokenVersion + 1,
+    })
+
+    let accountStripeId = updatedUser.accountStripeId
+    if (!accountStripeId) {
+        const account = await service.stripe.client.createCustomer({
+            email: updatedUser.email,
+            phone: updatedUser.phone ?? '',
+            name: updatedUser.fullName,
+            metadata: {
+                userId: userInfo.id.toString(),
+            },
+        })
+        await dal.auth.user.cmd.updateOne(userInfo.id, {
+            accountStripeId: account.id,
+        })
+        accountStripeId = account.id
+    }
+
+    const payload = {
+        id: updatedUser.id,
+        tokenVersion: updatedUser.tokenVersion,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        fullName: updatedUser.fullName,
+        role: updatedUser.role,
+        status: updatedUser.status,
+        accountStripeId,
+        lastChangeContact: updatedUser.lastChangeContact,
+    }
+
+    return {
+        message: 'Thành công',
+        token: jwt.auth.generateToken(payload),
+        user: {
+            fullName: updatedUser.fullName,
+            email: updatedUser.email,
+            phone: updatedUser.phone,
+            status: updatedUser.status,
+            accountStripeId,
         },
     }
 }
