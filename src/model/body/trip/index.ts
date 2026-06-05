@@ -20,7 +20,7 @@ export const TripItem = z.object({
     id: OperationTripId,
     routeId: OperationRouteId.optional(),
     vehicleId: OrganizationVehicleId.optional(),
-    driverId: AuthUserId.optional(),
+    driverIds: z.array(AuthUserId).nullable().optional(),
     scheduleId: OperationTripScheduleId.optional(),
     departureDate: z.coerce.date().optional(),
     status: OperationTripStatus.optional(),

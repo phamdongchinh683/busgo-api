@@ -1,6 +1,6 @@
 import { db } from '../../../datasource/db.js'
 import { OperationTripId } from '../trip/type.js'
-import { Transaction } from 'kysely'
+import { Transaction, sql } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { OperationRouteTableInsert, OperationRouteTableUpdate } from './table.js'
@@ -23,7 +23,7 @@ export async function getRouterByDriverIdAndTripId(
         .where(eb => {
             const cond = []
             cond.push(eb('t.id', '=', tripId))
-            cond.push(eb('t.driverId', '=', driverId))
+            cond.push(sql<boolean>`t.driver_ids @> ARRAY[${driverId}]::int[]`)
             return eb.and(cond)
         })
         .select(['s.address', 's.city', 'tst.stopOrder'])

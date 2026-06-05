@@ -6,6 +6,7 @@ import { utils } from '../../../utils/index.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { OperationTripTableUpdate } from './table.js'
 import _ from 'lodash'
+import { sql } from 'kysely'
 
 export async function findAllByFilter(filter: TripFilter, scheduleId?: OperationTripScheduleId) {
     const { limit, next, from, to, date, orderBy, status } = filter
@@ -69,7 +70,7 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
         .innerJoin('operation.trip_schedule as ts', 'ts.id', 't.scheduleId')
         .where(eb => {
             const cond = []
-            cond.push(eb('t.driverId', '=', userId))
+            cond.push(sql<boolean>`t.driver_ids @> ARRAY[${userId}]::int[]`)
             if (!date) {
                 cond.push(eb('t.departureDate', '=', now))
             } else {
@@ -122,7 +123,7 @@ export async function updateOneById(
             't.routeId',
             't.vehicleId',
             't.scheduleId',
-            't.driverId',
+            't.driverIds',
             't.departureDate',
             't.status',
         ])

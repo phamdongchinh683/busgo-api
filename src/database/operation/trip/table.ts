@@ -11,7 +11,7 @@ export interface OperationTripTable extends Timestamps {
     routeId: OperationRouteId
     vehicleId: OrganizationVehicleId | null
     scheduleId: OperationTripScheduleId
-    driverId: AuthUserId | null
+    driverIds: AuthUserId[] | null
     departureDate: Date
     status: OperationTripStatus
 }

@@ -131,7 +131,16 @@ export async function updateStatus(
 ) {
     return (trx ?? db)
         .updateTable('operation.trip')
-        .set({ status: params.status, driverId: params.userId })
+        .set({
+            status: params.status,
+            driverIds: sql<AuthUserId[]>`
+                CASE
+                    WHEN driver_ids IS NULL THEN ARRAY[${params.userId}]::int[]
+                    WHEN driver_ids @> ARRAY[${params.userId}]::int[] THEN driver_ids
+                    ELSE array_append(driver_ids, ${params.userId})
+                END
+            `,
+        })
         .where('id', '=', params.id)
         .returningAll()
         .executeTakeFirstOrThrow()

@@ -109,7 +109,7 @@ export async function findPassengersByDriverAndTripId(
         .where(eb => {
             const cond = []
             cond.push(eb('trip.id', '=', tripId))
-            cond.push(eb('trip.driverId', '=', driverId))
+            cond.push(sql<boolean>`trip.driver_ids @> ARRAY[${driverId}]::int[]`)
             cond.push(eb('b.status', 'in', [BookingStatus.enum.paid, BookingStatus.enum.pending]))
             cond.push(
                 eb('t.status', 'in', [
