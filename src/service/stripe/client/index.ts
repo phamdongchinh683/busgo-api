@@ -61,14 +61,7 @@ export async function detachPaymentMethod(params: { paymentMethodId: string }) {
     return stripe.paymentMethods.detach(params.paymentMethodId)
 }
 
-export async function createPaymentIntentWithCommission(params: {
-    amount: number
-    stripeCustomerId: string
-    companyAdminStripeId: string
-    transactionCode: string
-}) {
-    const { amount, stripeCustomerId, companyAdminStripeId, transactionCode } = params
-
+function getStripePaymentAmounts(amount: number) {
     const EXCHANGE_RATE_VND_PER_USD = 26000n
     const COMMISSION_PERCENT = 15n
 
@@ -78,6 +71,45 @@ export async function createPaymentIntentWithCommission(params: {
 
     const applicationFee = Number((BigInt(usdAmount) * COMMISSION_PERCENT + 50n) / 100n)
 
+    return {
+        usdAmount,
+        applicationFee,
+        exchangeRateVndPerUsd: EXCHANGE_RATE_VND_PER_USD,
+        commissionPercent: COMMISSION_PERCENT,
+    }
+}
+
+function getStripePaymentMetadata(params: {
+    amount: number
+    transactionCode: string
+    usdAmount: number
+    exchangeRateVndPerUsd: bigint
+    commissionPercent: bigint
+    applicationFee: number
+}) {
+    return {
+        transactionCode: params.transactionCode,
+        originalVndAmount: String(params.amount),
+        exchangeRateVndPerUsd: String(params.exchangeRateVndPerUsd),
+        usdAmountCents: String(params.usdAmount),
+        commissionPercent: String(params.commissionPercent),
+        applicationFeeCents: String(params.applicationFee),
+    }
+}
+
+type StripePaymentWithCommissionParams = {
+    amount: number
+    stripeCustomerId: string
+    companyAdminStripeId: string
+    transactionCode: string
+}
+
+export async function createPaymentIntentWithCommission(params: StripePaymentWithCommissionParams) {
+    const { amount, stripeCustomerId, companyAdminStripeId, transactionCode } = params
+
+    const { usdAmount, applicationFee, exchangeRateVndPerUsd, commissionPercent } =
+        getStripePaymentAmounts(amount)
+
     return stripe.paymentIntents.create({
         amount: usdAmount,
         currency: 'usd',
@@ -86,14 +118,67 @@ export async function createPaymentIntentWithCommission(params: {
         transfer_data: {
             destination: companyAdminStripeId,
         },
-        metadata: {
+        metadata: getStripePaymentMetadata({
+            amount,
             transactionCode,
-            originalVndAmount: String(amount),
-            exchangeRateVndPerUsd: String(EXCHANGE_RATE_VND_PER_USD),
-            usdAmountCents: String(usdAmount),
-            commissionPercent: String(COMMISSION_PERCENT),
-            applicationFeeCents: String(applicationFee),
+            usdAmount,
+            exchangeRateVndPerUsd,
+            commissionPercent,
+            applicationFee,
+        }),
+    })
+}
+
+export async function createCheckoutSessionWithCommission(
+    params: StripePaymentWithCommissionParams & {
+        successUrl: string
+        cancelUrl: string
+    }
+) {
+    const {
+        amount,
+        stripeCustomerId,
+        companyAdminStripeId,
+        transactionCode,
+        successUrl,
+        cancelUrl,
+    } = params
+    const { usdAmount, applicationFee, exchangeRateVndPerUsd, commissionPercent } =
+        getStripePaymentAmounts(amount)
+    const metadata = getStripePaymentMetadata({
+        amount,
+        transactionCode,
+        usdAmount,
+        exchangeRateVndPerUsd,
+        commissionPercent,
+        applicationFee,
+    })
+
+    return stripe.checkout.sessions.create({
+        mode: 'payment',
+        customer: stripeCustomerId,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        line_items: [
+            {
+                quantity: 1,
+                price_data: {
+                    currency: 'usd',
+                    unit_amount: usdAmount,
+                    product_data: {
+                        name: `BusGo ticket ${transactionCode}`,
+                    },
+                },
+            },
+        ],
+        payment_intent_data: {
+            application_fee_amount: applicationFee,
+            transfer_data: {
+                destination: companyAdminStripeId,
+            },
+            metadata,
         },
+        metadata,
     })
 }
 

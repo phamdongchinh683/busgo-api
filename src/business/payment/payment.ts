@@ -21,11 +21,40 @@ import type { StripeStatusResponse } from '../../service/stripe/type.js'
 import { stripeCacheKey, stripeCachePayload, type StripeCacheOwner } from './stripe-cache.js'
 
 const vnpayClientReturnUrl = process.env.VNPAY_CLIENT_RETURN_URL ?? ''
+const stripePaymentClientReturnUrl =
+    process.env.STRIPE_PAYMENT_CLIENT_RETURN_URL ??
+    process.env.STRIPE_CLIENT_RETURN_URL ??
+    process.env.SYSTEM_DOMAIN ??
+    ''
 const STRIPE_ACCOUNT_STATUS_CACHE_PREFIX = 'stripe:account-status'
 const STRIPE_ACCOUNT_STATUS_CACHE_TTL_SECONDS = 60
 
 export function stripeAccountStatusCacheKey(userInfo: StripeCacheOwner) {
     return stripeCacheKey(STRIPE_ACCOUNT_STATUS_CACHE_PREFIX, userInfo)
+}
+
+function buildStripePaymentReturnUrl(status: 'success' | 'cancelled', transactionCode: string) {
+    if (!stripePaymentClientReturnUrl) {
+        throw new HttpErr.BadRequest(
+            'Chưa cấu hình URL trả về cho thanh toán Stripe.',
+            'STRIPE_PAYMENT_RETURN_URL_NOT_CONFIGURED'
+        )
+    }
+
+    let redirectUrl: URL
+    try {
+        redirectUrl = new URL(stripePaymentClientReturnUrl)
+    } catch {
+        throw new HttpErr.BadRequest(
+            'URL trả về cho thanh toán Stripe không hợp lệ.',
+            'STRIPE_PAYMENT_RETURN_URL_INVALID'
+        )
+    }
+
+    redirectUrl.searchParams.set('status', status)
+    redirectUrl.searchParams.set('provider', 'stripe')
+    redirectUrl.searchParams.set('transactionCode', transactionCode)
+    return redirectUrl.toString()
 }
 
 async function preparePayment(
@@ -291,15 +320,36 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
         )
     }
 
-    const paymentIntent = await service.stripe.client.createPaymentIntentWithCommission({
-        amount: payment.amount,
-        stripeCustomerId: user.accountStripeId,
-        companyAdminStripeId: companyAdmin.accountStripeId,
-        transactionCode: payment.transactionCode,
-    })
+    const successUrl = buildStripePaymentReturnUrl('success', payment.transactionCode)
+    const cancelUrl = buildStripePaymentReturnUrl('cancelled', payment.transactionCode)
+
+    const [paymentIntent, checkoutSession] = await Promise.all([
+        service.stripe.client.createPaymentIntentWithCommission({
+            amount: payment.amount,
+            stripeCustomerId: user.accountStripeId,
+            companyAdminStripeId: companyAdmin.accountStripeId,
+            transactionCode: payment.transactionCode,
+        }),
+        service.stripe.client.createCheckoutSessionWithCommission({
+            amount: payment.amount,
+            stripeCustomerId: user.accountStripeId,
+            companyAdminStripeId: companyAdmin.accountStripeId,
+            transactionCode: payment.transactionCode,
+            successUrl,
+            cancelUrl,
+        }),
+    ])
+
+    if (!checkoutSession.url) {
+        throw new HttpErr.BadRequest(
+            'Không tạo được URL thanh toán Stripe.',
+            'STRIPE_PAYMENT_URL_NOT_CREATED'
+        )
+    }
 
     return {
         message: 'Thành công',
+        paymentUrl: checkoutSession.url,
         clientSecret: paymentIntent.client_secret,
         paymentIntentId: paymentIntent.id,
         payment: payment,
