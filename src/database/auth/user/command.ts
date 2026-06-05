@@ -136,7 +136,7 @@ export async function createCompanyAccount(
 ) {
     const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
 
-    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
+    await db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
             const newUser = await dal.auth.user.cmd.insertOne(
                 {
@@ -206,7 +206,7 @@ export async function signUpCompanyAdminWithCompany(
 ) {
     const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
 
-    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
+    await db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
             const newUser = await dal.auth.user.cmd.insertOne(
                 {

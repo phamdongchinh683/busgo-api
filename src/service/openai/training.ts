@@ -1,4 +1,3 @@
-import { Buffer } from 'buffer'
 import { mkdir, readFile, rename, stat, writeFile } from 'fs/promises'
 import { basename, dirname, resolve } from 'path'
 import { HttpErr } from '../../app/index.js'

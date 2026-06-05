@@ -107,10 +107,9 @@ Done! The API is now running at **http://localhost:3000**
 
 - **Stripe**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PAYMENT_CLIENT_RETURN_URL`, ...
 - **VNPay**: `VNPAY_TMN_CODE`, `VNPAY_SECRET`, ...
-- **Cloudinary** (file uploads): `CLOUDINARY_*`
 - **Firebase** (push notifications): `FIREBASE_*`
 - **Email/SMS**: `RESEND_API_KEY`, `INFOBIP_API_KEY`
-- **Social Login**: `GOOGLE_CLIENT_ID`, `FACEBOOK_APP_ID`, ...
+- **Social Login**: `GOOGLE_CLIENT_ID`, `FACEBOOK_APP_ID`, `FACEBOOK_APP_SECRET`
 
 All variables are loaded via `dotenv` from `.env` at the project root.
 
@@ -159,7 +158,6 @@ src/
 │   ├── payment/          # Payment method and VNPay return routes
 │   ├── stripe/           # Stripe Connect callback/status and webhook routes
 │   ├── chat/             # Chat boxes, messages, unread counters
-│   ├── file/             # Upload presign endpoints
 │   ├── public/           # Public company and promotion data
 │   └── job/              # Protected cron endpoints
 │
@@ -195,7 +193,6 @@ src/
 │   ├── stripe/           # Stripe customer, Connect, webhook helpers
 │   ├── vnpay/            # VNPay init/verify payment helpers
 │   ├── firebase/         # Push notifications
-│   ├── cloudinary/       # Upload presign helpers
 │   ├── email/            # Email sender and templates
 │   ├── infobip/          # SMS sender
 │   ├── google/           # Google auth verification

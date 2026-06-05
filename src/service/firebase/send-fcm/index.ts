@@ -4,7 +4,7 @@ export async function sendFcm(params: {
     fcmTokens: string[]
     title: string
     body: string
-    data?: Record<string, string>
+    data?: Record<string, string> | null
 }) {
     const accessToken = await getFirebaseAccessToken()
     const projectId = process.env.FIREBASE_PROJECT_ID ?? ''
@@ -25,7 +25,7 @@ export async function sendFcm(params: {
                             title: params.title,
                             body: params.body,
                         },
-                        data: params.data,
+                        data: params.data ?? undefined,
                     },
                 }),
             })

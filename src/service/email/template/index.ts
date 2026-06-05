@@ -52,10 +52,7 @@ export function otpTemplate(params: { otp: string }) {
     <div style="padding:18px 28px;background:#ffffff;color:#17311d;border-bottom:1px solid #ebf1ec;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="width:116px;vertical-align:middle;">
-            <img src="cid:bus-go-logo" alt="BusGo" style="display:block;width:108px;max-width:108px;height:auto;border:0;background:transparent;" />
-          </td>
-          <td style="vertical-align:middle;text-align:left;padding-left:8px;">
+          <td style="vertical-align:middle;text-align:left;">
             <div style="font-size:18px;font-weight:800;letter-spacing:0.2px;color:#1f3b27;">Hệ thống BusGo</div>
             <div style="font-size:12px;color:#5a7460;margin-top:4px;">Bảo mật tài khoản • Xác thực OTP</div>
           </td>
@@ -93,10 +90,7 @@ export function departureReminderTemplate() {
     <div style="padding:18px 28px;background:#ffffff;color:#17311d;border-bottom:1px solid #ebf1ec;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;">
         <tr>
-          <td style="width:116px;vertical-align:middle;">
-            <img src="cid:bus-go-logo" alt="BusGo" style="display:block;width:108px;max-width:108px;height:auto;border:0;background:transparent;" />
-          </td>
-          <td style="vertical-align:middle;text-align:left;padding-left:8px;">
+          <td style="vertical-align:middle;text-align:left;">
             <div style="font-size:18px;font-weight:800;letter-spacing:0.2px;color:#1f3b27;">BusGo</div>
             <div style="font-size:12px;color:#5a7460;margin-top:4px;">Nhắc lịch trình • Thông báo khởi hành</div>
           </td>

@@ -27,7 +27,7 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
                     .expression(
                         sql`LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id)`
                     )
-                    .doUpdateSet(eb => ({
+                    .doUpdateSet({
                         lastMessage: body.message,
                         lastMessageSenderId: createdBy,
                         unreadReceiverCount: sql`
@@ -58,7 +58,7 @@ export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUser
                             ELSE chat.box.receiver_message_count
                         END
                     `,
-                    }))
+                    })
             )
             .returning(['id', 'senderId', 'receiverId'])
             .executeTakeFirstOrThrow()

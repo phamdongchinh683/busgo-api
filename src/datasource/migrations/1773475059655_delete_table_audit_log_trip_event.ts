@@ -8,6 +8,6 @@ export async function up(db: Kysely<any>): Promise<void> {
     `.execute(db)
 }
 
-export async function down(db: Kysely<any>): Promise<void> {
+export async function down(_db: Kysely<any>): Promise<void> {
     // optional: leave empty or recreate tables if you need rollback
 }

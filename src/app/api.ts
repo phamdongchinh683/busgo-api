@@ -233,7 +233,7 @@ async function registerSwagger() {
         transform: jsonSchemaTransform,
     })
 
-    api.get('/swagger/json', async (_request, reply) => {
+    api.get('/swagger/json', async (_request, _reply) => {
         return api.swagger()
     })
 }

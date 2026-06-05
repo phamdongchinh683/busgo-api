@@ -475,10 +475,6 @@ PUT /operator-admin/me
 - Update partial BusCompanyBody cua cong ty minh.
 - Clear company/trip schedule cache.
 
-GET /file/upload/admin-company/presigned
-- Can company_admin.
-- Tao Cloudinary presigned upload folder "company" voi id = companyId.
-
 
 4.3 Staff management
 --------------------
@@ -1309,25 +1305,8 @@ POST /chat/ai
 - Goi service.openai.chat va tra message.
 
 
-11. Upload, public, Stripe system, cron
----------------------------------------
-
-GET /file/upload/auth/presigned
-- Can authenticated user.
-- Query:
-  {
-    folder,
-    id
-  }
-- Tao Cloudinary presigned upload.
-
-GET /file/upload/super-admin/presigned
-- Can super_admin.
-- Query giong auth presigned.
-
-GET /file/upload/admin-company/presigned
-- Can company_admin.
-- Tao presigned upload folder company, id = companyId.
+11. Public, Stripe system, cron
+-------------------------------
 
 GET /public/company
 - Public list bus company.
