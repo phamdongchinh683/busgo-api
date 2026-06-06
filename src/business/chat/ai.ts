@@ -9,6 +9,7 @@ import { OrganizationSeatId } from '../../database/organization/seat/type.js'
 import type {
     AiChatScheduleOption,
     AiChatSeatOption,
+    AiChatResponse,
     AiChatState,
     AiChatStopOption,
 } from '../../model/body/chat/index.js'
@@ -63,9 +64,12 @@ type NumericEntities = {
     tripId?: number
 }
 
+type PreferredTime = 'afternoon' | 'evening' | 'morning' | 'night'
+
 type TripSearchParams = {
     date?: Date
     from?: string
+    preferredTime?: PreferredTime
     to?: string
 }
 
@@ -103,6 +107,172 @@ export async function reply(params: { userInfo: UserInfo; message: string; state
         ...response,
         ...(state ? { state } : {}),
     }
+}
+
+export async function searchSchedulesForAgent(params: {
+    args: Record<string, unknown>
+    message: string
+    state?: AiChatState
+}): Promise<AiChatResponse> {
+    const state = params.state ?? { stage: 'idle' as const }
+    const messageSearch = extractTripSearchParams(params.message)
+    const search: TripSearchParams = {
+        from: getAgentString(params.args, 'from') ?? messageSearch.from ?? state.from,
+        to: getAgentString(params.args, 'to') ?? messageSearch.to ?? state.to,
+        date:
+            getAgentDate(params.args, 'departureDate') ?? messageSearch.date ?? state.departureDate,
+        preferredTime:
+            getAgentPreferredTime(params.args, 'preferredTime') ??
+            extractPreferredTime(params.message),
+    }
+
+    return safeBookingFlow(state, () => listSchedules(search))
+}
+
+export async function listPickupStopsForAgent(params: {
+    message: string
+    state?: AiChatState
+}): Promise<AiChatResponse> {
+    const state = params.state ?? { stage: 'idle' as const }
+
+    if (state.scheduleOptions?.length) {
+        const selectedIndex = matchScheduleOption(params.message, state.scheduleOptions)
+        if (selectedIndex === undefined) {
+            return {
+                message: `Bạn chọn chuyến nào?\n${formatScheduleOptions(state.scheduleOptions)}`,
+                state,
+            }
+        }
+
+        return safeBookingFlow(state, () =>
+            selectSchedule({
+                message: params.message,
+                selectedIndex,
+                state,
+            })
+        )
+    }
+
+    if (state.selectedSchedule || state.scheduleId) {
+        return safeBookingFlow(state, () => listPickupStops(state))
+    }
+
+    return {
+        message: 'Bạn chọn chuyến trước nhé.',
+        state,
+    }
+}
+
+export async function listDropoffStopsForAgent(params: {
+    message: string
+    state?: AiChatState
+}): Promise<AiChatResponse> {
+    const state = params.state ?? { stage: 'idle' as const }
+
+    if (state.pickupOptions?.length) {
+        const selectedIndex = matchStopOption(params.message, state.pickupOptions)
+        if (selectedIndex === undefined) {
+            return {
+                message: `Bạn chọn điểm đón nào?\n${formatStopOptions(state.pickupOptions)}`,
+                state,
+            }
+        }
+
+        return safeBookingFlow(state, () => selectPickup({ selectedIndex, state }))
+    }
+
+    if (state.selectedPickup || hasDropoffLookupState(state)) {
+        return safeBookingFlow(state, () => listDropoffStops(state))
+    }
+
+    return {
+        message: 'Bạn chọn điểm đón trước nhé.',
+        state,
+    }
+}
+
+export async function checkAvailableSeatsForAgent(params: {
+    message: string
+    state?: AiChatState
+}): Promise<AiChatResponse> {
+    const state = params.state ?? { stage: 'idle' as const }
+
+    if (state.dropoffOptions?.length) {
+        const selectedIndex = matchStopOption(params.message, state.dropoffOptions)
+        if (selectedIndex === undefined) {
+            return {
+                message: `Bạn chọn điểm trả nào?\n${formatStopOptions(state.dropoffOptions)}`,
+                state,
+            }
+        }
+
+        return safeBookingFlow(state, () => selectDropoff({ selectedIndex, state }))
+    }
+
+    if (state.selectedDropoff || hasSeatLookupState(state)) {
+        return safeBookingFlow(state, () => listSeats(state))
+    }
+
+    return {
+        message: 'Bạn chọn điểm trả trước nhé.',
+        state,
+    }
+}
+
+export async function createHoldBookingForAgent(params: {
+    message: string
+    state?: AiChatState
+    userInfo: UserInfo
+}): Promise<AiChatResponse> {
+    const state = params.state ?? { stage: 'idle' as const }
+
+    if (state.stage === 'booking_created' && state.bookingId) {
+        return {
+            message:
+                'Đã giữ chỗ thành công cho bạn. Bạn vào Profile > Vé > Đã giữ chỗ để thanh toán trước khi vé hết hạn nhé.',
+            state,
+        }
+    }
+
+    let selectedSeat = state.selectedSeat
+    if (!selectedSeat && state.seatOptions?.length) {
+        const selectedIndex = matchSeatOption(params.message, state.seatOptions)
+        if (selectedIndex === undefined) {
+            return {
+                message: `Bạn chọn ghế nào?\n${formatSeatOptions(state.seatOptions)}`,
+                state,
+            }
+        }
+        selectedSeat = state.seatOptions[selectedIndex]
+    }
+
+    if (!selectedSeat) {
+        return {
+            message: 'Bạn chọn ghế trước nhé.',
+            state,
+        }
+    }
+
+    const result = await safeBookingFlow(state, () =>
+        createBookingFromState({
+            state: {
+                ...state,
+                selectedSeat,
+                orderTotal: state.selectedDropoff?.price ?? state.orderTotal,
+            },
+            userInfo: params.userInfo,
+        })
+    )
+
+    if (result.state.stage === 'booking_created' && result.state.bookingId) {
+        return {
+            message:
+                'Đã giữ chỗ thành công cho bạn. Bạn vào Profile > Vé > Đã giữ chỗ để thanh toán trước khi vé hết hạn nhé.',
+            state: result.state,
+        }
+    }
+
+    return result
 }
 
 function getBookingFlowSession(userId: number) {
@@ -616,17 +786,24 @@ async function listSchedules(search: TripSearchParams) {
         ...(resolvedSearch.date ? { date: resolvedSearch.date } : {}),
     })
 
-    const scheduleOptions = result.trip.slice(0, MAX_FLOW_OPTIONS).map(item => ({
-        scheduleId: item.id,
-        companyId: item.companyId,
-        name: item.name,
-        fromLocation: item.fromLocation,
-        toLocation: item.toLocation,
-        departureTime: item.departureTime,
-        startDate: String(item.startDate),
-        endDate: String(item.endDate),
-        totalStars: item.totalStars ?? null,
-    }))
+    const scheduleOptions = result.trip
+        .filter(
+            item =>
+                !search.preferredTime ||
+                isTimeInPreferredRange(item.departureTime, search.preferredTime)
+        )
+        .slice(0, MAX_FLOW_OPTIONS)
+        .map(item => ({
+            scheduleId: item.id,
+            companyId: item.companyId,
+            name: item.name,
+            fromLocation: item.fromLocation,
+            toLocation: item.toLocation,
+            departureTime: item.departureTime,
+            startDate: String(item.startDate),
+            endDate: String(item.endDate),
+            totalStars: item.totalStars ?? null,
+        }))
 
     const state: AiChatState = {
         stage: 'schedules_listed',
@@ -1128,12 +1305,16 @@ async function createBookingFromState(params: {
         params.userInfo.id
     )
 
+    if (!result?.id) {
+        throw new Error('Mình chưa thể giữ chỗ lúc này, bạn thử lại giúp mình.')
+    }
+
     const state: AiChatState = {
         ...params.state,
         stage: 'booking_created',
         selectedSeat,
-        bookingId: result?.id,
-        expiredAt: result?.expiredAt ?? undefined,
+        bookingId: result.id,
+        expiredAt: result.expiredAt ?? undefined,
         seatOptions: undefined,
     }
 
@@ -2432,6 +2613,7 @@ async function resolveTripSearchParams(search: TripSearchParams): Promise<TripSe
         return {
             date: search.date,
             from: exactRoute.fromLocation,
+            preferredTime: search.preferredTime,
             to: exactRoute.toLocation,
         }
     }
@@ -2444,6 +2626,7 @@ async function resolveTripSearchParams(search: TripSearchParams): Promise<TripSe
                   routes.flatMap(item => [item.fromLocation, item.toLocation])
               )
             : undefined,
+        preferredTime: search.preferredTime,
         to: search.to
             ? resolveLocationName(
                   search.to,
@@ -2451,6 +2634,66 @@ async function resolveTripSearchParams(search: TripSearchParams): Promise<TripSe
               )
             : undefined,
     }
+}
+
+function getAgentString(args: Record<string, unknown>, key: string) {
+    const value = args[key]
+    return typeof value === 'string' && value.trim() ? value.trim() : undefined
+}
+
+function getAgentDate(args: Record<string, unknown>, key: string) {
+    const value = args[key]
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value
+    if (typeof value !== 'string') return undefined
+
+    const isoDate = value.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (isoDate) {
+        return utils.time.getAppCalendarDate({
+            year: Number(isoDate[1]),
+            month: Number(isoDate[2]),
+            day: Number(isoDate[3]),
+        })
+    }
+
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? undefined : parsed
+}
+
+function getAgentPreferredTime(
+    args: Record<string, unknown>,
+    key: string
+): PreferredTime | undefined {
+    const value = args[key]
+    return value === 'morning' || value === 'afternoon' || value === 'evening' || value === 'night'
+        ? value
+        : undefined
+}
+
+function extractPreferredTime(message: string): PreferredTime | undefined {
+    const normalizedMessage = normalizeSearch(message)
+
+    if (containsAny(normalizedMessage, ['sang', 'sáng', 'buoi sang', 'buổi sáng', 'morning'])) {
+        return 'morning'
+    }
+    if (
+        containsAny(normalizedMessage, ['chieu', 'chiều', 'buoi chieu', 'buổi chiều', 'afternoon'])
+    ) {
+        return 'afternoon'
+    }
+    if (containsAny(normalizedMessage, ['toi', 'tối', 'buoi toi', 'buổi tối', 'evening'])) {
+        return 'evening'
+    }
+    if (containsAny(normalizedMessage, ['dem', 'đêm', 'khuya', 'night'])) {
+        return 'night'
+    }
+}
+
+function isTimeInPreferredRange(departureTime: string, preferredTime: PreferredTime) {
+    const hour = Number(formatTime(departureTime).slice(0, 2))
+    if (preferredTime === 'morning') return hour >= 5 && hour < 12
+    if (preferredTime === 'afternoon') return hour >= 12 && hour < 18
+    if (preferredTime === 'evening') return hour >= 18 && hour < 22
+    return hour >= 22 || hour < 5
 }
 
 async function getRouteOptions() {
