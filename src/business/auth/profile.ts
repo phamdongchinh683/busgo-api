@@ -145,6 +145,8 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
         throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
     }
 
+    requireEmailChangeAllowed(params.field, user)
+
     if (user.lastChangeContact) {
         const changedAgoMs =
             utils.time.getNow().valueOf() - new Date(user.lastChangeContact).getTime()
@@ -173,6 +175,15 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         )
     }
 
+    if (params.field === 'email') {
+        const user = await dal.auth.user.query.getOne({ id: userInfo.id })
+        if (!user) {
+            throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
+        }
+
+        requireEmailChangeAllowed(params.field, user)
+    }
+
     await verifyOtp(params)
 
     const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
@@ -199,5 +210,24 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         message: 'Thành công',
         token: jwt.auth.generateToken(payload),
         user: payload,
+    }
+}
+
+function requireEmailChangeAllowed(
+    field: ProfileUpdateContactBody['field'],
+    user: { facebookId: null | string; googleId: null | string }
+): void {
+    if (field !== 'email') return
+
+    const providers = [user.googleId ? 'google' : null, user.facebookId ? 'facebook' : null].filter(
+        (provider): provider is 'facebook' | 'google' => provider !== null
+    )
+
+    if (providers.length) {
+        throw new HttpErr.UnprocessableEntity(
+            'Không thể thay đổi email của tài khoản đăng nhập bằng Google hoặc Facebook.',
+            'SOCIAL_ACCOUNT_EMAIL_CHANGE_NOT_ALLOWED',
+            { providers }
+        )
     }
 }
