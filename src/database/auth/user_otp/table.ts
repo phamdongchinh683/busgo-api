@@ -6,6 +6,7 @@ export interface AuthUserOtpTable {
     email: string | null
     phone: string | null
     otp: string
+    verified: ColumnType<boolean, boolean | undefined, boolean>
     expiresAt: Date | null
     createdAt: ColumnType<Date, never, never>
 }

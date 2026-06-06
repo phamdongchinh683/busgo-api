@@ -36,14 +36,6 @@ export async function listCompanyAdmins(query: CompanyAdminQuery) {
     }
 }
 
-export async function createCompanyAdmin(body: CompanyAdminCreateBody) {
-    return dal.auth.user.cmd.createCompanyAccount(
-        body,
-        AuthStaffProfileRole.enum.company_admin,
-        body.companyId
-    )
-}
-
 export async function updateOne(id: AuthUserId, body: UserUpdateBody) {
     const user = await dal.auth.user.cmd.updateOne(id, body)
     await utils.cache.delCacheByPattern('driver:list:*')

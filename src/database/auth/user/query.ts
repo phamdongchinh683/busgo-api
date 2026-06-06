@@ -159,6 +159,7 @@ export function getOne(params: {
             'u.tokenVersion',
             'u.accountStripeId',
             'u.isEmailVerified',
+            'u.isPhoneVerified',
             'u.lastChangeContact',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
@@ -273,4 +274,30 @@ export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {
             return eb.and(cond)
         })
         .executeTakeFirstOrThrow()
+}
+
+export function findOneByEmailOrPhone(params: { email?: string; phone?: string }) {
+    const { email, phone } = params
+
+    return db
+        .selectFrom('auth.user as u')
+        .select(['u.id'])
+        .where(eb => {
+            const conditions = []
+
+            if (email) {
+                conditions.push(
+                    eb.and([eb('u.email', '=', email), eb('u.isEmailVerified', '=', true)])
+                )
+            }
+
+            if (phone) {
+                conditions.push(
+                    eb.and([eb('u.phone', '=', phone), eb('u.isPhoneVerified', '=', true)])
+                )
+            }
+
+            return eb.or(conditions)
+        })
+        .executeTakeFirst()
 }

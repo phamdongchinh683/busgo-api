@@ -15,6 +15,7 @@ import {
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { jwt } from '../../app/index.js'
+import { verifyOtp } from './otp.js'
 
 export async function getProfile(userInfo: UserInfo) {
     return {
@@ -134,17 +135,6 @@ export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileU
     }
 }
 
-async function verifyOtp(params: { email?: string; phone?: string; otp?: string }) {
-    const { email, phone, otp } = params
-
-    if (otp === '555555') return
-
-    const userOtp = await dal.auth.userOtp.cmd.getOne({ otp, email, phone })
-    if (!userOtp || (userOtp.expiresAt && userOtp.expiresAt < utils.time.getNow().toDate())) {
-        throw new HttpErr.Unauthorized('Mã OTP không hợp lệ hoặc đã hết hạn.')
-    }
-}
-
 export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateContactBody) {
     const user = await dal.auth.user.query.getOne({
         id: userInfo.id,
@@ -166,10 +156,7 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
         }
     }
 
-    await verifyOtp({
-        [params.field]: params.value,
-        otp: params.otp,
-    })
+    await verifyOtp(params)
 
     return {
         message: 'Thành công',
@@ -186,10 +173,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         )
     }
 
-    await verifyOtp({
-        [params.field]: params.value,
-        otp: params.otp,
-    })
+    await verifyOtp(params)
 
     const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
         [params.field]: params.value,

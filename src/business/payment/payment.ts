@@ -315,7 +315,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
 
     if (!companyAdmin?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
-            'Công ty chưa liên kết tài khoản Stripe.',
+            'Hiện tại công ty chưa cho phép thanh toán qua thẻ.',
             'COMPANY_STRIPE_NOT_LINKED'
         )
     }

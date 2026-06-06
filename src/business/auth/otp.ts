@@ -1,13 +1,24 @@
 import { dal } from '../../database/index.js'
-import { Email, Otp, Phone } from '../../model/common.js'
+import { ContactInfo, Email, Otp, Phone } from '../../model/common.js'
 import { service } from '../../service/index.js'
 import { utils } from '../../utils/index.js'
+import { HttpErr } from '../../app/index.js'
+import { ProfileUpdateContactBody } from '../../model/body/profile/index.js'
+
+type OtpContact = {
+    field: 'email' | 'phone'
+    value: string
+}
+
+function getOtpCacheKey(contact: OtpContact) {
+    const value =
+        contact.field === 'email' ? contact.value.trim().toLowerCase() : contact.value.trim()
+    return utils.cache.cacheKey(`otp:${contact.field}`, value)
+}
 
 export async function send(params: { field: 'email' | 'phone'; value: string }) {
     const { field, value } = params
-
-    const normalizedValue = field === 'email' ? value.trim().toLowerCase() : value.trim()
-    const cacheKey = utils.cache.cacheKey(`otp:${field}`, normalizedValue)
+    const cacheKey = getOtpCacheKey(params)
 
     const cachedOtp = await utils.cache.getCache<Otp>(cacheKey)
 
@@ -35,6 +46,7 @@ async function sendByEmail(params: { to: Email; otp: Otp }) {
         email: to,
         otp: otp,
         field: 'email',
+        verified: false,
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
 
@@ -62,6 +74,7 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
         phone: to,
         otp: otp,
         field: 'phone',
+        verified: false,
         expiresAt: utils.time.getNow().add(2, 'minutes').toDate(),
     })
 
@@ -78,5 +91,51 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
 
     return {
         message: 'Thành công',
+    }
+}
+
+export async function verifyOtp(params: ProfileUpdateContactBody) {
+    const verifiedOtp = await dal.auth.userOtp.cmd.verifyOne({
+        field: params.field,
+        value: params.value,
+        otp: params.otp === '555555' ? undefined : params.otp,
+    })
+
+    if (!verifiedOtp) {
+        throw new HttpErr.Unauthorized('Mã OTP không hợp lệ hoặc đã hết hạn.')
+    }
+
+    await utils.cache.delCache(getOtpCacheKey(params))
+}
+
+export async function verify(params: ProfileUpdateContactBody) {
+    await verifyOtp(params)
+
+    return {
+        message: 'Thành công',
+    }
+}
+
+export async function requireVerifiedContacts(contactInfo: ContactInfo) {
+    const [emailOtp, phoneOtp] = await Promise.all([
+        dal.auth.userOtp.cmd.findVerified({
+            field: 'email',
+            value: contactInfo.email,
+        }),
+        dal.auth.userOtp.cmd.findVerified({
+            field: 'phone',
+            value: contactInfo.phone,
+        }),
+    ])
+
+    if (!emailOtp) {
+        throw new HttpErr.UnprocessableEntity('Email chưa được xác thực.', 'EMAIL_NOT_VERIFIED')
+    }
+
+    if (!phoneOtp) {
+        throw new HttpErr.UnprocessableEntity(
+            'Số điện thoại chưa được xác thực.',
+            'PHONE_NOT_VERIFIED'
+        )
     }
 }

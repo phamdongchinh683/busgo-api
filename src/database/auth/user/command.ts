@@ -60,6 +60,8 @@ export async function signUpCompanyAdmin(
                     password: params.password,
                     phone,
                     email,
+                    isEmailVerified: true,
+                    isPhoneVerified: true,
                     status: AuthUserStatus.enum.inactive,
                     role: AuthUserRole.enum.operator,
                 },
@@ -129,76 +131,6 @@ export async function signUpCompanyAdmin(
     }
 }
 
-export async function createCompanyAccount(
-    params: AuthCompanyAdminSignUpBody,
-    staffRole: AuthStaffProfileRole,
-    companyId: OrganizationBusCompanyId
-) {
-    const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
-
-    const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
-        try {
-            const newUser = await dal.auth.user.cmd.insertOne(
-                {
-                    fullName: params.fullName,
-                    password: utils.password.hashPassword(params.password),
-                    phone: phone,
-                    email: email,
-                    status: AuthUserStatus.enum.active,
-                    role: AuthUserRole.enum.operator,
-                },
-                trx
-            )
-            await dal.auth.staffProfile.cmd.upsertOne(
-                {
-                    userId: newUser.id,
-                    role: staffRole,
-                    companyId,
-                    status: AuthUserStatus.enum.active,
-                    staffCode: utils.random.generateRandomNumber(6).toString(),
-                    position: '',
-                    department: '',
-                    identityNumber: '',
-                    hireDate: utils.time.getNow().toDate(),
-                },
-                trx
-            )
-
-            await dal.auth.notification.cmd.insertOne(
-                {
-                    userId: newUser.id,
-                    title: 'Chào mừng bạn đến với ứng dụng',
-                    body: 'Tài khoản của bạn đã được tạo bởi quản trị viên cấp cao',
-                    isRead: false,
-                },
-                trx
-            )
-
-            return newUser
-        } catch (error) {
-            if (error instanceof DatabaseError && error.code === '23505') {
-                if (error.constraint === 'user_email_key') {
-                    throw new HttpErr.UnprocessableEntity(
-                        `Email ${email} đã được đăng ký.`,
-                        'EMAIL_ALREADY_EXISTS'
-                    )
-                }
-                if (error.constraint === 'user_phone_key') {
-                    throw new HttpErr.UnprocessableEntity(
-                        `Số điện thoại ${phone} đã được đăng ký.`,
-                        'PHONE_ALREADY_EXISTS'
-                    )
-                }
-            }
-            throw error
-        }
-    })
-
-    return {
-        message: 'Thành công',
-    }
-}
-
 export async function signUpCompanyAdminWithCompany(
     params: AuthCompanyAdminSignUpBody,
     staffRole: AuthStaffProfileRole,
@@ -214,6 +146,8 @@ export async function signUpCompanyAdminWithCompany(
                     password: utils.password.hashPassword(params.password),
                     phone: phone,
                     email: email,
+                    isEmailVerified: true,
+                    isPhoneVerified: true,
                     status: AuthUserStatus.enum.inactive,
                     role: AuthUserRole.enum.operator,
                 },
@@ -226,8 +160,8 @@ export async function signUpCompanyAdminWithCompany(
                     companyId,
                     status: AuthUserStatus.enum.inactive,
                     staffCode: utils.random.generateRandomNumber(6).toString(),
-                    position: '',
-                    department: '',
+                    position: 'Giám đốc',
+                    department: 'Điều Hành',
                     identityNumber: '',
                     hireDate: utils.time.getNow().toDate(),
                 },
