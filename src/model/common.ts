@@ -35,6 +35,8 @@ export const UserInfo = z.object({
     phone: Phone.nullable(),
     role: AuthUserRole,
     fullName: z.string(),
+    facebookId: z.string().nullable().optional(),
+    firstName: z.string().nullable().optional(),
     tokenVersion: z.number().int().nonnegative(),
     staffProfileRole: AuthStaffProfileRole.nullable().optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
