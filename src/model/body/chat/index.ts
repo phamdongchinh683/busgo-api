@@ -28,13 +28,6 @@ export const ChatMessageBody = z.object({
 
 export type ChatMessageBody = z.infer<typeof ChatMessageBody>
 
-export const AiChatMessage = z.object({
-    role: z.enum(['system', 'user', 'assistant']),
-    content: z.string().trim().min(1),
-})
-
-export type AiChatMessage = z.infer<typeof AiChatMessage>
-
 export const AiChatBookingStage = z.enum([
     'idle',
     'schedules_listed',

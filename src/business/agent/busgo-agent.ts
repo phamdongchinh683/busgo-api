@@ -5,7 +5,7 @@ import { utils } from '../../utils/index.js'
 import * as coupon from '../booking/coupon.js'
 import * as promotionNew from '../booking/promotion-new.js'
 import * as ticket from '../booking/ticket.js'
-import * as aiChat from '../chat/ai.js'
+import * as bookingFlow from './booking-flow.js'
 
 export type BusGoAgentAction =
     | 'ASK_USER'
@@ -39,7 +39,9 @@ export async function reply(params: {
     state?: AiChatState
 }): Promise<AiChatResponse> {
     const userId = Number(params.userInfo.id)
-    const state = params.state ?? getAgentSession(userId) ?? { stage: 'idle' as const }
+    const state = normalizeAgentState(
+        getAgentSession(userId) ?? params.state ?? { stage: 'idle' as const }
+    )
 
     if (isExpiredHold(state)) {
         agentSessions.delete(userId)
@@ -49,10 +51,38 @@ export async function reply(params: {
         }
     }
 
+    if (isResetRequest(params.message)) {
+        agentSessions.delete(userId)
+        return {
+            message: 'Bạn muốn đi từ đâu đến đâu và ngày nào?',
+            state: { stage: 'idle' },
+        }
+    }
+
+    if (isRoundTripRequest(params.message)) {
+        agentSessions.delete(userId)
+        return {
+            message:
+                'Hiện tại mình chỉ hỗ trợ giữ chỗ vé một chiều trong chat. Bạn vui lòng đặt vé khứ hồi bằng luồng đặt vé thông thường nhé.',
+            state: { stage: 'idle' },
+        }
+    }
+
     if (isPaymentRequest(params.message)) {
         return saveResponse(userId, {
             message: PAYMENT_GUIDANCE,
             state,
+        })
+    }
+
+    const deterministicAction = getDeterministicAction(params.message, state)
+    if (deterministicAction) {
+        return executeAndSave({
+            action: deterministicAction,
+            message: params.message,
+            state,
+            userId,
+            userInfo: params.userInfo,
         })
     }
 
@@ -70,18 +100,42 @@ export async function reply(params: {
         })
     }
 
+    return executeAndSave({
+        action: decision.action,
+        args: decision.args,
+        decisionReply: decision.reply,
+        message: params.message,
+        state,
+        userId,
+        userInfo: params.userInfo,
+    })
+}
+
+async function executeAndSave(params: {
+    action: BusGoAgentAction
+    args?: Record<string, unknown>
+    decisionReply?: string | null
+    message: string
+    state: AiChatState
+    userId: number
+    userInfo: UserInfo
+}): Promise<AiChatResponse> {
     try {
         const response = await executeDecision({
-            decision,
+            decision: {
+                action: params.action,
+                args: params.args ?? {},
+                reply: params.decisionReply,
+            },
             message: params.message,
-            state,
+            state: params.state,
             userInfo: params.userInfo,
         })
-        return saveResponse(userId, response)
+        return saveResponse(params.userId, response)
     } catch {
-        return saveResponse(userId, {
+        return saveResponse(params.userId, {
             message: 'Mình chưa xử lý được bước này, bạn thử lại giúp mình.',
-            state,
+            state: params.state,
         })
     }
 }
@@ -101,28 +155,28 @@ async function executeDecision(params: {
                 state: params.state,
             }
         case 'SEARCH_SCHEDULES':
-            return aiChat.searchSchedulesForAgent({
+            return bookingFlow.searchSchedules({
                 args: params.decision.args,
                 message: params.message,
                 state: params.state,
             })
         case 'LIST_PICKUP_STOPS':
-            return aiChat.listPickupStopsForAgent({
+            return bookingFlow.listPickupStops({
                 message: params.message,
                 state: params.state,
             })
         case 'LIST_DROPOFF_STOPS':
-            return aiChat.listDropoffStopsForAgent({
+            return bookingFlow.listDropoffStops({
                 message: params.message,
                 state: params.state,
             })
         case 'CHECK_AVAILABLE_SEATS':
-            return aiChat.checkAvailableSeatsForAgent({
+            return bookingFlow.checkAvailableSeats({
                 message: params.message,
                 state: params.state,
             })
         case 'CREATE_HOLD_BOOKING':
-            return aiChat.createHoldBookingForAgent({
+            return bookingFlow.createHoldBooking({
                 message: params.message,
                 state: params.state,
                 userInfo: params.userInfo,
@@ -297,6 +351,97 @@ function buildAgentContext(state: AiChatState) {
         seatOptions: state.seatOptions?.map(item => item.seatNumber),
         selectedSeat: state.selectedSeat?.seatNumber,
     })
+}
+
+function getDeterministicAction(message: string, state: AiChatState): BusGoAgentAction | undefined {
+    if (isPromotionRequest(message)) return 'GET_PROMOTIONS'
+    if (isBookingLookupRequest(message) && state.stage !== 'seat_listed') return 'GET_BOOKING'
+
+    if (state.stage === 'need_date') return 'SEARCH_SCHEDULES'
+    if (state.stage === 'schedules_listed') return 'LIST_PICKUP_STOPS'
+    if (state.stage === 'pickup_listed') return 'LIST_DROPOFF_STOPS'
+    if (state.stage === 'dropoff_listed') return 'CHECK_AVAILABLE_SEATS'
+    if (state.stage === 'seat_listed') return 'CREATE_HOLD_BOOKING'
+    if (state.stage === 'booking_created') return 'GET_BOOKING'
+}
+
+function normalizeAgentState(state: AiChatState): AiChatState {
+    if (state.bookingId) return { ...state, stage: 'booking_created' }
+    if (state.seatOptions?.length) return { ...state, stage: 'seat_listed' }
+    if (state.dropoffOptions?.length) return { ...state, stage: 'dropoff_listed' }
+    if (state.pickupOptions?.length) return { ...state, stage: 'pickup_listed' }
+    if (state.scheduleOptions?.length) return { ...state, stage: 'schedules_listed' }
+    if (state.selectedSchedule && !state.departureDate) return { ...state, stage: 'need_date' }
+
+    if (
+        state.stage === 'booking_created' ||
+        state.stage === 'seat_listed' ||
+        state.stage === 'dropoff_listed' ||
+        state.stage === 'pickup_listed' ||
+        state.stage === 'schedules_listed' ||
+        state.stage === 'need_date'
+    ) {
+        return {
+            stage: 'idle',
+            from: state.from,
+            to: state.to,
+            departureDate: state.departureDate,
+        }
+    }
+
+    return state
+}
+
+function isResetRequest(message: string) {
+    const normalized = normalize(message)
+    return [
+        'tim chuyen moi',
+        'dat ve moi',
+        'dat lai',
+        'lam lai',
+        'lam tu dau',
+        'bat dau lai',
+        'khong dat nua',
+        'dung lai',
+        'huy luong',
+        'doi tuyen',
+        'doi chuyen',
+        'doi ngay',
+        'reset',
+    ].some(pattern => normalized.includes(pattern))
+}
+
+function isRoundTripRequest(message: string) {
+    const normalized = normalize(message)
+    return [
+        'khu hoi',
+        'hai chieu',
+        'chieu ve',
+        've quay lai',
+        'return trip',
+        'round trip',
+        'roundtrip',
+    ].some(pattern => normalized.includes(pattern))
+}
+
+function isPromotionRequest(message: string) {
+    const normalized = normalize(message)
+    return ['khuyen mai', 'uu dai', 'ma giam', 'giam gia', 'coupon', 'voucher', 'promotion'].some(
+        pattern => normalized.includes(pattern)
+    )
+}
+
+function isBookingLookupRequest(message: string) {
+    const normalized = normalize(message)
+    return [
+        've cua toi',
+        've da dat',
+        've dang giu',
+        'trang thai ve',
+        'trang thai booking',
+        'kiem tra booking',
+        'booking cua toi',
+    ].some(pattern => normalized.includes(pattern))
 }
 
 function isPaymentRequest(message: string) {
