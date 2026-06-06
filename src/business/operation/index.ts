@@ -1,7 +1,0 @@
-export * as trip from './trip.js'
-export * as tripSchedule from './trip-schedule.js'
-export * as route from './route.js'
-export * as tripStopTemplate from './trip-stop-template.js'
-export * as tripPriceTemplate from './trip-price-template.js'
-export * as station from './station.js'
-export * as driverMonthlyStat from './driver-monthly-stat.js'

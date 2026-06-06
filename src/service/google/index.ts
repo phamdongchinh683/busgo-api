@@ -10,7 +10,7 @@ export async function verifyToken(params: { idToken: string }) {
         .filter(Boolean)
 
     if (!configuredClientIds.length) {
-        throw new HttpErr.BadRequest('Google ID token không hợp lệ.', 'INVALID_TOKEN')
+        throw new HttpErr.BadRequest('Invalid Google ID token.', 'INVALID_TOKEN')
     }
 
     const searchParams = new URLSearchParams({ id_token: idToken })
@@ -21,13 +21,13 @@ export async function verifyToken(params: { idToken: string }) {
     const result = GoogleTokenInfo.safeParse(data)
     if (!result.success)
         throw new HttpErr.UnprocessableEntity(
-            'Không thể xác thực Google ID token.',
+            'Unable to verify Google ID token.',
             'INVALID_TOKEN',
             z.looseObject({}).parse(data)
         )
 
     if (!configuredClientIds.includes(result.data.aud)) {
-        throw new HttpErr.Unauthorized('Google ID token không hợp lệ.')
+        throw new HttpErr.Unauthorized('Invalid Google ID token.')
     }
 
     return result.data

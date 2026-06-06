@@ -1,6 +1,6 @@
 export class BadRequest extends Error {
     constructor(
-        public message = 'Yêu cầu không hợp lệ.',
+        public message = 'Invalid request.',
         public errorCode = 'BadRequest',
         public extra: object = {},
         public status = 400
@@ -11,7 +11,7 @@ export class BadRequest extends Error {
 
 export class Forbidden extends Error {
     constructor(
-        public message = 'Bạn không có quyền thực hiện thao tác này.',
+        public message = 'You do not have permission to perform this action.',
         public extra: object = {},
         public errorCode = 'Forbidden',
         public status = 403
@@ -22,7 +22,7 @@ export class Forbidden extends Error {
 
 export class NotFound extends Error {
     constructor(
-        public message = 'Không tìm thấy tài nguyên.',
+        public message = 'Resource not found.',
         public extra: object = {},
         public errorCode = 'NotFound',
         public status = 404
@@ -33,7 +33,7 @@ export class NotFound extends Error {
 
 export class Unauthorized extends Error {
     constructor(
-        public message = 'Bạn chưa được xác thực hoặc phiên đăng nhập không hợp lệ.',
+        public message = 'You are not authenticated or the login session is invalid.',
         public extra: object = {},
         public errorCode = 'Unauthorized',
         public status = 401
@@ -44,7 +44,7 @@ export class Unauthorized extends Error {
 
 export class UnprocessableEntity extends Error {
     constructor(
-        public message = 'Dữ liệu không hợp lệ.',
+        public message = 'Invalid data.',
         public errorCode = 'UnprocessableEntity',
         public extra: object = {},
         public status = 422
@@ -55,7 +55,7 @@ export class UnprocessableEntity extends Error {
 
 export class TooManyRequests extends Error {
     constructor(
-        public message = 'Bạn đã gửi quá nhiều yêu cầu.',
+        public message = 'You have sent too many requests.',
         public errorCode = 'TooManyRequests',
         public extra: object = {},
         public status = 429

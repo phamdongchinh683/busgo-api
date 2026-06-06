@@ -7,7 +7,6 @@ import {
     validatorCompiler,
     type ZodTypeProvider,
 } from 'fastify-type-provider-zod'
-import qs from 'qs'
 import { readdir } from 'fs/promises'
 import path, { dirname, parse, relative, sep } from 'path'
 import { fileURLToPath, pathToFileURL } from 'url'
@@ -28,12 +27,6 @@ const publicDir = path.resolve(process.cwd(), 'public')
 const isProduction = process.env.APP_ENV === 'production'
 const enableHttpDebugLogs = process.env.ENABLE_HTTP_DEBUG_LOGS === 'true' && !isProduction
 const isTsRuntime = process.argv[1]?.endsWith('.ts') ?? false
-
-const STRIPE_WEBHOOK_PATH = '/stripe/webhook'
-
-type RawWithStripeBody = import('http').IncomingMessage & {
-    rawBody?: Buffer
-}
 
 export const api = Fastify({
     trustProxy: true,
@@ -59,29 +52,7 @@ api.addContentTypeParser(
     { parseAs: 'buffer' },
     (request: FastifyRequest, body: Buffer, done) => {
         try {
-            const pathname = getPathname(request.url)
-
-            if (
-                pathname === STRIPE_WEBHOOK_PATH ||
-                pathname.startsWith(`${STRIPE_WEBHOOK_PATH}/`)
-            ) {
-                ;(request.raw as RawWithStripeBody).rawBody = body
-            }
-
             done(null, JSON.parse(body.toString('utf8')) as unknown)
-        } catch (err) {
-            ;(err as { statusCode?: number }).statusCode = 400
-            done(err as Error, undefined)
-        }
-    }
-)
-
-api.addContentTypeParser(
-    'application/x-www-form-urlencoded',
-    { parseAs: 'string' },
-    (_request: FastifyRequest, body: string, done) => {
-        try {
-            done(null, qs.parse(body))
         } catch (err) {
             ;(err as { statusCode?: number }).statusCode = 400
             done(err as Error, undefined)

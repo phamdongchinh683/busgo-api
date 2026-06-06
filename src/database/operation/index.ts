@@ -1,6 +1,0 @@
-export * as station from './station/index.js'
-export * as trip from './trip/index.js'
-export * as tripSchedule from './trip-schedule/index.js'
-export * as tripStopTemplate from './trip-stop-template/index.js'
-export * as tripPriceTemplate from './trip_price_template/index.js'
-export * as route from './route/index.js'

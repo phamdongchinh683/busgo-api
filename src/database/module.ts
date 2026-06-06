@@ -1,6 +1,1 @@
 export * as auth from './auth/index.js'
-export * as booking from './booking/index.js'
-export * as operation from './operation/index.js'
-export * as organization from './organization/index.js'
-export * as payment from './payment/index.js'
-export * as chat from './chat/index.js'
