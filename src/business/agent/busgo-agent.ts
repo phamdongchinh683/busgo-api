@@ -39,9 +39,18 @@ export async function reply(params: {
     state?: AiChatState
 }): Promise<AiChatResponse> {
     const userId = Number(params.userInfo.id)
-    const state = normalizeAgentState(
+    let state = normalizeAgentState(
         getAgentSession(userId) ?? params.state ?? { stage: 'idle' as const }
     )
+    const messageDate = isDateOnlyMessage(params.message)
+        ? extractDateFromMessage(params.message)
+        : undefined
+    if (messageDate) {
+        state = {
+            ...state,
+            departureDate: messageDate,
+        }
+    }
 
     if (isExpiredHold(state)) {
         agentSessions.delete(userId)
@@ -72,6 +81,21 @@ export async function reply(params: {
         return saveResponse(userId, {
             message: PAYMENT_GUIDANCE,
             state,
+        })
+    }
+
+    if (state.stage === 'idle' && state.from && state.to && messageDate) {
+        return executeAndSave({
+            action: 'SEARCH_SCHEDULES',
+            args: {
+                from: state.from,
+                to: state.to,
+                departureDate: utils.time.formatCalendarDate(messageDate, 'YYYY-MM-DD'),
+            },
+            message: params.message,
+            state,
+            userId,
+            userInfo: params.userInfo,
         })
     }
 
@@ -131,13 +155,110 @@ async function executeAndSave(params: {
             state: params.state,
             userInfo: params.userInfo,
         })
-        return saveResponse(params.userId, response)
+        const naturalResponse = await naturalizeResponse({
+            action: params.action,
+            response,
+            userMessage: params.message,
+        })
+        return saveResponse(params.userId, naturalResponse)
     } catch {
         return saveResponse(params.userId, {
             message: 'Mình chưa xử lý được bước này, bạn thử lại giúp mình.',
             state: params.state,
         })
     }
+}
+
+async function naturalizeResponse(params: {
+    action: BusGoAgentAction
+    response: AiChatResponse
+    userMessage: string
+}): Promise<AiChatResponse> {
+    if (params.action === 'CREATE_HOLD_BOOKING' && params.response.state?.bookingId) {
+        return params.response
+    }
+
+    try {
+        const message = await service.openai.generateBusGoAgentReply({
+            action: params.action,
+            context: buildAgentContext(params.response.state ?? { stage: 'idle' }),
+            toolMessage: params.response.message,
+            userMessage: params.userMessage,
+        })
+
+        if (!isSafeNaturalReply(message, params.response)) {
+            return params.response
+        }
+
+        return {
+            ...params.response,
+            message,
+        }
+    } catch {
+        return params.response
+    }
+}
+
+function isSafeNaturalReply(message: string, response: AiChatResponse) {
+    const normalized = normalize(message)
+    const state = response.state
+
+    if (!message.trim()) return false
+    if (
+        ['api', 'endpoint', 'payload', 'database', 'scheduleid', 'tripid', 'stationid'].some(
+            pattern => normalized.includes(pattern)
+        )
+    ) {
+        return false
+    }
+    if (!state?.bookingId && containsBookingSuccessClaim(normalized)) return false
+    if (
+        containsPaymentSuccessClaim(normalized) &&
+        !containsPaymentSuccessClaim(normalize(response.message))
+    ) {
+        return false
+    }
+
+    const requiredValues = [
+        ...(state?.scheduleOptions?.flatMap(item => [item.name, item.departureTime.slice(0, 5)]) ??
+            []),
+        ...(state?.pickupOptions?.map(item => item.address) ?? []),
+        ...(state?.dropoffOptions?.map(item => item.address) ?? []),
+        ...(state?.seatOptions?.map(item => item.seatNumber) ?? []),
+        ...extractProtectedReplyValues(response.message),
+    ]
+
+    return requiredValues.every(value => normalize(message).includes(normalize(value)))
+}
+
+function extractProtectedReplyValues(message: string) {
+    const patterns = [
+        /\b\d{1,2}:\d{2}(?::\d{2})?\b/g,
+        /\b\d{1,2}\/\d{1,2}\/\d{4}\b/g,
+        /\b\d+(?:[.,]\d+)*đ\b/g,
+        /\b\d+(?:[.,]\d+)?%\b/g,
+        /\b[A-Z0-9]+(?:[-_][A-Z0-9]+)+\b/g,
+    ]
+
+    return [...new Set(patterns.flatMap(pattern => message.match(pattern) ?? []))]
+}
+
+function containsBookingSuccessClaim(message: string) {
+    return [
+        'da giu cho thanh cong',
+        'giu cho thanh cong',
+        'da dat ve thanh cong',
+        'dat ve thanh cong',
+    ].some(pattern => message.includes(pattern))
+}
+
+function containsPaymentSuccessClaim(message: string) {
+    return [
+        'da thanh toan thanh cong',
+        'thanh toan thanh cong',
+        'da thanh toan',
+        'da tra tien',
+    ].some(pattern => message.includes(pattern))
 }
 
 async function executeDecision(params: {
@@ -147,13 +268,37 @@ async function executeDecision(params: {
     userInfo: UserInfo
 }): Promise<AiChatResponse> {
     switch (params.decision.action) {
-        case 'ASK_USER':
+        case 'ASK_USER': {
+            const state = mergeDecisionArgsIntoState({
+                args: params.decision.args,
+                message: params.message,
+                reply: params.decision.reply,
+                state: params.state,
+            })
+
+            if (state.from && state.to && state.departureDate) {
+                return bookingFlow.searchSchedules({
+                    args: {
+                        from: state.from,
+                        to: state.to,
+                        departureDate: utils.time.formatCalendarDate(
+                            state.departureDate,
+                            'YYYY-MM-DD'
+                        ),
+                    },
+                    message: params.message,
+                    state,
+                })
+            }
+
             return {
                 message:
-                    params.decision.reply?.trim() ||
+                    getMissingSearchPrompt(state) ??
+                    params.decision.reply?.trim() ??
                     'Bạn muốn tìm chuyến hay đặt vé từ đâu đến đâu?',
-                state: params.state,
+                state,
             }
+        }
         case 'SEARCH_SCHEDULES':
             return bookingFlow.searchSchedules({
                 args: params.decision.args,
@@ -390,6 +535,133 @@ function normalizeAgentState(state: AiChatState): AiChatState {
     }
 
     return state
+}
+
+function mergeDecisionArgsIntoState(params: {
+    args: Record<string, unknown>
+    message: string
+    reply?: string | null
+    state: AiChatState
+}): AiChatState {
+    let from = getStringArg(params.args, 'from') ?? params.state.from
+    let to = getStringArg(params.args, 'to') ?? params.state.to
+    const departureDate =
+        getDateArg(params.args, 'departureDate') ??
+        extractDateFromMessage(params.message) ??
+        params.state.departureDate
+
+    const simpleLocation = getSimpleLocationInput(params.message)
+    const normalizedReply = normalize(params.reply ?? '')
+    if (simpleLocation && !from && normalizedReply.includes('tu dau')) {
+        to = to ?? simpleLocation
+    }
+    if (simpleLocation && !to && normalizedReply.includes('den dau')) {
+        from = from ?? simpleLocation
+    }
+
+    return {
+        ...params.state,
+        stage: 'idle',
+        from,
+        to,
+        departureDate,
+    }
+}
+
+function getMissingSearchPrompt(state: AiChatState) {
+    if (!state.from) return 'Bạn muốn đi từ đâu?'
+    if (!state.to) return 'Bạn muốn đi đến đâu?'
+    if (!state.departureDate) return 'Bạn muốn đi vào ngày nào?'
+}
+
+function getSimpleLocationInput(message: string) {
+    const value = message.trim()
+    const normalized = normalize(value)
+
+    if (!value || value.length > 80 || extractDateFromMessage(value)) return undefined
+    if (
+        [
+            'di ',
+            'den ',
+            'tu ',
+            'chon ',
+            'ghe ',
+            'diem ',
+            'tim ',
+            'dat ',
+            've ',
+            'khuyen mai',
+            'thanh toan',
+        ].some(pattern => normalized.includes(pattern))
+    ) {
+        return undefined
+    }
+
+    return value
+}
+
+function getDateArg(args: Record<string, unknown>, key: string) {
+    const value = args[key]
+    if (value instanceof Date && !Number.isNaN(value.getTime())) return value
+    if (typeof value !== 'string') return undefined
+    return parseCalendarDate(value)
+}
+
+function extractDateFromMessage(message: string) {
+    const normalized = normalize(message)
+    if (normalized.includes('hom nay')) return utils.time.getRelativeAppCalendarDate(0)
+    if (normalized.includes('mai')) return utils.time.getRelativeAppCalendarDate(1)
+    if (
+        normalized.includes('ngay mot') ||
+        normalized.includes('ngay kia') ||
+        normalized === 'mot'
+    ) {
+        return utils.time.getRelativeAppCalendarDate(2)
+    }
+
+    return parseCalendarDate(message)
+}
+
+function isDateOnlyMessage(message: string) {
+    const normalized = normalize(message)
+    return (
+        /^\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?$/.test(message.trim()) ||
+        [
+            'hom nay',
+            'bua nay',
+            'mai',
+            'ngay mai',
+            'ngay mot',
+            'mot',
+            'ngay kia',
+            'today',
+            'tomorrow',
+        ].includes(normalized)
+    )
+}
+
+function parseCalendarDate(value: string) {
+    const iso = value.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/)
+    if (iso) {
+        return utils.time.getAppCalendarDate({
+            year: Number(iso[1]),
+            month: Number(iso[2]),
+            day: Number(iso[3]),
+        })
+    }
+
+    const slash = value.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/)
+    if (!slash) return undefined
+
+    const year = slash[3]
+        ? Number(slash[3].length === 2 ? `20${slash[3]}` : slash[3])
+        : utils.time.getNow().year()
+
+    return utils.time.getAppCalendarDate({
+        year,
+        month: Number(slash[2]),
+        day: Number(slash[1]),
+    })
 }
 
 function isResetRequest(message: string) {
