@@ -39,8 +39,9 @@ export async function reply(params: {
     state?: AiChatState
 }): Promise<AiChatResponse> {
     const userId = Number(params.userInfo.id)
+    // The request state identifies the exact chat flow; the user session is only a fallback.
     let state = normalizeAgentState(
-        getAgentSession(userId) ?? params.state ?? { stage: 'idle' as const }
+        params.state ?? getAgentSession(userId) ?? { stage: 'idle' as const }
     )
     const messageDate = isDateOnlyMessage(params.message)
         ? extractDateFromMessage(params.message)
