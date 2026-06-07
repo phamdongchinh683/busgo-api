@@ -9,6 +9,7 @@ import * as bookingFlow from './booking-flow.js'
 
 export type BusGoAgentAction =
     | 'ASK_USER'
+    | 'CHAT'
     | 'SEARCH_SCHEDULES'
     | 'LIST_PICKUP_STOPS'
     | 'LIST_DROPOFF_STOPS'
@@ -43,15 +44,8 @@ export async function reply(params: {
     let state = normalizeAgentState(
         params.state ?? getAgentSession(userId) ?? { stage: 'idle' as const }
     )
-    const messageDate = isDateOnlyMessage(params.message)
-        ? extractDateFromMessage(params.message)
-        : undefined
-    if (messageDate) {
-        state = {
-            ...state,
-            departureDate: messageDate,
-        }
-    }
+    const messageState = mergeMessageIntoSearchState(params.message, state)
+    state = messageState.state
 
     if (isExpiredHold(state)) {
         agentSessions.delete(userId)
@@ -61,7 +55,7 @@ export async function reply(params: {
         }
     }
 
-    if (isResetRequest(params.message)) {
+    if (isResetRequest(params.message) && !messageState.changed) {
         agentSessions.delete(userId)
         return {
             message: 'Bạn muốn đi từ đâu đến đâu và ngày nào?',
@@ -85,14 +79,24 @@ export async function reply(params: {
         })
     }
 
-    if (state.stage === 'idle' && state.from && state.to && messageDate) {
+    if (messageState.changed && state.from && state.to && state.departureDate) {
         return executeAndSave({
             action: 'SEARCH_SCHEDULES',
             args: {
                 from: state.from,
                 to: state.to,
-                departureDate: utils.time.formatCalendarDate(messageDate, 'YYYY-MM-DD'),
+                departureDate: utils.time.formatCalendarDate(state.departureDate, 'YYYY-MM-DD'),
             },
+            message: params.message,
+            state,
+            userId,
+            userInfo: params.userInfo,
+        })
+    }
+
+    if (messageState.changed && getMissingSearchPrompt(state)) {
+        return executeAndSave({
+            action: 'ASK_USER',
             message: params.message,
             state,
             userId,
@@ -156,11 +160,14 @@ async function executeAndSave(params: {
             state: params.state,
             userInfo: params.userInfo,
         })
-        const naturalResponse = await naturalizeResponse({
-            action: params.action,
-            response,
-            userMessage: params.message,
-        })
+        const naturalResponse =
+            params.action === 'CHAT'
+                ? response
+                : await naturalizeResponse({
+                      action: params.action,
+                      response,
+                      userMessage: params.message,
+                  })
         return saveResponse(params.userId, naturalResponse)
     } catch {
         return saveResponse(params.userId, {
@@ -277,7 +284,12 @@ async function executeDecision(params: {
                 state: params.state,
             })
 
-            if (state.from && state.to && state.departureDate) {
+            if (
+                state.from &&
+                state.to &&
+                state.departureDate &&
+                isScheduleSearchRequest(params.message)
+            ) {
                 return bookingFlow.searchSchedules({
                     args: {
                         from: state.from,
@@ -297,9 +309,16 @@ async function executeDecision(params: {
                     getMissingSearchPrompt(state) ??
                     params.decision.reply?.trim() ??
                     'Bạn muốn tìm chuyến hay đặt vé từ đâu đến đâu?',
-                state,
+                state: withSearchAwaitingField(state),
             }
         }
+        case 'CHAT':
+            return {
+                message:
+                    params.decision.reply?.trim() ??
+                    'Mình có thể giúp bạn tìm chuyến, chọn điểm đón trả, kiểm tra ghế và giữ chỗ. Bạn đang cần hỗ trợ gì?',
+                state: params.state,
+            }
         case 'SEARCH_SCHEDULES':
             return bookingFlow.searchSchedules({
                 args: params.decision.args,
@@ -463,7 +482,11 @@ function getAgentSession(userId: number) {
 
 function shouldClearSession(state: AiChatState) {
     return (
-        (!state.stage || state.stage === 'idle') && !state.from && !state.to && !state.departureDate
+        (!state.stage || state.stage === 'idle') &&
+        !state.awaiting &&
+        !state.from &&
+        !state.to &&
+        !state.departureDate
     )
 }
 
@@ -478,6 +501,7 @@ function isExpiredHold(state: AiChatState) {
 function buildAgentContext(state: AiChatState) {
     return JSON.stringify({
         stage: state.stage ?? 'idle',
+        awaiting: state.awaiting,
         route: state.from || state.to ? `${state.from ?? '?'} -> ${state.to ?? '?'}` : undefined,
         departureDate: state.departureDate
             ? utils.time.formatCalendarDate(state.departureDate, 'YYYY-MM-DD')
@@ -503,12 +527,12 @@ function getDeterministicAction(message: string, state: AiChatState): BusGoAgent
     if (isPromotionRequest(message)) return 'GET_PROMOTIONS'
     if (isBookingLookupRequest(message) && state.stage !== 'seat_listed') return 'GET_BOOKING'
 
-    if (state.stage === 'need_date') return 'SEARCH_SCHEDULES'
+    if (!bookingFlow.hasMatchingCurrentOption(message, state)) return undefined
+
     if (state.stage === 'schedules_listed') return 'LIST_PICKUP_STOPS'
     if (state.stage === 'pickup_listed') return 'LIST_DROPOFF_STOPS'
     if (state.stage === 'dropoff_listed') return 'CHECK_AVAILABLE_SEATS'
     if (state.stage === 'seat_listed') return 'CREATE_HOLD_BOOKING'
-    if (state.stage === 'booking_created') return 'GET_BOOKING'
 }
 
 function normalizeAgentState(state: AiChatState): AiChatState {
@@ -529,6 +553,7 @@ function normalizeAgentState(state: AiChatState): AiChatState {
     ) {
         return {
             stage: 'idle',
+            awaiting: state.awaiting,
             from: state.from,
             to: state.to,
             departureDate: state.departureDate,
@@ -552,20 +577,76 @@ function mergeDecisionArgsIntoState(params: {
         params.state.departureDate
 
     const simpleLocation = getSimpleLocationInput(params.message)
-    const normalizedReply = normalize(params.reply ?? '')
-    if (simpleLocation && !from && normalizedReply.includes('tu dau')) {
-        to = to ?? simpleLocation
+    if (simpleLocation && !from && params.state.awaiting === 'from') {
+        from = simpleLocation
     }
-    if (simpleLocation && !to && normalizedReply.includes('den dau')) {
-        from = from ?? simpleLocation
+    if (simpleLocation && !to && params.state.awaiting === 'to') {
+        to = simpleLocation
     }
 
     return {
         ...params.state,
         stage: 'idle',
+        awaiting: undefined,
         from,
         to,
         departureDate,
+    }
+}
+
+function mergeMessageIntoSearchState(
+    message: string,
+    state: AiChatState
+): { changed: boolean; state: AiChatState } {
+    const search = bookingFlow.extractTripSearchParams(message)
+    const hasRouteDetails = Boolean(search.from || search.to)
+    const hasDateDetail = search.date !== undefined
+
+    if (hasRouteDetails || hasDateDetail) {
+        return {
+            changed: true,
+            state: {
+                stage: 'idle',
+                awaiting: undefined,
+                from: search.from ?? state.from,
+                to: search.to ?? state.to,
+                departureDate: search.date ?? state.departureDate,
+            },
+        }
+    }
+
+    if (
+        (state.stage === 'idle' || state.stage === 'need_date') &&
+        (state.awaiting === 'from' || state.awaiting === 'to')
+    ) {
+        const simpleLocation = getSimpleLocationInput(message)
+        if (simpleLocation) {
+            return {
+                changed: true,
+                state: {
+                    stage: 'idle',
+                    awaiting: undefined,
+                    from: state.awaiting === 'from' ? simpleLocation : state.from,
+                    to: state.awaiting === 'to' ? simpleLocation : state.to,
+                    departureDate: state.departureDate,
+                },
+            }
+        }
+    }
+
+    return { changed: false, state }
+}
+
+function withSearchAwaitingField(state: AiChatState): AiChatState {
+    return {
+        ...state,
+        awaiting: !state.from
+            ? 'from'
+            : !state.to
+              ? 'to'
+              : !state.departureDate
+                ? 'departureDate'
+                : undefined,
     }
 }
 
@@ -623,24 +704,6 @@ function extractDateFromMessage(message: string) {
     return parseCalendarDate(message)
 }
 
-function isDateOnlyMessage(message: string) {
-    const normalized = normalize(message)
-    return (
-        /^\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?$/.test(message.trim()) ||
-        [
-            'hom nay',
-            'bua nay',
-            'mai',
-            'ngay mai',
-            'ngay mot',
-            'mot',
-            'ngay kia',
-            'today',
-            'tomorrow',
-        ].includes(normalized)
-    )
-}
-
 function parseCalendarDate(value: string) {
     const iso = value.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/)
     if (iso) {
@@ -677,11 +740,27 @@ function isResetRequest(message: string) {
         'khong dat nua',
         'dung lai',
         'huy luong',
-        'doi tuyen',
         'doi chuyen',
-        'doi ngay',
         'reset',
     ].some(pattern => normalized.includes(pattern))
+}
+
+function isScheduleSearchRequest(message: string) {
+    const normalized = normalize(message)
+    const search = bookingFlow.extractTripSearchParams(message)
+
+    return (
+        Boolean(search.from || search.to || search.date) ||
+        [
+            'tim chuyen',
+            'tim xe',
+            'co xe',
+            'dat ve',
+            'lich trinh',
+            'danh sach nha xe',
+            'chuyen xe',
+        ].some(pattern => normalized.includes(pattern))
+    )
 }
 
 function isRoundTripRequest(message: string) {
@@ -739,8 +818,9 @@ function normalize(value: string) {
     return value
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
         .toLowerCase()
+        .replace(/đ/g, 'd')
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
         .replace(/\s+/g, ' ')
         .trim()
 }

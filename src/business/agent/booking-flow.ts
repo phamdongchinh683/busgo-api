@@ -25,7 +25,7 @@ const SEAT_OPTIONS_PER_LINE = 12
 
 type PreferredTime = 'afternoon' | 'evening' | 'morning' | 'night'
 
-type TripSearchParams = {
+export type TripSearchParams = {
     date?: Date
     from?: string
     preferredTime?: PreferredTime
@@ -799,7 +799,7 @@ function resolveLocationName(input: string, candidates: string[]) {
     )
 }
 
-function extractTripSearchParams(message: string): TripSearchParams {
+export function extractTripSearchParams(message: string): TripSearchParams {
     const cleaned = message
         .replace(
             /\b(?:hôm nay|hom nay|ngày mai|ngay mai|mai|ngày mốt|ngay mot|mốt|mot|ngày kia|ngay kia|sáng|sang|chiều|chieu|tối|toi|đêm|dem)\b/giu,
@@ -817,6 +817,23 @@ function extractTripSearchParams(message: string): TripSearchParams {
         date: extractDate(message),
         preferredTime: extractPreferredTime(message),
     }
+}
+
+export function hasMatchingCurrentOption(message: string, state: AiChatState) {
+    if (state.scheduleOptions?.length) {
+        return matchScheduleOption(message, state.scheduleOptions) !== undefined
+    }
+    if (state.pickupOptions?.length) {
+        return matchStopOption(message, state.pickupOptions) !== undefined
+    }
+    if (state.dropoffOptions?.length) {
+        return matchStopOption(message, state.dropoffOptions) !== undefined
+    }
+    if (state.seatOptions?.length) {
+        return matchSeatOption(message, state.seatOptions) !== undefined
+    }
+
+    return false
 }
 
 function cleanupLocation(value?: string) {

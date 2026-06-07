@@ -41,6 +41,10 @@ export const AiChatBookingStage = z.enum([
 
 export type AiChatBookingStage = z.infer<typeof AiChatBookingStage>
 
+export const AiChatAwaitingField = z.enum(['departureDate', 'from', 'to'])
+
+export type AiChatAwaitingField = z.infer<typeof AiChatAwaitingField>
+
 export const AiChatScheduleOption = z.object({
     scheduleId: OperationTripScheduleId,
     companyId: OrganizationBusCompanyId,
@@ -75,6 +79,7 @@ export type AiChatSeatOption = z.infer<typeof AiChatSeatOption>
 
 export const AiChatState = z.object({
     stage: AiChatBookingStage.optional(),
+    awaiting: AiChatAwaitingField.optional(),
     from: z.string().optional(),
     to: z.string().optional(),
     departureDate: z.coerce.date().optional(),
