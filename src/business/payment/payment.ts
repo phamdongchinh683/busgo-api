@@ -293,7 +293,10 @@ export async function stripeStatus(p: UserInfo): Promise<StripeStatusResponse> {
 }
 
 async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {
-    const payment = await preparePayment(params.id, PaymentMethod.enum.stripe)
+    const payment = await db.transaction().execute(async tx => {
+        await dal.booking.booking.query.lockBookingForPayment(params.id, tx)
+        return preparePayment(params.id, PaymentMethod.enum.stripe, tx)
+    })
 
     const user = await dal.auth.user.query.getOne({ id: userId })
     if (!user?.accountStripeId) {

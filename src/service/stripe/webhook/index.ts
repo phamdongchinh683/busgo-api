@@ -3,6 +3,14 @@ import { stripe } from '../client/index.js'
 import { dal } from '../../../database/index.js'
 import { db } from '../../../datasource/db.js'
 import { utils } from '../../../utils/index.js'
+import { PaymentMethod, PaymentStatus } from '../../../database/payment/payment/type.js'
+
+const StripePaymentSuccessResult = {
+    recorded: 'recorded',
+    alreadyRecorded: 'already_recorded',
+    refundRequired: 'refund_required',
+    ignored: 'ignored',
+} as const
 
 export async function handleWebhook(rawBody: string | Buffer, signature: string) {
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET ?? ''
@@ -18,7 +26,7 @@ export async function handleWebhook(rawBody: string | Buffer, signature: string)
                 await handlePaymentSuccess(event.data.object)
                 break
             case 'payment_intent.payment_failed':
-                await handlePaymentFailed(event.data.object)
+                // A failed intent can be retried, and another Stripe payment flow may still be active.
                 break
         }
     } catch (err: any) {
@@ -55,9 +63,37 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 }
 
 async function updateStripePaymentSuccess(transactionCode: string, paymentIntentId: string) {
-    await db.transaction().execute(async tx => {
-        const payment = await dal.payment.payment.query.getPayment(undefined, transactionCode, tx)
-        if (!payment || payment.status === 'success') return
+    const result = await db.transaction().execute(async tx => {
+        const currentPayment = await dal.payment.payment.query.getPayment(
+            undefined,
+            transactionCode,
+            tx
+        )
+        if (!currentPayment) {
+            return StripePaymentSuccessResult.ignored
+        }
+
+        await dal.booking.booking.query.lockBookingForPayment(currentPayment.bookingId, tx)
+
+        const payment = await dal.payment.payment.query.getPaymentByTransactionCodeForUpdate(
+            transactionCode,
+            tx
+        )
+        if (!payment || payment.method !== PaymentMethod.enum.stripe) {
+            return StripePaymentSuccessResult.ignored
+        }
+
+        if (
+            payment.transactionNo === paymentIntentId &&
+            (payment.status === PaymentStatus.enum.success ||
+                payment.status === PaymentStatus.enum.refunded)
+        ) {
+            return StripePaymentSuccessResult.alreadyRecorded
+        }
+
+        if (payment.status !== PaymentStatus.enum.pending) {
+            return StripePaymentSuccessResult.refundRequired
+        }
 
         await dal.payment.payment.cmd.updatePaymentStatusSuccess(
             transactionCode,
@@ -65,17 +101,20 @@ async function updateStripePaymentSuccess(transactionCode: string, paymentIntent
             utils.time.getNow().toISOString(),
             tx
         )
+        return StripePaymentSuccessResult.recorded
     })
-}
 
-async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-    const transactionCode = paymentIntent.metadata?.transactionCode
-    if (!transactionCode) return
-
-    await db.transaction().execute(async tx => {
-        const payment = await dal.payment.payment.query.getPayment(undefined, transactionCode, tx)
-        if (!payment || payment.status === 'failed') return
-
-        await dal.payment.payment.cmd.updatePaymentStatusFailed(transactionCode, tx)
-    })
+    if (result === StripePaymentSuccessResult.refundRequired) {
+        await stripe.refunds.create(
+            {
+                payment_intent: paymentIntentId,
+                refund_application_fee: true,
+                reverse_transfer: true,
+                reason: 'duplicate',
+            },
+            {
+                idempotencyKey: `duplicate-payment-refund:${transactionCode}:${paymentIntentId}`,
+            }
+        )
+    }
 }

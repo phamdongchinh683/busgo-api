@@ -79,6 +79,18 @@ export async function getPaymentByBookingId(bookingId: BookingId, trx?: Transact
         .executeTakeFirst()
 }
 
+export async function getPaymentByTransactionCodeForUpdate(
+    transactionCode: string,
+    trx: Transaction<Database>
+) {
+    return trx
+        .selectFrom('payment.payment as pp')
+        .selectAll()
+        .where('pp.transactionCode', '=', transactionCode)
+        .forUpdate('pp')
+        .executeTakeFirst()
+}
+
 export async function getCompanyIdByBookingId(bookingId: BookingId) {
     return db
         .selectFrom('booking.ticket as t')

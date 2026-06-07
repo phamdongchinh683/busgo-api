@@ -23,6 +23,15 @@ export async function getAmountByBookingId(bookingId: BookingId, trx?: Transacti
         .executeTakeFirstOrThrow()
 }
 
+export async function lockBookingForPayment(bookingId: BookingId, trx: Transaction<Database>) {
+    return trx
+        .selectFrom('booking.booking as b')
+        .select('b.id')
+        .where('b.id', '=', bookingId)
+        .forUpdate('b')
+        .executeTakeFirstOrThrow()
+}
+
 export async function getBookingByUserIdAndBookingId(
     params: {
         userId: AuthUserId

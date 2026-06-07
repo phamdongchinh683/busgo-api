@@ -110,23 +110,28 @@ export async function createPaymentIntentWithCommission(params: StripePaymentWit
     const { usdAmount, applicationFee, exchangeRateVndPerUsd, commissionPercent } =
         getStripePaymentAmounts(amount)
 
-    return stripe.paymentIntents.create({
-        amount: usdAmount,
-        currency: 'usd',
-        customer: stripeCustomerId,
-        application_fee_amount: applicationFee,
-        transfer_data: {
-            destination: companyAdminStripeId,
+    return stripe.paymentIntents.create(
+        {
+            amount: usdAmount,
+            currency: 'usd',
+            customer: stripeCustomerId,
+            application_fee_amount: applicationFee,
+            transfer_data: {
+                destination: companyAdminStripeId,
+            },
+            metadata: getStripePaymentMetadata({
+                amount,
+                transactionCode,
+                usdAmount,
+                exchangeRateVndPerUsd,
+                commissionPercent,
+                applicationFee,
+            }),
         },
-        metadata: getStripePaymentMetadata({
-            amount,
-            transactionCode,
-            usdAmount,
-            exchangeRateVndPerUsd,
-            commissionPercent,
-            applicationFee,
-        }),
-    })
+        {
+            idempotencyKey: `payment-intent:${transactionCode}`,
+        }
+    )
 }
 
 export async function createCheckoutSessionWithCommission(
@@ -154,39 +159,47 @@ export async function createCheckoutSessionWithCommission(
         applicationFee,
     })
 
-    return stripe.checkout.sessions.create({
-        mode: 'payment',
-        customer: stripeCustomerId,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        line_items: [
-            {
-                quantity: 1,
-                price_data: {
-                    currency: 'usd',
-                    unit_amount: usdAmount,
-                    product_data: {
-                        name: `BusGo ticket ${transactionCode}`,
+    return stripe.checkout.sessions.create(
+        {
+            mode: 'payment',
+            customer: stripeCustomerId,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            line_items: [
+                {
+                    quantity: 1,
+                    price_data: {
+                        currency: 'usd',
+                        unit_amount: usdAmount,
+                        product_data: {
+                            name: `BusGo ticket ${transactionCode}`,
+                        },
                     },
                 },
-            },
-        ],
-        payment_intent_data: {
-            application_fee_amount: applicationFee,
-            transfer_data: {
-                destination: companyAdminStripeId,
+            ],
+            payment_intent_data: {
+                application_fee_amount: applicationFee,
+                transfer_data: {
+                    destination: companyAdminStripeId,
+                },
+                metadata,
             },
             metadata,
         },
-        metadata,
-    })
+        {
+            idempotencyKey: `checkout-session:${transactionCode}`,
+        }
+    )
 }
 
-export async function createRefund(params: { paymentIntentId: string }) {
-    return stripe.refunds.create({
-        payment_intent: params.paymentIntentId,
-        refund_application_fee: true,
-        reverse_transfer: true,
-        reason: 'requested_by_customer',
-    })
+export async function createRefund(params: { paymentIntentId: string; idempotencyKey?: string }) {
+    return stripe.refunds.create(
+        {
+            payment_intent: params.paymentIntentId,
+            refund_application_fee: true,
+            reverse_transfer: true,
+            reason: 'requested_by_customer',
+        },
+        params.idempotencyKey ? { idempotencyKey: params.idempotencyKey } : undefined
+    )
 }
