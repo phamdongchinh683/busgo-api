@@ -12,12 +12,14 @@ import type {
     AiChatStopOption,
 } from '../../model/body/chat/index.js'
 import type { UserInfo } from '../../model/common.js'
+import { service } from '../../service/index.js'
 import { utils } from '../../utils/index.js'
 import * as booking from '../booking/booking.js'
 import * as route from '../operation/route.js'
 import * as tripSchedule from '../operation/trip-schedule.js'
 import * as operationTrip from '../operation/trip.js'
 import * as seat from '../organization/seat.js'
+import { resolveLatestVietnamLocationName, resolveVietnamLocationName } from './location.js'
 
 const MAX_FLOW_OPTIONS = 5
 const MAX_SEAT_OPTIONS = 36
@@ -39,9 +41,11 @@ export async function searchSchedules(params: {
 }): Promise<AiChatResponse> {
     const state = params.state ?? { stage: 'idle' as const }
     const messageSearch = extractTripSearchParams(params.message)
+    const from = getStringArg(params.args, 'from') ?? messageSearch.from ?? state.from
+    const to = getStringArg(params.args, 'to') ?? messageSearch.to ?? state.to
     const search: TripSearchParams = {
-        from: getStringArg(params.args, 'from') ?? messageSearch.from ?? state.from,
-        to: getStringArg(params.args, 'to') ?? messageSearch.to ?? state.to,
+        from,
+        to,
         date: getDateArg(params.args, 'departureDate') ?? messageSearch.date ?? state.departureDate,
         preferredTime:
             getPreferredTimeArg(params.args, 'preferredTime') ??
@@ -776,27 +780,49 @@ function hasSeatLookupState(state: AiChatState) {
 }
 
 async function resolveTripSearchParams(search: TripSearchParams): Promise<TripSearchParams> {
-    const result = await route.getRoutes({ limit: 100 })
-    const candidates = result.routes.flatMap(item => [item.fromLocation, item.toLocation])
+    const [result, provinceNames] = await Promise.all([
+        route.getRoutes({ limit: 10_000 }),
+        getLatestProvinceNames(),
+    ])
+    const routeCandidates = result.routes.flatMap(item => [item.fromLocation, item.toLocation])
     return {
         ...search,
-        from: search.from ? resolveLocationName(search.from, candidates) : undefined,
-        to: search.to ? resolveLocationName(search.to, candidates) : undefined,
+        from: search.from
+            ? resolveLocationName(search.from, provinceNames, routeCandidates)
+            : undefined,
+        to: search.to ? resolveLocationName(search.to, provinceNames, routeCandidates) : undefined,
     }
 }
 
-function resolveLocationName(input: string, candidates: string[]) {
-    const normalizedInput = normalizeSearch(input)
-    return (
-        candidates.find(candidate => {
-            const normalizedCandidate = normalizeSearch(candidate)
-            return (
-                normalizedCandidate === normalizedInput ||
-                normalizedCandidate.includes(normalizedInput) ||
-                normalizedInput.includes(normalizedCandidate)
-            )
-        }) ?? input
-    )
+export async function resolveSearchStateLocations(state: AiChatState): Promise<AiChatState> {
+    if (!state.from && !state.to) return state
+
+    try {
+        const resolved = await resolveTripSearchParams({
+            from: state.from,
+            to: state.to,
+        })
+        return {
+            ...state,
+            from: resolved.from,
+            to: resolved.to,
+        }
+    } catch {
+        return state
+    }
+}
+
+async function getLatestProvinceNames() {
+    try {
+        return await service.province.getProvinceNames()
+    } catch {
+        return []
+    }
+}
+
+function resolveLocationName(input: string, provinceNames: string[], routeCandidates: string[]) {
+    const latestName = resolveLatestVietnamLocationName(input, provinceNames)
+    return resolveVietnamLocationName(latestName, routeCandidates)
 }
 
 export function extractTripSearchParams(message: string): TripSearchParams {
@@ -807,9 +833,11 @@ export function extractTripSearchParams(message: string): TripSearchParams {
         )
         .replace(/\s+/g, ' ')
         .trim()
+    const directRouteMatch = cleaned.match(/^(.+?)\s+(?:đến|den)\s+(.+?)(?:[,.?]|$)/iu)
     const match =
         cleaned.match(/(?:từ|tu)\s+(.+?)\s+(?:đến|den|tới|toi)\s+(.+?)(?:[,.?]|$)/iu) ??
-        cleaned.match(/(.+?)\s+(?:đi|di)\s+(.+?)(?:[,.?]|$)/iu)
+        cleaned.match(/(.+?)\s+(?:đi|di)\s+(.+?)(?:[,.?]|$)/iu) ??
+        (directRouteMatch && isLikelyDirectRoute(directRouteMatch) ? directRouteMatch : undefined)
 
     return {
         from: cleanupLocation(match?.[1]),
@@ -842,6 +870,17 @@ function cleanupLocation(value?: string) {
         .replace(/^(?:có xe|co xe|xe|vé|ve|chuyến|chuyen|tuyến|tuyen)\s+/iu, '')
         .replace(/\s+(?:không|khong|ko|không vậy|khong vay)$/iu, '')
         .trim()
+}
+
+function isLikelyDirectRoute(match: RegExpMatchArray) {
+    const from = normalizeSearch(match[1])
+    const to = normalizeSearch(match[2])
+    const nonLocationWords = ['anh', 'ban', 'chi', 'em', 'minh', 'muon', 'toi']
+    return (
+        from.length > 1 &&
+        to.length > 1 &&
+        !from.split(' ').some(word => nonLocationWords.includes(word))
+    )
 }
 
 function extractDate(message: string) {
@@ -974,8 +1013,8 @@ function normalizeSearch(value: string) {
     return value
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .replace(/đ/g, 'd')
         .toLowerCase()
+        .replace(/đ/g, 'd')
         .replace(/[^\p{L}\p{N}\s]/gu, ' ')
         .replace(/\s+/g, ' ')
         .trim()

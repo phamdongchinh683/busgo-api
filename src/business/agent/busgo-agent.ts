@@ -47,6 +47,10 @@ export async function reply(params: {
     const messageState = mergeMessageIntoSearchState(params.message, state)
     state = messageState.state
 
+    if (messageState.changed && getMissingSearchPrompt(state)) {
+        state = await bookingFlow.resolveSearchStateLocations(state)
+    }
+
     if (isExpiredHold(state)) {
         agentSessions.delete(userId)
         return {
@@ -277,7 +281,7 @@ async function executeDecision(params: {
 }): Promise<AiChatResponse> {
     switch (params.decision.action) {
         case 'ASK_USER': {
-            const state = mergeDecisionArgsIntoState({
+            const mergedState = mergeDecisionArgsIntoState({
                 args: params.decision.args,
                 message: params.message,
                 reply: params.decision.reply,
@@ -285,25 +289,26 @@ async function executeDecision(params: {
             })
 
             if (
-                state.from &&
-                state.to &&
-                state.departureDate &&
+                mergedState.from &&
+                mergedState.to &&
+                mergedState.departureDate &&
                 isScheduleSearchRequest(params.message)
             ) {
                 return bookingFlow.searchSchedules({
                     args: {
-                        from: state.from,
-                        to: state.to,
+                        from: mergedState.from,
+                        to: mergedState.to,
                         departureDate: utils.time.formatCalendarDate(
-                            state.departureDate,
+                            mergedState.departureDate,
                             'YYYY-MM-DD'
                         ),
                     },
                     message: params.message,
-                    state,
+                    state: mergedState,
                 })
             }
 
+            const state = await bookingFlow.resolveSearchStateLocations(mergedState)
             return {
                 message:
                     getMissingSearchPrompt(state) ??
