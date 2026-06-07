@@ -237,6 +237,12 @@ function isSafeNaturalReply(message: string, response: AiChatResponse) {
         ...(state?.pickupOptions?.map(item => item.address) ?? []),
         ...(state?.dropoffOptions?.map(item => item.address) ?? []),
         ...(state?.seatOptions?.map(item => item.seatNumber) ?? []),
+        ...(state?.from && normalize(response.message).includes(normalize(state.from))
+            ? [state.from]
+            : []),
+        ...(state?.to && normalize(response.message).includes(normalize(state.to))
+            ? [state.to]
+            : []),
         ...extractProtectedReplyValues(response.message),
     ]
 

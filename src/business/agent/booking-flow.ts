@@ -15,11 +15,10 @@ import type { UserInfo } from '../../model/common.js'
 import { service } from '../../service/index.js'
 import { utils } from '../../utils/index.js'
 import * as booking from '../booking/booking.js'
-import * as route from '../operation/route.js'
 import * as tripSchedule from '../operation/trip-schedule.js'
 import * as operationTrip from '../operation/trip.js'
 import * as seat from '../organization/seat.js'
-import { resolveLatestVietnamLocationName, resolveVietnamLocationName } from './location.js'
+import { resolveLatestVietnamLocationName } from './location.js'
 
 const MAX_FLOW_OPTIONS = 5
 const MAX_SEAT_OPTIONS = 36
@@ -278,7 +277,7 @@ async function listSchedules(search: TripSearchParams): Promise<AiChatResponse> 
 
     if (scheduleOptions.length === 0) {
         return {
-            message: `Mình chưa tìm thấy chuyến ${search.from} -> ${search.to} ngày ${formatDisplayDate(search.date)}. Bạn thử đổi ngày hoặc tuyến khác nhé.`,
+            message: `Mình chưa tìm thấy chuyến ${state.from} -> ${state.to} ngày ${formatDisplayDate(search.date)}. Bạn thử đổi ngày hoặc tuyến khác nhé.`,
             state,
         }
     }
@@ -780,17 +779,11 @@ function hasSeatLookupState(state: AiChatState) {
 }
 
 async function resolveTripSearchParams(search: TripSearchParams): Promise<TripSearchParams> {
-    const [result, provinceNames] = await Promise.all([
-        route.getRoutes({ limit: 10_000 }),
-        getLatestProvinceNames(),
-    ])
-    const routeCandidates = result.routes.flatMap(item => [item.fromLocation, item.toLocation])
+    const provinceNames = await getLatestProvinceNames()
     return {
         ...search,
-        from: search.from
-            ? resolveLocationName(search.from, provinceNames, routeCandidates)
-            : undefined,
-        to: search.to ? resolveLocationName(search.to, provinceNames, routeCandidates) : undefined,
+        from: search.from ? resolveLocationName(search.from, provinceNames) : undefined,
+        to: search.to ? resolveLocationName(search.to, provinceNames) : undefined,
     }
 }
 
@@ -816,13 +809,19 @@ async function getLatestProvinceNames() {
     try {
         return await service.province.getProvinceNames()
     } catch {
-        return []
+        throw new Error('Mình chưa thể xác định tỉnh/thành lúc này, bạn thử lại giúp mình.')
     }
 }
 
-function resolveLocationName(input: string, provinceNames: string[], routeCandidates: string[]) {
+function resolveLocationName(input: string, provinceNames: string[]) {
     const latestName = resolveLatestVietnamLocationName(input, provinceNames)
-    return resolveVietnamLocationName(latestName, routeCandidates)
+    if (!latestName) {
+        throw new Error(
+            `Mình chưa xác định được tỉnh/thành "${input.trim()}". Bạn nhập lại giúp mình.`
+        )
+    }
+
+    return latestName
 }
 
 export function extractTripSearchParams(message: string): TripSearchParams {
