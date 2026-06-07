@@ -95,7 +95,7 @@ Done! The API is now running at **http://localhost:3000**
 ### Redis (via REDIS_URL only)
 
 - `REDIS_URL` — **Required** to enable Redis features (cache, rate limiting, chat realtime). Must be a full connection string from your managed Redis provider.
-  - Upstash / Redis Cloud example: `rediss://default:your-password@your-host:6379`
+  - Redis Cloud example: `rediss://default:your-password@your-host:6379`
   - The code only supports connecting via `REDIS_URL` (no more separate REDIS_HOST/PORT variables).
 
 ### Other Important Variables
@@ -275,7 +275,7 @@ Always run migrations after pulling changes that include new migration files.
 - Full stack: `docker-compose.prod.yml` (includes 2 API replicas + Postgres + monitoring). **Redis container has been removed** — use a managed Redis service (see `REDIS_URL`).
 - CI/CD: `Jenkinsfile` (builds image, runs migrations, deploys via compose)
 
-**Required for production:** Set `REDIS_URL=rediss://...` (from Upstash or similar managed Redis). The app now **only** connects to Redis using `REDIS_URL`.
+**Required for production:** Set `REDIS_URL=rediss://...` using your Redis Cloud connection string. The app now **only** connects to Redis using `REDIS_URL`.
 
 The legacy GitHub Actions workflow has been removed.
 

@@ -1,23 +1,17 @@
+import { redis } from '../../../datasource/redis.js'
+
 type SocketEventPayload = {
     targetId: string
     event: string
     data: Record<string, unknown>
 }
 
-export async function emitEvent(params: SocketEventPayload) {
-    const url = process.env.UPSTASH_REDIS_REST_URL ?? ''
-    const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? ''
-
+export async function emitEvent(params: SocketEventPayload): Promise<number> {
     const payload = JSON.stringify({
         targetId: params.targetId,
         event: params.event,
         data: params.data,
     })
 
-    return await fetch(`${url}/publish/socket:events/${encodeURIComponent(payload)}`, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    })
+    return redis.publish('socket:events', payload)
 }
