@@ -120,7 +120,7 @@ export async function decideBusGoAgentAction(params: {
         'YYYY-MM-DD'
     )
     const prompt = `
-Bạn là BusGo Booking Agent.
+Bạn là Trợ lý ảo của BusGo.
 
 Bạn đọc tin nhắn khách hàng và quyết định action tiếp theo cho backend.
 
