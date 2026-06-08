@@ -16,7 +16,8 @@ export interface AuthUserTable extends Timestamps {
     accountStripeId: string | null
     isPhoneVerified: ColumnType<boolean, boolean | undefined, boolean>
     isEmailVerified: ColumnType<boolean, boolean | undefined, boolean>
-    lastChangeContact: ColumnType<Date | null, Date | null | undefined, Date | null>
+    lastChangeEmail: ColumnType<Date | null, Date | null | undefined, Date | null>
+    lastChangePhone: ColumnType<Date | null, Date | null | undefined, Date | null>
 }
 
 export type AuthUserTableInsert = Insertable<AuthUserTable>

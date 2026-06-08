@@ -26,32 +26,13 @@ interface FacebookSignInUser {
     lastName?: null | string
 }
 
-export async function signInByEmail(userData: SocialSignInUser): Promise<AuthResponse> {
-    const user = await dal.auth.user.cmd.authUpsertByEmail({
-        data: {
-            email: userData.email,
-            password: utils.password.hashPassword(userData.email),
-            fullName: getFullName(userData),
-            phone: null,
-            isPhoneVerified: false,
-            isEmailVerified: userData.isEmailVerified ?? false,
-            role: AuthUserRole.enum.customer,
-            status: AuthUserStatus.enum.active,
-        },
-    })
-
-    return buildSocialAuthResponse(user)
-}
-
 export async function signInByGoogle(userData: GoogleSignInUser): Promise<AuthResponse> {
-    const user = await dal.auth.user.cmd.authUpsertByGoogle({
+    const user = await dal.auth.user.cmd.authUpsertByGoogleEmail({
         data: {
             email: userData.email,
             googleId: userData.googleId,
-            password: utils.password.hashPassword(userData.email),
+            password: utils.password.hashPassword(utils.random.generateRandomNumber(20)),
             fullName: getFullName(userData),
-            phone: null,
-            isPhoneVerified: false,
             isEmailVerified: userData.isEmailVerified ?? false,
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,
@@ -62,14 +43,28 @@ export async function signInByGoogle(userData: GoogleSignInUser): Promise<AuthRe
 }
 
 export async function signInByFacebook(userData: FacebookSignInUser): Promise<AuthResponse> {
-    const user = await dal.auth.user.cmd.authUpsertByFacebook({
+    if (!userData.email) {
+        const user = await dal.auth.user.cmd.authUpsertByFacebookId({
+            data: {
+                email: null,
+                facebookId: userData.facebookId,
+                password: utils.password.hashPassword(utils.random.generateRandomNumber(20)),
+                fullName: getFullName(userData),
+                isEmailVerified: false,
+                role: AuthUserRole.enum.customer,
+                status: AuthUserStatus.enum.active,
+            },
+        })
+
+        return buildSocialAuthResponse(user)
+    }
+
+    const user = await dal.auth.user.cmd.authUpsertByFacebookEmail({
         data: {
-            email: userData.email ?? null,
+            email: userData.email,
             facebookId: userData.facebookId,
-            password: utils.password.hashPassword(userData.email ?? userData.facebookId),
+            password: utils.password.hashPassword(utils.random.generateRandomNumber(20)),
             fullName: getFullName(userData),
-            phone: null,
-            isPhoneVerified: false,
             isEmailVerified: userData.isEmailVerified ?? Boolean(userData.email),
             role: AuthUserRole.enum.customer,
             status: AuthUserStatus.enum.active,

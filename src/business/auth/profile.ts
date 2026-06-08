@@ -119,7 +119,8 @@ export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileU
         role: updatedUser.role,
         status: updatedUser.status,
         accountStripeId,
-        lastChangeContact: updatedUser.lastChangeContact,
+        lastChangeEmail: updatedUser.lastChangeEmail,
+        lastChangePhone: updatedUser.lastChangePhone,
     }
 
     return {
@@ -145,11 +146,9 @@ export async function verifyIdentity(userInfo: UserInfo, params: ProfileUpdateCo
         throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
     }
 
-    requireEmailChangeAllowed(params.field, user)
-
-    if (user.lastChangeContact) {
-        const changedAgoMs =
-            utils.time.getNow().valueOf() - new Date(user.lastChangeContact).getTime()
+    const lastChangeAt = params.field === 'email' ? user.lastChangeEmail : user.lastChangePhone
+    if (lastChangeAt) {
+        const changedAgoMs = utils.time.getNow().valueOf() - new Date(lastChangeAt).getTime()
         if (changedAgoMs < utils.time.coolDownTime12Hours) {
             throw new HttpErr.UnprocessableEntity(
                 'Bạn chỉ có thể thay đổi thông tin liên hệ sau 12 giờ.',
@@ -180,17 +179,18 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         if (!user) {
             throw new HttpErr.NotFound('Không tìm thấy người dùng.', {}, 'USER_NOT_FOUND')
         }
-
-        requireEmailChangeAllowed(params.field, user)
     }
 
     await verifyOtp(params)
 
     const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
         [params.field]: params.value,
-        lastChangeContact: utils.time.getNow().toDate(),
+        lastChangeEmail: params.field === 'email' ? utils.time.getNow().toDate() : undefined,
+        lastChangePhone: params.field === 'phone' ? utils.time.getNow().toDate() : undefined,
         isEmailVerified: params.field === 'email' ? true : undefined,
         isPhoneVerified: params.field === 'phone' ? true : undefined,
+        googleId: params.field === 'email' ? null : undefined,
+        facebookId: params.field === 'email' ? null : undefined,
         tokenVersion: userInfo.tokenVersion + 1,
     })
 
@@ -203,31 +203,13 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         role: updatedUser.role,
         status: updatedUser.status,
         accountStripeId: updatedUser.accountStripeId,
-        lastChangeContact: updatedUser.lastChangeContact,
+        lastChangeEmail: updatedUser.lastChangeEmail,
+        lastChangePhone: updatedUser.lastChangePhone,
     }
 
     return {
         message: 'Thành công',
         token: jwt.auth.generateToken(payload),
         user: payload,
-    }
-}
-
-function requireEmailChangeAllowed(
-    field: ProfileUpdateContactBody['field'],
-    user: { facebookId: null | string; googleId: null | string }
-): void {
-    if (field !== 'email') return
-
-    const providers = [user.googleId ? 'google' : null, user.facebookId ? 'facebook' : null].filter(
-        (provider): provider is 'facebook' | 'google' => provider !== null
-    )
-
-    if (providers.length) {
-        throw new HttpErr.UnprocessableEntity(
-            'Không thể thay đổi email của tài khoản đăng nhập bằng Google hoặc Facebook.',
-            'SOCIAL_ACCOUNT_EMAIL_CHANGE_NOT_ALLOWED',
-            { providers }
-        )
     }
 }

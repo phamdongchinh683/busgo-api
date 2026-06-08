@@ -368,10 +368,11 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
         .onConflict(oc =>
             oc.column('email').doUpdateSet({
                 email: params.data.email,
+                googleId: sql<string | null>`COALESCE(auth.user.google_id, excluded.google_id)`,
                 facebookId: sql<
                     string | null
                 >`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
-                googleId: sql<string | null>`COALESCE(auth.user.google_id, excluded.google_id)`,
+                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
         )
@@ -379,66 +380,67 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
         .executeTakeFirstOrThrow()
 }
 
-type FacebookAuthUserTableInsert = AuthUserTableInsert & {
-    facebookId: string
-}
-
-type GoogleAuthUserTableInsert = AuthUserTableInsert & {
+type GoogleEmailAuthUserTableInsert = AuthUserTableInsert & {
     email: string
     googleId: string
 }
 
-export async function authUpsertByFacebook(params: { data: FacebookAuthUserTableInsert }) {
-    try {
-        return await db
-            .insertInto('auth.user')
-            .values(params.data)
-            .onConflict(oc =>
-                oc.column('facebookId').doUpdateSet({
-                    email: sql<string | null>`COALESCE(auth.user.email, excluded.email)`,
-                    fullName: sql<string>`COALESCE(NULLIF(auth.user.full_name, ''), NULLIF(excluded.full_name, ''), auth.user.full_name)`,
-                    isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
-                })
-            )
-            .returningAll()
-            .executeTakeFirstOrThrow()
-    } catch (error) {
-        if (
-            error instanceof DatabaseError &&
-            error.code === '23505' &&
-            error.constraint === 'user_email_key' &&
-            params.data.email
-        ) {
-            return authUpsertByEmail(params)
-        }
-
-        throw error
-    }
+export async function authUpsertByGoogleEmail(params: { data: GoogleEmailAuthUserTableInsert }) {
+    return db
+        .insertInto('auth.user')
+        .values(params.data)
+        .onConflict(oc =>
+            oc.column('email').doUpdateSet({
+                email: params.data.email,
+                googleId: sql<string | null>`COALESCE(auth.user.google_id, excluded.google_id)`,
+                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
+                isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
+            })
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow()
 }
 
-export async function authUpsertByGoogle(params: { data: GoogleAuthUserTableInsert }) {
-    try {
-        return await db
-            .insertInto('auth.user')
-            .values(params.data)
-            .onConflict(oc =>
-                oc.column('googleId').doUpdateSet({
-                    email: sql<string | null>`COALESCE(auth.user.email, excluded.email)`,
-                    fullName: sql<string>`COALESCE(NULLIF(auth.user.full_name, ''), NULLIF(excluded.full_name, ''), auth.user.full_name)`,
-                    isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
-                })
-            )
-            .returningAll()
-            .executeTakeFirstOrThrow()
-    } catch (error) {
-        if (
-            error instanceof DatabaseError &&
-            error.code === '23505' &&
-            error.constraint === 'user_email_key'
-        ) {
-            return authUpsertByEmail(params)
-        }
+type FacebookEmailAuthUserTableInsert = AuthUserTableInsert & {
+    email: string
+    facebookId: string
+}
 
-        throw error
-    }
+export async function authUpsertByFacebookEmail(params: {
+    data: FacebookEmailAuthUserTableInsert
+}) {
+    return db
+        .insertInto('auth.user')
+        .values(params.data)
+        .onConflict(oc =>
+            oc.column('email').doUpdateSet({
+                email: params.data.email,
+                facebookId: sql<
+                    string | null
+                >`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
+                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
+                isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
+            })
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
+
+type FacebookIdAuthUserTableInsert = AuthUserTableInsert & {
+    facebookId: string
+}
+
+export async function authUpsertByFacebookId(params: { data: FacebookIdAuthUserTableInsert }) {
+    return db
+        .insertInto('auth.user')
+        .values(params.data)
+        .onConflict(oc =>
+            oc.column('facebookId').doUpdateSet({
+                email: sql<string | null>`COALESCE(auth.user.email, excluded.email)`,
+                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
+                isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
+            })
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow()
 }

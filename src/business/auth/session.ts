@@ -46,7 +46,8 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
         companyId: context.companyId,
         status: user.status,
         accountStripeId: user.accountStripeId,
-        lastChangeContact: user.lastChangeContact,
+        lastChangeEmail: user.lastChangeEmail,
+        lastChangePhone: user.lastChangePhone,
     }
 
     return {
@@ -64,7 +65,8 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
             googleId: tokenPayload.googleId,
             status: tokenPayload.status,
             accountStripeId: tokenPayload.accountStripeId,
-            lastChangeContact: tokenPayload.lastChangeContact,
+            lastChangeEmail: tokenPayload.lastChangeEmail,
+            lastChangePhone: tokenPayload.lastChangePhone,
             driverCompanyId: context.driverCompanyId,
         },
     }

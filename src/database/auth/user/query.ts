@@ -160,7 +160,8 @@ export function getOne(params: {
             'u.accountStripeId',
             'u.isEmailVerified',
             'u.isPhoneVerified',
-            'u.lastChangeContact',
+            'u.lastChangeEmail',
+            'u.lastChangePhone',
             'auth.staff_profile.companyId',
             'auth.staff_profile.role as staffProfileRole',
             'organization.company_driver.companyId as driverCompanyId',
@@ -205,7 +206,8 @@ export async function getAuthUser(params: {
             'u.tokenVersion',
             'u.accountStripeId',
             'u.isEmailVerified',
-            'u.lastChangeContact',
+            'u.lastChangeEmail',
+            'u.lastChangePhone',
         ])
         .where(eb => {
             const cond = []
