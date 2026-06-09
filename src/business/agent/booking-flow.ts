@@ -546,11 +546,14 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
         stopOrderPickup,
         stopOrderDropoff,
     })
-    const seatOptions = result.seats.slice(0, MAX_SEAT_OPTIONS).map(item => ({
-        seatId: item.id,
-        seatNumber: item.seatNumber,
-        type: item.type,
-    }))
+    const seatOptions = result.seats
+        .filter(item => item.isAvailable)
+        .slice(0, MAX_SEAT_OPTIONS)
+        .map(item => ({
+            seatId: item.id,
+            seatNumber: item.seatNumber,
+            type: item.type,
+        }))
     const nextState: AiChatState = {
         ...state,
         stage: 'seat_listed',

@@ -44,31 +44,6 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
         .execute()
 }
 
-function getOccupiedSeatsSubQuery(params: TripSeatParam) {
-    const { id, stopOrderPickup, stopOrderDropoff } = params
-    return db
-        .selectFrom('booking.seat_segment as ss')
-        .innerJoin('operation.trip as t', 't.id', 'ss.tripId')
-        .innerJoin('operation.trip_stop_template as ts', join =>
-            join
-                .onRef('ts.scheduleId', '=', 't.scheduleId')
-                .onRef('ts.stationId', '=', 'ss.fromStationId')
-        )
-        .innerJoin('operation.trip_stop_template as fs', join =>
-            join
-                .onRef('fs.scheduleId', '=', 't.scheduleId')
-                .onRef('fs.stationId', '=', 'ss.toStationId')
-        )
-        .where(eb => {
-            const cond = []
-            cond.push(eb('ss.tripId', '=', id))
-            cond.push(eb('ts.stopOrder', '<', stopOrderDropoff))
-            cond.push(eb('fs.stopOrder', '>', stopOrderPickup))
-            return eb.and(cond)
-        })
-        .select(['ss.seatId'])
-}
-
 function getVehicleIdByTrip(tripId: OperationTripId) {
     return db
         .selectFrom('operation.trip')
@@ -77,18 +52,42 @@ function getVehicleIdByTrip(tripId: OperationTripId) {
         .executeTakeFirstOrThrow()
 }
 
-export async function getAvailableSeats(params: TripSeatParam) {
+export async function getSeatsWithAvailability(params: TripSeatParam) {
     const { vehicleId } = await getVehicleIdByTrip(params.id)
 
     return db
         .selectFrom('organization.seat as s')
-        .select(['s.id', 's.seatNumber', 's.type'])
-        .where(eb => {
-            const cond = []
-            cond.push(eb('s.vehicleId', '=', vehicleId))
-            cond.push(eb('s.id', 'not in', getOccupiedSeatsSubQuery(params)))
-            return eb.and(cond)
-        })
+        .select(eb => [
+            's.id',
+            's.seatNumber',
+            's.type',
+            eb
+                .not(
+                    eb.exists(
+                        eb
+                            .selectFrom('booking.seat_segment as ss')
+                            .innerJoin('operation.trip as t', 't.id', 'ss.tripId')
+                            .innerJoin('operation.trip_stop_template as fromStop', join =>
+                                join
+                                    .onRef('fromStop.scheduleId', '=', 't.scheduleId')
+                                    .onRef('fromStop.stationId', '=', 'ss.fromStationId')
+                            )
+                            .innerJoin('operation.trip_stop_template as toStop', join =>
+                                join
+                                    .onRef('toStop.scheduleId', '=', 't.scheduleId')
+                                    .onRef('toStop.stationId', '=', 'ss.toStationId')
+                            )
+                            .select('ss.id')
+                            .whereRef('ss.seatId', '=', 's.id')
+                            .where('ss.tripId', '=', params.id)
+                            .where('fromStop.stopOrder', '<', params.stopOrderDropoff)
+                            .where('toStop.stopOrder', '>', params.stopOrderPickup)
+                    )
+                )
+                .$castTo<boolean>()
+                .as('isAvailable'),
+        ])
+        .where('s.vehicleId', '=', vehicleId)
         .orderBy('s.type', 'asc')
         .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
         .orderBy('s.seatNumber')

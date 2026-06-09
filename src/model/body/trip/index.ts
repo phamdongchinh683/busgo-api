@@ -84,6 +84,7 @@ export const TripSeatResponse = z.object({
             id: OrganizationSeatId,
             seatNumber: z.string(),
             type: OrganizationSeatType,
+            isAvailable: z.boolean(),
         })
     ),
 })
