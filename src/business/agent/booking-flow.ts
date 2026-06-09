@@ -404,6 +404,22 @@ async function getPickupStops(state: AiChatState): Promise<AiChatResponse> {
         }
     }
 
+    if (pickupOptions.length === 1) {
+        const selectedPickup = pickupOptions[0]
+        const response = await selectPickup({
+            selectedIndex: 0,
+            state: nextState,
+        })
+
+        return {
+            ...response,
+            message: [
+                `Chuyến chỉ có một điểm đón tại ${selectedPickup.address}, ${selectedPickup.city} nên mình đã chọn giúp bạn.`,
+                response.message,
+            ].join('\n'),
+        }
+    }
+
     return {
         message: [
             `Điểm đón hiện có:\n${formatStopOptions(pickupOptions)}`,
@@ -644,7 +660,7 @@ function matchScheduleOption(message: string, options: AiChatScheduleOption[]) {
         return findScheduleByTime(options, 'desc')
     }
 
-    const timeRangeIndex = findScheduleByTimeRange(options, normalized)
+    const timeRangeIndex = findScheduleByTimeRange(options, message)
     if (timeRangeIndex !== undefined) return timeRangeIndex
 
     const choiceIndex = extractChoiceIndex(message, options.length)
@@ -712,19 +728,17 @@ function findScheduleByTime(options: AiChatScheduleOption[], order: 'asc' | 'des
 }
 
 function findScheduleByTimeRange(options: AiChatScheduleOption[], message: string) {
-    const ranges: Array<[string[], number, number]> = [
-        [['sang', 'morning'], 5, 12],
-        [['chieu', 'afternoon'], 12, 18],
-        [['toi', 'evening'], 18, 22],
-        [['dem', 'khuya', 'night'], 22, 24],
-    ]
-    for (const [patterns, startHour, endHour] of ranges) {
-        if (!containsAny(message, patterns)) continue
-        return options
-            .map((item, index) => ({ index, hour: Number(item.departureTime.slice(0, 2)) }))
-            .filter(item => item.hour >= startHour && item.hour < endHour)
-            .sort((left, right) => left.hour - right.hour)[0]?.index
-    }
+    const preferredTime = extractPreferredTime(message)
+    if (!preferredTime) return undefined
+
+    return options
+        .map((item, index) => ({
+            index,
+            departureTime: item.departureTime,
+            hour: Number(item.departureTime.slice(0, 2)),
+        }))
+        .filter(item => isTimeInPreferredRange(item.departureTime, preferredTime))
+        .sort((left, right) => left.hour - right.hour)[0]?.index
 }
 
 function extractTimeText(message: string) {
@@ -739,7 +753,7 @@ function extractTimeText(message: string) {
 function findBestTextMatchIndex(message: string, labels: string[]) {
     const selection = normalizeSearch(message)
         .replace(
-            /\b(?:toi|minh|em|anh|chi|cho|giup|muon|can|lay|chon|cai|nay|do|diem|don|tra|xuong|o|tai|nha|xe|chuyen|ghe|so|muc|option|ve|di|giu)\b/g,
+            /\b(?:toi|minh|em|anh|chi|cho|giup|muon|can|lay|chon|cai|nay|do|diem|don|tra|xuong|o|tai|nha|xe|chuyen|ghe|so|muc|option|ve|di|giu|nhe|voi)\b/g,
             ' '
         )
         .replace(/\s+/g, ' ')
@@ -749,13 +763,17 @@ function findBestTextMatchIndex(message: string, labels: string[]) {
     const selectionTokens = selection.split(' ').filter(token => token.length > 1)
     const scored = labels
         .map((label, index) => {
-            const normalizedLabel = normalizeSearch(label)
-            const score = selectionTokens.filter(token => normalizedLabel.includes(token)).length
+            const labelTokens = new Set(normalizeSearch(label).split(' '))
+            const score = selectionTokens.filter(token => labelTokens.has(token)).length
             return { index, score }
         })
         .filter(item => item.score > 0)
         .sort((left, right) => right.score - left.score)
-    return scored[0]?.index
+    const best = scored[0]
+    if (!best || best.score === scored[1]?.score) return undefined
+    if (best.score >= 2) return best.index
+
+    return selectionTokens.length === 1 && selectionTokens[0].length >= 4 ? best.index : undefined
 }
 
 function hasDropoffLookupState(state: AiChatState) {
@@ -830,9 +848,20 @@ function resolveLocationName(input: string, provinceNames: string[]) {
 export function extractTripSearchParams(message: string): TripSearchParams {
     const cleaned = message
         .replace(
-            /\b(?:hôm nay|hom nay|ngày mai|ngay mai|mai|ngày mốt|ngay mot|mốt|mot|ngày kia|ngay kia|sáng|sang|chiều|chieu|tối|toi|đêm|dem)\b/giu,
+            /\b(?:hôm nay|hom nay|ngày mai|ngay mai|ngày mốt|ngay mot|ngày kia|ngay kia|sáng nay|sang nay|chiều nay|chieu nay|tối nay|toi nay|đêm nay|dem nay|sáng mai|sang mai|chiều mai|chieu mai|tối mai|toi mai|đêm mai|dem mai)\b/giu,
             ' '
         )
+        .replace(
+            /\b(?:(?:vào|vao)\s+)?(?:(?:buổi|buoi)\s+)?(?:sáng|sang|chiều|chieu|tối|đêm|dem|khuya)\b/giu,
+            ' '
+        )
+        .replace(
+            /\b(?:(?:vào|vao)\s+)?(?:ngày|ngay)\s+\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b/giu,
+            ' '
+        )
+        .replace(/\b20\d{2}-\d{1,2}-\d{1,2}\b/gu, ' ')
+        .replace(/\b\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b/gu, ' ')
+        .replace(/\b(?:lúc|luc)\s+\d{1,2}(?:(?::|h)\d{1,2})?\b/giu, ' ')
         .replace(/\s+/g, ' ')
         .trim()
     const directRouteMatch = cleaned.match(/^(.+?)\s+(?:đến|den)\s+(.+?)(?:[,.?]|$)/iu)
@@ -850,6 +879,8 @@ export function extractTripSearchParams(message: string): TripSearchParams {
 }
 
 export function hasMatchingCurrentOption(message: string, state: AiChatState) {
+    if (isQuestionAboutCurrentOption(message)) return false
+
     if (state.scheduleOptions?.length) {
         return matchScheduleOption(message, state.scheduleOptions) !== undefined
     }
@@ -866,11 +897,55 @@ export function hasMatchingCurrentOption(message: string, state: AiChatState) {
     return false
 }
 
+function isQuestionAboutCurrentOption(message: string) {
+    const normalized = normalizeSearch(message)
+    const hasExplicitSelectionIntent = containsNormalizedPhrase(normalized, [
+        'chon',
+        'lay',
+        'giu',
+        'dat',
+        'cho toi chuyen',
+        'cho minh chuyen',
+        'cho toi diem',
+        'cho minh diem',
+        'cho toi ghe',
+        'cho minh ghe',
+        'don o',
+        'xuong o',
+        'ngoi ghe',
+    ])
+    if (hasExplicitSelectionIntent) return false
+
+    return (
+        containsNormalizedPhrase(normalized, [
+            'tai sao',
+            'vi sao',
+            'sao lai',
+            'bao nhieu',
+            'bao lau',
+            'khi nao',
+            'luc nao',
+            'o dau',
+            'the nao',
+            'la gi',
+            'hoi',
+        ]) || /\bco\b.+\bkhong\b/u.test(normalized)
+    )
+}
+
 function cleanupLocation(value?: string) {
     if (!value) return undefined
     return value
         .replace(/^(?:có xe|co xe|xe|vé|ve|chuyến|chuyen|tuyến|tuyen)\s+/iu, '')
-        .replace(/\s+(?:không|khong|ko|không vậy|khong vay)$/iu, '')
+        .replace(/\s+(?:có|co)\s+(?:chuyến|chuyen|xe|vé|ve)\b.*$/iu, '')
+        .replace(/\s+(?:(?:vào|vao)\s+)?(?:ngày|ngay)\b.*$/iu, '')
+        .replace(/\s+(?:lúc|luc)\b.*$/iu, '')
+        .replace(/\s+(?:(?:buổi|buoi)\s+)?(?:sáng|sang|chiều|chieu|tối|toi|đêm|dem|khuya)$/iu, '')
+        .replace(
+            /\s+(?:hôm nay|hom nay|ngày mai|ngay mai|mai|ngày mốt|ngay mot|mốt|mot|ngày kia|ngay kia)$/iu,
+            ''
+        )
+        .replace(/\s+(?:không|khong|ko|không vậy|khong vay|nhé|nhe)$/iu, '')
         .trim()
 }
 
@@ -887,13 +962,37 @@ function isLikelyDirectRoute(match: RegExpMatchArray) {
 
 function extractDate(message: string) {
     const normalized = normalizeSearch(message)
-    if (containsAny(normalized, ['hom nay', 'bua nay', 'today'])) {
+    if (
+        containsNormalizedPhrase(normalized, [
+            'hom nay',
+            'bua nay',
+            'sang nay',
+            'chieu nay',
+            'toi nay',
+            'dem nay',
+            'today',
+        ])
+    ) {
         return utils.time.getRelativeAppCalendarDate(0)
     }
-    if (containsAny(normalized, ['ngay mai', 'mai', 'tomorrow'])) {
+    if (
+        containsNormalizedPhrase(normalized, [
+            'ngay mai',
+            'sang mai',
+            'chieu mai',
+            'toi mai',
+            'dem mai',
+            'mai',
+            'tomorrow',
+        ])
+    ) {
         return utils.time.getRelativeAppCalendarDate(1)
     }
-    if (containsAny(normalized, ['ngay mot', 'ngay kia', 'mot'])) {
+    if (
+        containsNormalizedPhrase(normalized, ['ngay mot', 'ngay kia']) ||
+        /\bmốt\b/iu.test(message) ||
+        normalized === 'mot'
+    ) {
         return utils.time.getRelativeAppCalendarDate(2)
     }
 
@@ -942,10 +1041,30 @@ function getPreferredTimeArg(
 
 function extractPreferredTime(message: string): PreferredTime | undefined {
     const normalized = normalizeSearch(message)
-    if (containsAny(normalized, ['sang', 'buoi sang', 'morning'])) return 'morning'
-    if (containsAny(normalized, ['chieu', 'buoi chieu', 'afternoon'])) return 'afternoon'
-    if (containsAny(normalized, ['toi', 'buoi toi', 'evening'])) return 'evening'
-    if (containsAny(normalized, ['dem', 'khuya', 'night'])) return 'night'
+    if (
+        /\bsáng\b/iu.test(message) ||
+        containsNormalizedPhrase(normalized, ['buoi sang', 'sang nay', 'sang mai', 'morning'])
+    ) {
+        return 'morning'
+    }
+    if (
+        /\bchiều\b/iu.test(message) ||
+        containsNormalizedPhrase(normalized, ['buoi chieu', 'chieu nay', 'chieu mai', 'afternoon'])
+    ) {
+        return 'afternoon'
+    }
+    if (
+        /\btối\b/iu.test(message) ||
+        containsNormalizedPhrase(normalized, ['buoi toi', 'toi nay', 'toi mai', 'evening'])
+    ) {
+        return 'evening'
+    }
+    if (
+        /\bđêm\b/iu.test(message) ||
+        containsNormalizedPhrase(normalized, ['buoi dem', 'dem nay', 'dem mai', 'khuya', 'night'])
+    ) {
+        return 'night'
+    }
 }
 
 function isTimeInPreferredRange(departureTime: string, preferredTime: PreferredTime) {
@@ -1009,6 +1128,11 @@ function formatMoney(value: number) {
 function containsAny(value: string, patterns: string[]) {
     const normalized = normalizeSearch(value)
     return patterns.some(pattern => normalized.includes(normalizeSearch(pattern)))
+}
+
+function containsNormalizedPhrase(value: string, patterns: string[]) {
+    const normalized = ` ${normalizeSearch(value)} `
+    return patterns.some(pattern => normalized.includes(` ${normalizeSearch(pattern)} `))
 }
 
 function normalizeSearch(value: string) {

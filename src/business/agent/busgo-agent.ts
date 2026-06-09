@@ -237,6 +237,14 @@ function isSafeNaturalReply(message: string, response: AiChatResponse) {
         ...(state?.pickupOptions?.map(item => item.address) ?? []),
         ...(state?.dropoffOptions?.map(item => item.address) ?? []),
         ...(state?.seatOptions?.map(item => item.seatNumber) ?? []),
+        ...(state?.selectedPickup &&
+        normalize(response.message).includes(normalize(state.selectedPickup.address))
+            ? [state.selectedPickup.address]
+            : []),
+        ...(state?.selectedDropoff &&
+        normalize(response.message).includes(normalize(state.selectedDropoff.address))
+            ? [state.selectedDropoff.address]
+            : []),
         ...(state?.from && normalize(response.message).includes(normalize(state.from))
             ? [state.from]
             : []),
@@ -707,7 +715,8 @@ function extractDateFromMessage(message: string) {
     if (
         normalized.includes('ngay mot') ||
         normalized.includes('ngay kia') ||
-        normalized === 'mot'
+        normalized === 'mot' ||
+        /\bmốt\b/iu.test(message)
     ) {
         return utils.time.getRelativeAppCalendarDate(2)
     }
