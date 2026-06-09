@@ -3,6 +3,7 @@ import { BookingTicketStatus } from '../../database/booking/ticket/type.js'
 import { PaymentStatus } from '../../database/payment/payment/type.js'
 import { utils } from '../../utils/index.js'
 import { db } from '../../datasource/db.js'
+import { dal } from '../../database/index.js'
 
 export async function expireBooking() {
     const now = utils.time.getNow().toDate()
@@ -34,7 +35,7 @@ export async function expireBooking() {
             .where('b.id', 'in', bookingIds)
             .where('b.status', '=', BookingStatus.enum.pending)
             .where('b.expiredAt', '<', now)
-            .returning('b.id')
+            .returning(['b.id', 'b.couponId'])
             .execute()
 
         const updatedBookingIds = updatedBookings.map(b => b.id)
@@ -46,6 +47,13 @@ export async function expireBooking() {
                 cancelledTicketCount: 0,
             }
         }
+
+        await dal.booking.coupon.cmd.downCountUsedQuantityMany(
+            updatedBookings.flatMap(booking =>
+                booking.couponId === null ? [] : [booking.couponId]
+            ),
+            trx
+        )
 
         await trx
             .updateTable('payment.payment as pp')

@@ -41,6 +41,7 @@ export async function getCouponByCodeTransaction(
             }
             return eb.and(cond)
         })
+        .forUpdate('c')
         .executeTakeFirstOrThrow()
 }
 
@@ -158,17 +159,60 @@ export async function upCountUsedQuantity(
     trx?: Transaction<Database>
 ) {
     const usedQuantity =
-        type === '+' ? sql<number>`used_quantity + 1` : sql<number>`used_quantity - 1`
-    const coupon = await (trx ?? db)
+        type === '+'
+            ? sql<number>`coalesce(used_quantity, 0) + 1`
+            : sql<number>`greatest(coalesce(used_quantity, 0) - 1, 0)`
+    let query = (trx ?? db)
         .updateTable('booking.coupon')
         .set({
             usedQuantity,
         })
         .where('id', '=', id)
-        .returningAll()
-        .executeTakeFirstOrThrow()
+
+    if (type === '+') {
+        query = query.where(sql<boolean>`coalesce(used_quantity, 0) < total_quantity`)
+    }
+
+    const coupon = await query.returningAll().executeTakeFirst()
+
+    if (!coupon) {
+        throw new HttpErr.UnprocessableEntity(
+            'Mã giảm giá đã hết lượt sử dụng.',
+            'COUPON_OUT_OF_STOCK'
+        )
+    }
 
     await clearCouponCache(coupon.companyId)
 
     return coupon
+}
+
+export async function downCountUsedQuantityMany(
+    couponIds: BookingCouponId[],
+    trx: Transaction<Database>
+) {
+    const counts = new Map<BookingCouponId, number>()
+
+    for (const couponId of couponIds) {
+        counts.set(couponId, (counts.get(couponId) ?? 0) + 1)
+    }
+
+    const companyIds = new Set<OrganizationBusCompanyId>()
+
+    for (const [couponId, count] of counts) {
+        const coupon = await trx
+            .updateTable('booking.coupon')
+            .set({
+                usedQuantity: sql<number>`greatest(coalesce(used_quantity, 0) - ${count}, 0)`,
+            })
+            .where('id', '=', couponId)
+            .returning('companyId')
+            .executeTakeFirst()
+
+        if (coupon) {
+            companyIds.add(coupon.companyId)
+        }
+    }
+
+    await Promise.all([...companyIds].map(companyId => clearCouponCache(companyId)))
 }

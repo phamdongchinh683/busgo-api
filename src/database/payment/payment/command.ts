@@ -45,15 +45,11 @@ export async function updatePaymentStatusSuccess(
         trx
     )
 
-    const booking = await dal.booking.booking.cmd.updateBookingStatus(
+    await dal.booking.booking.cmd.updateBookingStatus(
         payment[0].bookingId,
         BookingStatus.enum.paid,
         trx
     )
-
-    if (booking[0].couponId !== null) {
-        await dal.booking.coupon.cmd.upCountUsedQuantity(booking[0].couponId, '+', trx)
-    }
 
     await dal.booking.ticket.cmd.updateTicketStatusByBookingId(
         {

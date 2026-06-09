@@ -56,6 +56,10 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
             tx
         )
 
+        if (couponId) {
+            await dal.booking.coupon.cmd.upCountUsedQuantity(couponId, '+', tx)
+        }
+
         return {
             id: booking.id,
             expiredAt: booking.expiredAt,
@@ -179,6 +183,10 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
                 tx
             )
 
+            if (couponId) {
+                await dal.booking.coupon.cmd.upCountUsedQuantity(couponId, '+', tx)
+            }
+
             return {
                 id: booking.id,
                 expiredAt: booking.expiredAt,
@@ -200,12 +208,29 @@ export async function updateBookingStatus(
     status: BookingStatus,
     trx: Transaction<Database>
 ) {
-    return trx
+    const booking = await trx
+        .selectFrom('booking.booking as b')
+        .select(['b.status', 'b.couponId'])
+        .where('b.id', '=', bookingId)
+        .forUpdate('b')
+        .executeTakeFirstOrThrow()
+
+    const updatedBooking = await trx
         .updateTable('booking.booking')
         .set({ status })
         .returning('booking.booking.couponId')
         .where('id', '=', bookingId)
         .execute()
+
+    if (
+        booking.status === BookingStatus.enum.pending &&
+        (status === BookingStatus.enum.cancelled || status === BookingStatus.enum.expired) &&
+        booking.couponId !== null
+    ) {
+        await dal.booking.coupon.cmd.upCountUsedQuantity(booking.couponId, '-', trx)
+    }
+
+    return updatedBooking
 }
 
 export async function updateExpiredBooking(id: BookingId, trx?: Transaction<Database>) {
