@@ -1,6 +1,6 @@
 import { redis } from '../../../datasource/redis.js'
 
-type SocketEventPayload = {
+export type SocketEventPayload = {
     targetId: string
     event: string
     data: Record<string, unknown>
@@ -13,5 +13,15 @@ export async function emitEvent(params: SocketEventPayload): Promise<number> {
         data: params.data,
     })
 
-    return redis.publish('socket:events', payload)
+    try {
+        return await redis.publish('socket:events', payload)
+    } catch (err) {
+        console.error('[emitEvent] redis publish failed', {
+            channel: 'socket:events',
+            targetId: params.targetId,
+            event: params.event,
+            error: err instanceof Error ? err.message : String(err),
+        })
+        return 0
+    }
 }

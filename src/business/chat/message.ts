@@ -25,7 +25,7 @@ export async function sendMessage(
     const receiverId =
         result.box.receiverId === userInfo.id ? result.box.senderId : result.box.receiverId
 
-    Promise.allSettled([
+    void Promise.allSettled([
         ws.publish.emitEvent({
             targetId: String(result.box.id),
             event: 'message:new',
