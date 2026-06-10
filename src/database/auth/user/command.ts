@@ -378,7 +378,7 @@ export async function verify(params: {
 }
 
 export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
-    return db
+    const user = await db
         .insertInto('auth.user')
         .values(params.data)
         .onConflict(oc =>
@@ -394,6 +394,8 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
         )
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    return user.accountStripeId ? user : ensureAccountStripeId(user)
 }
 
 type GoogleEmailAuthUserTableInsert = AuthUserTableInsert & {
@@ -402,7 +404,7 @@ type GoogleEmailAuthUserTableInsert = AuthUserTableInsert & {
 }
 
 export async function authUpsertByGoogleEmail(params: { data: GoogleEmailAuthUserTableInsert }) {
-    return db
+    const user = await db
         .insertInto('auth.user')
         .values(params.data)
         .onConflict(oc =>
@@ -415,6 +417,8 @@ export async function authUpsertByGoogleEmail(params: { data: GoogleEmailAuthUse
         )
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    return user.accountStripeId ? user : ensureAccountStripeId(user)
 }
 
 type FacebookEmailAuthUserTableInsert = AuthUserTableInsert & {
@@ -425,7 +429,7 @@ type FacebookEmailAuthUserTableInsert = AuthUserTableInsert & {
 export async function authUpsertByFacebookEmail(params: {
     data: FacebookEmailAuthUserTableInsert
 }) {
-    return db
+    const user = await db
         .insertInto('auth.user')
         .values(params.data)
         .onConflict(oc =>
@@ -440,6 +444,8 @@ export async function authUpsertByFacebookEmail(params: {
         )
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    return user.accountStripeId ? user : ensureAccountStripeId(user)
 }
 
 type FacebookIdAuthUserTableInsert = AuthUserTableInsert & {
@@ -447,7 +453,7 @@ type FacebookIdAuthUserTableInsert = AuthUserTableInsert & {
 }
 
 export async function authUpsertByFacebookId(params: { data: FacebookIdAuthUserTableInsert }) {
-    return db
+    const user = await db
         .insertInto('auth.user')
         .values(params.data)
         .onConflict(oc =>
@@ -459,4 +465,30 @@ export async function authUpsertByFacebookId(params: { data: FacebookIdAuthUserT
         )
         .returningAll()
         .executeTakeFirstOrThrow()
+
+    return user.accountStripeId ? user : ensureAccountStripeId(user)
+}
+
+async function ensureAccountStripeId(user: {
+    id: AuthUserId
+    email: string | null
+    phone: string | null
+    fullName: string
+    accountStripeId: string | null
+}) {
+    const stripeCustomer = await service.stripe.client.createCustomer({
+        email: user.email,
+        phone: user.phone ?? '',
+        name: user.fullName || user.email || 'BusGo User',
+        metadata: {
+            userId: user.id.toString(),
+            fullName: user.fullName,
+            ...(user.email ? { email: user.email } : {}),
+            ...(user.phone ? { phone: user.phone } : {}),
+        },
+    })
+
+    return dal.auth.user.cmd.updateOne(user.id, {
+        accountStripeId: stripeCustomer.id,
+    })
 }
