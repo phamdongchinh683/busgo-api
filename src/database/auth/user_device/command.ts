@@ -1,6 +1,6 @@
 import { db } from '../../../datasource/db.js'
 import { Database } from '../../../datasource/type.js'
-import { Transaction } from 'kysely'
+import { sql, Transaction } from 'kysely'
 import { AuthUserDeviceTableInsert } from './table.js'
 import { AuthUserDeviceId } from './type.js'
 import { AuthUserId, AuthUserRole } from '../user/type.js'
@@ -30,6 +30,8 @@ export async function findDeviceSuperAdmin(trx?: Transaction<Database>) {
         .select(['ud.id', 'ud.userId', 'ud.fcmToken'])
         .innerJoin('auth.user', 'ud.userId', 'auth.user.id')
         .where('auth.user.role', '=', AuthUserRole.enum.super_admin)
+        .orderBy(sql`random()`)
+        .limit(1)
         .execute()
 }
 
