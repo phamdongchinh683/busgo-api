@@ -143,7 +143,7 @@ export async function getPayments(
             )
             return eb.and(cond)
         })
-        .orderBy('pp.id', 'asc')
+        .orderBy('pp.id', 'desc')
         .limit(limit + 1)
         .execute()
 }

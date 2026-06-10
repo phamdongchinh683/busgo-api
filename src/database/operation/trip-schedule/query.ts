@@ -11,7 +11,7 @@ export async function findAllByFilter(
     query: TripScheduleFilter,
     companyId?: OrganizationBusCompanyId
 ) {
-    const { limit, next, from, to, date, orderBy } = query
+    const { limit, next, from, to, date, orderBy, status } = query
 
     const now = utils.time.getNow()
     const today = now.format('YYYY-MM-DD')
@@ -41,7 +41,9 @@ export async function findAllByFilter(
         .where(eb => {
             const cond: Expression<SqlBool>[] = []
 
-            cond.push(eb('ts.status', '=', true))
+            if (status !== undefined) {
+                cond.push(eb('ts.status', '=', status))
+            }
 
             if (from) {
                 cond.push(eb('r.fromLocation', '=', from))

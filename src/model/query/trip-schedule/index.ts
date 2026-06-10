@@ -7,6 +7,11 @@ export const TripScheduleFilter = z.object({
     next: OperationTripScheduleId.optional(),
     from: z.string().optional(),
     to: z.string().optional(),
+    status: z.preprocess(val => {
+        if (val === true || val === 'true' || val === 1 || val === '1') return true
+        if (val === false || val === 'false' || val === 0 || val === '0') return false
+        return undefined
+    }, z.boolean().optional()),
     date: z.coerce.date().optional(),
     orderBy: OrderBy,
 })
