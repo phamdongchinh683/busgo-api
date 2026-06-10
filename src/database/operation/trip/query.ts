@@ -52,6 +52,7 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
             'r.fromLocation',
             'r.toLocation',
             'r.distanceKm',
+            't.driverIds',
             'r.durationMinutes',
             't.status',
         ])

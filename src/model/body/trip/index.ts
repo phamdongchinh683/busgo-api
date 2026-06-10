@@ -39,6 +39,7 @@ export const TripResponse = z.object({
             companyName: z.string(),
             logoUrl: z.string(),
             plateNumber: z.string(),
+            driverIds: z.array(AuthUserId).nullable(),
             type: OrganizationVehicleType,
             totalSeats: z.number(),
             status: OperationTripStatus,
