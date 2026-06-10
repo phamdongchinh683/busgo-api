@@ -5,28 +5,10 @@ import { utils } from '../../utils/index.js'
 import { HttpErr } from '../../app/index.js'
 import { ProfileUpdateContactBody } from '../../model/body/profile/index.js'
 
-type OtpContact = {
-    field: 'email' | 'phone'
-    value: string
-}
-
-function getOtpCacheKey(contact: OtpContact) {
-    const value =
-        contact.field === 'email' ? contact.value.trim().toLowerCase() : contact.value.trim()
-    return utils.cache.cacheKey(`otp:${contact.field}`, value)
-}
-
 export async function send(params: { field: 'email' | 'phone'; value: string }) {
     const { field, value } = params
-    const cacheKey = getOtpCacheKey(params)
 
-    const cachedOtp = await utils.cache.getCache<Otp>(cacheKey)
-
-    const otp = cachedOtp ?? utils.random.generateRandomNumber(6)
-
-    if (!cachedOtp) {
-        await utils.cache.setCache(cacheKey, otp, 120)
-    }
+    const otp = utils.random.generateRandomNumber(6)
 
     if (field === 'email') {
         return sendByEmail({ to: value, otp: otp.toString() })
@@ -104,8 +86,6 @@ export async function verifyOtp(params: ProfileUpdateContactBody) {
     if (!verifiedOtp) {
         throw new HttpErr.Unauthorized('Mã OTP không hợp lệ hoặc đã hết hạn.')
     }
-
-    await utils.cache.delCache(getOtpCacheKey(params))
 }
 
 export async function verify(params: ProfileUpdateContactBody) {

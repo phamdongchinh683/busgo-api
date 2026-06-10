@@ -107,24 +107,26 @@ export async function signUpCompanyAdmin(
 
     const userDevice = await dal.auth.userDevice.cmd.findDeviceSuperAdmin()
 
-    const notification = await dal.auth.notification.cmd.insertOne({
-        userId: userDevice[0].userId,
-        title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
-        body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
-        data: JSON.stringify({
-            userNewAccountId: user.id.toString(),
-        }),
-        isRead: false,
-    })
-    await service.firebase.fcm.sendFcm({
-        fcmTokens: userDevice.map(device => device.fcmToken),
-        title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
-        body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
-        data: {
-            userNewAccountId: user.id.toString(),
-            id: notification.id.toString(),
-        },
-    })
+    if (userDevice.length > 0) {
+        const notification = await dal.auth.notification.cmd.insertOne({
+            userId: userDevice[0].userId,
+            title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
+            body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
+            data: JSON.stringify({
+                userNewAccountId: user.id.toString(),
+            }),
+            isRead: false,
+        })
+        await service.firebase.fcm.sendFcm({
+            fcmTokens: userDevice.map(device => device.fcmToken),
+            title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
+            body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
+            data: {
+                userNewAccountId: user.id.toString(),
+                id: notification.id.toString(),
+            },
+        })
+    }
 
     return {
         message: 'Yêu cầu tạo tài khoản mới đã được gửi đến quản trị viên cấp cao',
