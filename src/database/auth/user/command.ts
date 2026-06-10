@@ -15,7 +15,21 @@ import { service } from '../../../service/index.js'
 
 export async function signUp(params: AuthUserTableInsert) {
     try {
-        const user = await dal.auth.user.query.insertOne(params)
+        const stripeCustomer = await service.stripe.client.createCustomer({
+            email: params.email,
+            phone: params.phone ?? '',
+            name: params.fullName,
+            metadata: {
+                fullName: params.fullName,
+                ...(params.email ? { email: params.email } : {}),
+                ...(params.phone ? { phone: params.phone } : {}),
+            },
+        })
+
+        const user = await dal.auth.user.query.insertOne({
+            ...params,
+            accountStripeId: stripeCustomer.id,
+        })
 
         return {
             message: 'Thành công',
