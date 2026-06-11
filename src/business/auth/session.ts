@@ -24,7 +24,7 @@ async function getAuthContext(user: AuthUser) {
 export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
     const context = await getAuthContext(user)
     const tokenPayload = {
-        id: user.id,
+        id: user.publicId,
         email: user.email,
         phone: user.phone,
         role: user.role,
@@ -41,7 +41,6 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
 
     const responseUser = {
         id: tokenPayload.id,
-        publicId: user.publicId,
         email: tokenPayload.email,
         phone: tokenPayload.phone,
         role: tokenPayload.role,
