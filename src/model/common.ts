@@ -49,6 +49,7 @@ export const UserInfo = z.object({
     accountStripeId: z.string().nullable(),
     lastChangeEmail: z.date().nullable(),
     lastChangePhone: z.date().nullable(),
+    publicId: AuthUserPublicId.optional(),
 })
 
 export type UserInfo = z.infer<typeof UserInfo>

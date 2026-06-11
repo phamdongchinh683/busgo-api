@@ -128,7 +128,7 @@ export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileU
     }
 
     const payload = {
-        id: updatedUser.id,
+        id: updatedUser.publicId,
         tokenVersion: updatedUser.tokenVersion,
         email: updatedUser.email,
         phone: updatedUser.phone,
@@ -212,7 +212,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
     })
 
     const payload = {
-        id: updatedUser.id,
+        id: updatedUser.publicId,
         tokenVersion: updatedUser.tokenVersion,
         email: updatedUser.email,
         phone: updatedUser.phone,

@@ -32,7 +32,7 @@ export async function signUp(params: AuthUserTableInsert) {
 
         return {
             message: 'Thành công',
-            token: generateToken(user),
+            token: generateToken({ ...user, id: user.publicId }),
             user: user,
         }
     } catch (error) {
@@ -263,6 +263,9 @@ async function updateUser(
 
     if (params.tokenVersion !== undefined || params.status !== undefined) {
         await utils.cache.delCache(`auth:token-version:${userId}`)
+        if (user.publicId) {
+            await utils.cache.delCache(`auth:token-version:${user.publicId}`)
+        }
     }
 
     return user
@@ -294,6 +297,9 @@ export async function updateRole(
         .executeTakeFirstOrThrow()
 
     await utils.cache.delCache(`auth:token-version:${userId}`)
+    if (user.publicId) {
+        await utils.cache.delCache(`auth:token-version:${user.publicId}`)
+    }
 
     return user
 }
@@ -327,10 +333,13 @@ export async function incrementTokenVersion(userId: AuthUserId, trx?: Transactio
             tokenVersion: sql<number>`token_version + 1`,
         })
         .where('id', '=', userId)
-        .returning(['id'])
+        .returning(['id', 'publicId'])
         .executeTakeFirstOrThrow()
 
     await utils.cache.delCache(`auth:token-version:${user.id}`)
+    if (user.publicId) {
+        await utils.cache.delCache(`auth:token-version:${user.publicId}`)
+    }
 
     return user
 }
@@ -343,6 +352,9 @@ export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>)
         .executeTakeFirstOrThrow()
 
     await utils.cache.delCache(`auth:token-version:${userId}`)
+    if (user.publicId) {
+        await utils.cache.delCache(`auth:token-version:${user.publicId}`)
+    }
 
     return user
 }
