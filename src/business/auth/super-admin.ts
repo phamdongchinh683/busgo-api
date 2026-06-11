@@ -36,7 +36,7 @@ export async function listCompanyAdmins(query: CompanyAdminQuery) {
 }
 
 export async function updateOne(id: AuthUserId, body: UserUpdateBody) {
-    const user = await dal.auth.user.cmd.updateOne(id, body)
+    const user = await dal.auth.user.cmd.updateOneForPublicResponse(id, body)
     await utils.cache.delCacheByPattern('driver:list:*')
 
     return {
@@ -76,7 +76,7 @@ export async function createUser(body: UserBody) {
 }
 
 export async function deleteOne(id: AuthUserId) {
-    const user = await dal.auth.user.cmd.deleteOne(id)
+    const user = await dal.auth.user.cmd.deleteOneForPublicResponse(id)
     await utils.cache.delCacheByPattern('driver:list:*')
 
     return {

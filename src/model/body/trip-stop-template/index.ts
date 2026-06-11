@@ -7,7 +7,6 @@ import {
     OperationTripStopTemplateId,
     OperationTripStopTemplatePublicId,
 } from '../../../database/operation/trip-stop-template/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const TripStopTemplateBody = z.object({
     companyId: OrganizationBusCompanyId,
@@ -26,7 +25,7 @@ export const TripStopTemplateResponse = z.object({
         TripStopTemplateBody.extend({
             address: z.string(),
             city: z.string(),
-            id: PublicApiId(OperationTripStopTemplatePublicId, OperationTripStopTemplateId),
+            id: OperationTripStopTemplatePublicId,
         }).omit({ companyId: true, routeId: true })
     ),
 })
@@ -35,7 +34,7 @@ export type TripStopTemplateResponse = z.infer<typeof TripStopTemplateResponse>
 
 export const TripStopTemplateUpdateResponse = z.object({
     stoppingPoint: TripStopTemplateBody.extend({
-        id: PublicApiId(OperationTripStopTemplatePublicId, OperationTripStopTemplateId),
+        id: OperationTripStopTemplatePublicId,
     }),
 })
 

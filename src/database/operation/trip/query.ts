@@ -43,8 +43,8 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.id as cursorId',
+            't.publicId as id',
             'bc.name as companyName',
             'bc.logoUrl',
             'v.plateNumber',
@@ -88,8 +88,8 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.id as cursorId',
+            't.publicId as id',
             'v.plateNumber',
             'v.type',
             't.status',
@@ -122,8 +122,7 @@ export async function updateOneById(
             return eb.and(cond)
         })
         .returning([
-            't.id',
-            't.publicId',
+            't.publicId as id',
             't.routeId',
             't.vehicleId',
             't.scheduleId',

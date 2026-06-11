@@ -38,6 +38,7 @@ export async function createRoute(params: OperationRouteTableInsert, trx?: Trans
         .values(data)
         .onConflict(oc => oc.columns(['fromLocation', 'toLocation']).doUpdateSet(data))
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -51,5 +52,6 @@ export async function updateOneById(
         .set(data)
         .where('id', '=', params.id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

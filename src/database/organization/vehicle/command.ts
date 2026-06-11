@@ -40,6 +40,7 @@ export async function createOrganizationVehicle(
         .values(params)
         .onConflict(oc => oc.column('plateNumber').doUpdateSet(params))
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -57,5 +58,6 @@ export async function updateOrganizationVehicle(
             return eb.and(cond)
         })
         .returningAll()
+        .returning('v.publicId as id')
         .executeTakeFirstOrThrow()
 }

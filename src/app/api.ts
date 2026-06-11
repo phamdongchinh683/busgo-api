@@ -17,7 +17,6 @@ import { errorHandlerPlugin } from './plugins/error-handler.js'
 import { rateLimitPlugin } from './plugins/rate-limit.js'
 import { corsPlugin } from './plugins/cors.js'
 import { helmetPlugin } from './plugins/helmet.js'
-import { publicIdPlugin } from './plugins/public-id.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -184,7 +183,6 @@ async function registerPlugins() {
     await api.register(helmetPlugin)
     await api.register(corsPlugin)
     await api.register(errorHandlerPlugin)
-    await api.register(publicIdPlugin)
 }
 
 async function registerSwagger() {

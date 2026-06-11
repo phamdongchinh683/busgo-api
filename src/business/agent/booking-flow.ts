@@ -257,7 +257,7 @@ async function listSchedules(search: TripSearchParams): Promise<AiChatResponse> 
         )
         .slice(0, MAX_FLOW_OPTIONS)
         .map(item => ({
-            scheduleId: item.id,
+            scheduleId: item.internalId,
             companyId: item.companyId,
             name: item.name,
             fromLocation: item.fromLocation,
@@ -554,7 +554,7 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
             companyId,
             departureDate: state.departureDate,
         })
-        tripId = preparedTrip.id
+        tripId = preparedTrip.internalId
         companyId = preparedTrip.companyId
     }
 
@@ -641,7 +641,7 @@ async function createBookingFromState(params: {
             ...params.state,
             stage: 'booking_created',
             selectedSeat,
-            bookingId: result.id,
+            bookingId: result.internalId,
             expiredAt: result.expiredAt ?? undefined,
             seatOptions: undefined,
         },

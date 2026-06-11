@@ -8,7 +8,6 @@ import {
 import z from 'zod'
 import { AuthPassword } from '../auth/index.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const UserBody = z.object({
     fullName: z.string().min(7),
@@ -62,7 +61,7 @@ export type UserLoginProvider = z.infer<typeof UserLoginProvider>
 export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
-            id: PublicApiId(AuthUserPublicId, AuthUserId),
+            id: AuthUserPublicId,
             email: Email.nullable(),
             facebookId: z.string().nullable(),
             googleId: z.string().nullable(),
@@ -89,7 +88,7 @@ export type UserListQuery = z.infer<typeof UserListQuery>
 export const UserResponseMessage = z.object({
     ...MessageResponse.shape,
     user: UserBody.extend({
-        id: PublicApiId(AuthUserPublicId, AuthUserId),
+        id: AuthUserPublicId,
         email: Email.nullable(),
     }).omit({ password: true }),
 })

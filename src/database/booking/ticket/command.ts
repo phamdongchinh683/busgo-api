@@ -38,6 +38,7 @@ export async function updateTicketStatusByBookingId(
         .set({ status: params.status })
         .where('t.bookingId', '=', params.id)
         .returningAll()
+        .returning(['t.id as internalId', 't.publicId as id'])
         .execute()
 }
 
@@ -57,6 +58,7 @@ export async function updateTicketStatus(
             return eb.and(cond)
         })
         .returningAll()
+        .returning(['t.id as internalId', 't.publicId as id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -76,7 +78,7 @@ export async function cancelTicketTransaction(id: BookingTicketId) {
         )
 
         await dal.booking.seatSegment.cmd.deleteByTicketIds(
-            tickets.map(t => t.id),
+            tickets.map(t => t.internalId),
             trx
         )
 

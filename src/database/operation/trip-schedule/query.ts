@@ -23,8 +23,9 @@ export async function findAllByFilter(
         .innerJoin('operation.route as r', 'r.id', 'ts.routeId')
         .innerJoin('organization.bus_company as bc', 'bc.id', 'ts.companyId')
         .select([
-            'ts.id',
-            'ts.publicId',
+            'ts.id as cursorId',
+            'ts.id as internalId',
+            'ts.publicId as id',
             'ts.departureTime',
             'bc.name',
             'bc.logoUrl',

@@ -50,6 +50,7 @@ export async function upsertOne(params: OperationTripScheduleTableInsert) {
         .values(params)
         .onConflict(oc => oc.columns(['companyId', 'routeId']).doNothing())
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirst()
 
     if (!inserted) {
@@ -86,6 +87,7 @@ export async function updateOneById(params: {
             'ts.endDate',
             'ts.status',
         ])
+        .returning('ts.publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -106,5 +108,6 @@ export async function deleteOneById(id: OperationTripScheduleId, trx?: Transacti
         .deleteFrom('operation.trip_schedule')
         .where('id', '=', id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

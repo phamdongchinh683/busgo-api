@@ -15,7 +15,9 @@ interface FacebookUserData {
 
 const decoder = createDecoder()
 
-export async function verifyToken(params: { payload: AuthFacebookBody }): Promise<AuthResponse> {
+export async function verifyToken(params: {
+    payload: AuthFacebookBody
+}): Promise<AuthResponse> {
     const { payload } = params
     const userData = await getFacebookUserData({ payload })
 

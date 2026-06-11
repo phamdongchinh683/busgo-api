@@ -7,10 +7,9 @@ import {
 import { BookingId, BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OrganizationVehicleType } from '../../../database/organization/vehicle/type.js'
 import { OperationTripId, OperationTripStatus } from '../../../database/operation/trip/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const TicketBody = z.object({
-    id: PublicApiId(BookingTicketPublicId, BookingTicketId),
+    id: BookingTicketPublicId,
     status: BookingStatus,
     bookingType: BookingType,
     originalAmount: z.number(),
@@ -25,7 +24,7 @@ export const TicketCancelResponse = z.object({
     message: z.string(),
     tickets: z.array(
         z.object({
-            id: PublicApiId(BookingTicketPublicId, BookingTicketId),
+            id: BookingTicketPublicId,
             status: BookingTicketStatus,
         })
     ),
@@ -49,7 +48,7 @@ export type TicketsResponse = z.infer<typeof TicketsResponse>
 
 export const TicketResponse = z.object({
     ticket: z.object({
-        id: PublicApiId(BookingTicketPublicId, BookingTicketId),
+        id: BookingTicketPublicId,
         status: BookingStatus.nullable(),
         code: z.string().nullable(),
         bookingType: BookingType.nullable(),
@@ -77,7 +76,7 @@ export type TicketStatusBody = z.infer<typeof TicketStatusBody>
 export const TicketCheckInResponse = z.object({
     message: z.string(),
     ticket: z.object({
-        id: PublicApiId(BookingTicketPublicId, BookingTicketId),
+        id: BookingTicketPublicId,
         status: BookingTicketStatus,
     }),
 })
@@ -85,7 +84,7 @@ export type TicketCheckInResponse = z.infer<typeof TicketCheckInResponse>
 
 export const TicketSupportResponse = z.object({
     ticket: z.object({
-        id: PublicApiId(BookingTicketPublicId, BookingTicketId),
+        id: BookingTicketPublicId,
         status: BookingStatus,
         code: z.string(),
         bookingType: BookingType,

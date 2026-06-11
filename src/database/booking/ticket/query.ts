@@ -34,8 +34,8 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.id as cursorId',
+            't.publicId as id',
             'trip.id as tripId',
             'b.code',
             'b.bookingType',
@@ -72,8 +72,7 @@ export async function findById(id: BookingTicketId, userId: AuthUserId) {
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.publicId as id',
             'b.code',
             'b.bookingType',
             'b.originalAmount',
@@ -129,8 +128,8 @@ export async function findPassengersByDriverAndTripId(
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.id as cursorId',
+            't.publicId as id',
             'u.phone as phoneNumber',
             'u.fullName as fullName',
             'seat.seatNumber',
@@ -198,8 +197,8 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.id as cursorId',
+            't.publicId as id',
             'b.code',
             'b.bookingType',
             'b.originalAmount',
@@ -230,8 +229,7 @@ export async function findByIdSupport(id: BookingTicketId, companyId: Organizati
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.publicId as id',
             'b.code',
             'b.bookingType',
             'b.originalAmount',

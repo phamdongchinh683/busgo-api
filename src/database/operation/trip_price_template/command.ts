@@ -64,6 +64,7 @@ export async function createOne(
             oc.columns(['companyId', 'routeId', 'fromStationId', 'toStationId']).doUpdateSet(data)
         )
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -72,5 +73,6 @@ export async function deleteOneById(id: OperationTripPriceTemplateId, trx?: Tran
         .deleteFrom('operation.trip_price_template')
         .where('id', '=', id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

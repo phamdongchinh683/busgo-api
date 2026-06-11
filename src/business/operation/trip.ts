@@ -58,7 +58,7 @@ export async function updateTripStatus(params: {
     status: OperationTripStatus
     userId: AuthUserId
 }) {
-    return dal.operation.trip.cmd.updateStatus(params)
+    return dal.operation.trip.cmd.updateStatusForResponse(params)
 }
 
 export async function getTripByScheduleId(q: TripFilter, scheduleId: OperationTripScheduleId) {

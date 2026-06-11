@@ -1,8 +1,7 @@
 import { jwt } from '../../app/index.js'
 import { AuthOperatorRole, AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
-import type { AuthResponse } from '../../model/body/auth/index.js'
-
+import { AuthResponse } from '../../model/body/auth/index.js'
 type AuthUser = NonNullable<Awaited<ReturnType<typeof dal.auth.user.query.getAuthUser>>>
 
 async function getAuthContext(user: AuthUser) {

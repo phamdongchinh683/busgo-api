@@ -21,6 +21,7 @@ export async function findAll(query: BusCompanyListQuery) {
     return db
         .selectFrom('organization.bus_company as bc')
         .selectAll()
+        .select(['bc.id as cursorId', 'bc.publicId as id'])
         .where(eb => {
             const cond = []
             if (name) cond.push(eb('bc.name', 'ilike', `%${name}%`))

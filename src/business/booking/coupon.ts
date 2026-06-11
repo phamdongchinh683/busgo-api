@@ -25,6 +25,8 @@ import {
     hydrateCouponsResponse,
 } from './coupon-cache.js'
 
+type CouponRules = Omit<CouponResponse, 'id'>
+
 export async function getCouponByCode(params: CouponCheckCodeQuery) {
     const coupon = hydrateCoupon(
         await utils.cache.cacheQuery({
@@ -53,11 +55,10 @@ export async function getCoupons(filter: CouponFilter) {
         ttl: COUPON_CACHE_TTL_SECONDS,
         queryFn: async () => {
             const rows = await dal.booking.coupon.cmd.findAllCoupons(filter)
-            const hasNextPage = rows.length > 10
-            const data = hasNextPage ? rows.slice(0, 10) : rows
+            const { data, next } = utils.common.paginateByCursor(rows, 10)
             return {
                 coupons: data,
-                next: hasNextPage ? data[data.length - 1]?.id : null,
+                next: next === null ? null : BookingCouponId.parse(next),
             }
         },
     })
@@ -65,7 +66,7 @@ export async function getCoupons(filter: CouponFilter) {
     return hydrateCouponsResponse(response)
 }
 
-export function validateCoupon(coupon: CouponResponse, orderTotal: number) {
+export function validateCoupon<T extends CouponRules>(coupon: T, orderTotal: number): T {
     const now = utils.time.getNow().toDate()
     if (coupon.startDate && coupon.startDate > now) {
         throw new HttpErr.UnprocessableEntity(
@@ -109,7 +110,7 @@ export function validateCoupon(coupon: CouponResponse, orderTotal: number) {
     return coupon
 }
 
-export function applyCoupon(coupon: CouponResponse, orderTotal: number) {
+export function applyCoupon(coupon: CouponRules, orderTotal: number) {
     let discountAmount = 0
 
     if (coupon.discountType === BookingDiscountType.enum.percent) {

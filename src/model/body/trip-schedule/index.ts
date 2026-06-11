@@ -5,10 +5,9 @@ import {
 } from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const TripScheduleItemResponse = z.object({
-    id: PublicApiId(OperationTripSchedulePublicId, OperationTripScheduleId),
+    id: OperationTripSchedulePublicId,
     routeId: OperationRouteId,
     companyId: OrganizationBusCompanyId,
     departureTime: z.string(),
@@ -22,7 +21,7 @@ export type TripScheduleItemResponse = z.infer<typeof TripScheduleItemResponse>
 export const TripScheduleResponse = z.object({
     trip: z.array(
         z.object({
-            id: PublicApiId(OperationTripSchedulePublicId, OperationTripScheduleId),
+            id: OperationTripSchedulePublicId,
             departureTime: z.string(),
             name: z.string(),
             logoUrl: z.string(),

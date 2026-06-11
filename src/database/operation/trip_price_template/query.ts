@@ -29,8 +29,8 @@ export async function findAllByCompanyId(params: {
             return eb.and(cond)
         })
         .select([
-            'tpt.id',
-            'tpt.publicId',
+            'tpt.id as cursorId',
+            'tpt.publicId as id',
             'tpt.price',
             'tpt.status',
             'r.id as routeId',
@@ -57,5 +57,6 @@ export async function updateOneById(
         .set(body)
         .where('tpt.id', '=', id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

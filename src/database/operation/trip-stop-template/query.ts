@@ -22,8 +22,7 @@ export async function getStoppingPointByScheduleId(params: {
             return eb.and(cond)
         })
         .select([
-            'ts.id',
-            'ts.publicId',
+            'ts.publicId as id',
             'ts.stopOrder',
             'ts.stationId',
             's.address',
@@ -50,5 +49,6 @@ export async function updateOneById(
             return eb.and(cond)
         })
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

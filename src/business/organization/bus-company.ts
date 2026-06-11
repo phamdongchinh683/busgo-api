@@ -31,7 +31,7 @@ export async function createOne(body: BusCompanyBody) {
 
     await Promise.all([
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(company.id),
+        clearTripScheduleListCache(company.internalId),
     ])
 
     return {
@@ -44,7 +44,7 @@ export async function deleteOne(id: OrganizationBusCompanyId) {
 
     await Promise.all([
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(company.id),
+        clearTripScheduleListCache(id),
     ])
 
     return { company }
@@ -58,7 +58,7 @@ export async function updateOne(
 
     await Promise.all([
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(company.id),
+        clearTripScheduleListCache(id),
     ])
 
     return { company }

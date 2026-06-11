@@ -13,6 +13,7 @@ export async function upsertOne(
         .values(params)
         .onConflict(oc => oc.columns(['name', 'hotline']).doUpdateSet(params))
         .returningAll()
+        .returning(['id as internalId', 'publicId as id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -26,6 +27,7 @@ export async function updateOne(
         .set(params)
         .where('id', '=', id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -34,6 +36,7 @@ export async function deleteOne(id: OrganizationBusCompanyId, trx?: Transaction<
         .deleteFrom('organization.bus_company')
         .where('id', '=', id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -41,6 +44,7 @@ export async function getOne(id: OrganizationBusCompanyId, trx?: Transaction<Dat
     return (trx ?? db)
         .selectFrom('organization.bus_company')
         .selectAll()
+        .select('publicId as id')
         .where('id', '=', id)
         .executeTakeFirstOrThrow()
 }

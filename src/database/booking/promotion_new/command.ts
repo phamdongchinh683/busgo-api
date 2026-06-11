@@ -10,6 +10,7 @@ export async function createOne(params: BookingPromotionNewsTableInsert) {
         .insertInto('booking.promotion_new')
         .values(data)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 

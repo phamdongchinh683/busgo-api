@@ -12,6 +12,7 @@ export async function findAllByUserId(query: {
     return db
         .selectFrom('auth.notification')
         .selectAll()
+        .select(['id as cursorId', 'publicId as id'])
         .where(eb => {
             const cond = []
             if (next) {

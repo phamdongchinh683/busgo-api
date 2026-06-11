@@ -51,8 +51,7 @@ export async function getSeatsWithAvailability(params: TripSeatParam) {
     return db
         .selectFrom('organization.seat as s')
         .select(eb => [
-            's.id',
-            's.publicId',
+            's.publicId as id',
             's.seatNumber',
             's.type',
             eb

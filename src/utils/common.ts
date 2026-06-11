@@ -7,10 +7,15 @@ export function parseContactInfo(contactInfo: ContactInfo) {
     }
 }
 
-export function paginateByCursor<T extends { id: number | string }>(items: T[], limit = 10) {
+export function paginateByCursor<T extends { id: number | string; cursorId?: number | string }>(
+    items: T[],
+    limit = 10
+) {
     const hasNextPage = items.length > limit
-    const data = hasNextPage ? items.slice(0, limit) : items
-    const next = hasNextPage ? data[data.length - 1]?.id : null
+    const page = hasNextPage ? items.slice(0, limit) : items
+    const last = page[page.length - 1]
+    const next = hasNextPage ? (last?.cursorId ?? last?.id ?? null) : null
+    const data = page.map(({ cursorId: _cursorId, ...item }) => item) as Omit<T, 'cursorId'>[]
 
     return {
         data,

@@ -7,7 +7,13 @@ export async function findAllByCompany(query: BusCompanyReviewFilter) {
     return db
         .selectFrom('organization.bus_company_review as r')
         .innerJoin('auth.user as u', 'u.id', 'r.userId')
-        .select(['r.id', 'r.publicId', 'r.rating', 'r.comment', 'u.fullName as reviewerName'])
+        .select([
+            'r.id as cursorId',
+            'r.publicId as id',
+            'r.rating',
+            'r.comment',
+            'u.fullName as reviewerName',
+        ])
         .where(eb => {
             const cond = []
             cond.push(eb('r.companyId', '=', companyId))

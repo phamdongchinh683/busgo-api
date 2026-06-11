@@ -13,6 +13,7 @@ export async function insertOne(params: AuthUserDeviceTableInsert, trx?: Transac
             oc.column('fcmToken').doUpdateSet({ userId: params.userId, fcmToken: params.fcmToken })
         )
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 
@@ -21,6 +22,7 @@ export async function deleteOne(id: AuthUserDeviceId, trx?: Transaction<Database
         .deleteFrom('auth.user_device')
         .where('id', '=', id)
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 

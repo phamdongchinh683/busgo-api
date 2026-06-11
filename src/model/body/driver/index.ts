@@ -5,11 +5,10 @@ import {
     AuthUserStatus,
 } from '../../../database/auth/user/type.js'
 import { Email, Phone } from '../../common.js'
-import { PublicApiId } from '../../public-id.js'
 import { z } from 'zod'
 
 export const DriverResponse = z.object({
-    id: PublicApiId(AuthUserPublicId, AuthUserId),
+    id: AuthUserPublicId,
     fullName: z.string(),
     email: Email.nullable(),
     phone: Phone.nullable(),

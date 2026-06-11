@@ -131,7 +131,12 @@ export async function resultAmountRoundTrip(
 
 export async function createOne(body: CouponBody & { companyId: OrganizationBusCompanyId }) {
     const data = _.omitBy(body, v => _.isNil(v)) as BookingCouponTableInsert
-    return db.insertInto('booking.coupon').values(data).returningAll().executeTakeFirstOrThrow()
+    return db
+        .insertInto('booking.coupon')
+        .values(data)
+        .returningAll()
+        .returning('publicId as id')
+        .executeTakeFirstOrThrow()
 }
 
 export async function updateOne(
@@ -150,6 +155,7 @@ export async function updateOne(
         })
 
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }
 

@@ -1,6 +1,8 @@
 import { redis } from '../datasource/redis.js'
 import crypto from 'crypto'
 
+const CACHE_QUERY_VERSION = 'v2'
+
 function normalizePayload(value: unknown): unknown {
     if (typeof value === 'bigint') return value.toString()
     if (value === null || typeof value !== 'object') return value
@@ -35,7 +37,7 @@ function normalizeTtlSeconds(ttlSeconds: number) {
 export function cacheKey(prefix: string, payload: unknown) {
     const hash = crypto.createHash('sha1').update(stringifyPayload(payload)).digest('hex')
 
-    return `${prefix}:${hash}`
+    return `${prefix}:${CACHE_QUERY_VERSION}:${hash}`
 }
 
 export async function getCache<T>(key: string): Promise<T | null> {

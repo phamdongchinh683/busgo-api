@@ -7,7 +7,6 @@ import {
     PaymentStatus,
 } from '../../../database/payment/payment/type.js'
 import { PeriodFilter, Phone } from '../../common.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const PaymentIdParam = z.object({
     id: PaymentPublicId,
@@ -58,7 +57,7 @@ export const PaymentFilter = z.object({
 export type PaymentFilter = z.infer<typeof PaymentFilter>
 
 export const PaymentResponse = z.object({
-    id: PublicApiId(PaymentPublicId, PaymentId),
+    id: PaymentPublicId,
     bookingId: BookingId,
     amount: z.number(),
     method: PaymentMethod.nullable(),

@@ -7,13 +7,14 @@ import {
 } from '../../../model/query/coupon/index.js'
 import { utils } from '../../../utils/index.js'
 
-export function findAll(q: CouponFilter) {
+export async function findAll(q: CouponFilter) {
     const { next, orderTotal, companyId } = q
     const now = utils.time.getNow().toDate()
 
     let query = db
         .selectFrom('booking.coupon as c')
         .selectAll()
+        .select(['c.id as cursorId', 'c.publicId as id'])
         .where(eb => {
             const filters: Expression<SqlBool>[] = []
             filters.push(eb('c.startDate', '<=', now).or(eb('c.startDate', 'is', null)))
@@ -46,6 +47,7 @@ export async function findOneByCode(params: CouponCheckCodeQuery) {
     return db
         .selectFrom('booking.coupon as c')
         .selectAll()
+        .select(['c.id as cursorId', 'c.publicId as id'])
         .where(eb => {
             const cond = []
             if (params.id) {
@@ -62,13 +64,14 @@ export async function findOneByCode(params: CouponCheckCodeQuery) {
         .executeTakeFirstOrThrow()
 }
 
-export function findAllSupportCoupons(filter: CouponSupportFilter) {
+export async function findAllSupportCoupons(filter: CouponSupportFilter) {
     const { next, date, type, status } = filter
     const now = utils.time.getNow().toDate()
 
     let query = db
         .selectFrom('booking.coupon as c')
         .selectAll()
+        .select(['c.id as cursorId', 'c.publicId as id'])
         .where(eb => {
             const filters: Expression<SqlBool>[] = []
 

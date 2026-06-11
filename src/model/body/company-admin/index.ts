@@ -8,7 +8,6 @@ import {
     AuthUserStatus,
 } from '../../../database/auth/user/type.js'
 import { Email, Phone } from '../../common.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const CompanyAdminCreateBody = AuthCompanyAdminSignUpBody.extend({
     companyId: OrganizationBusCompanyId,
@@ -22,7 +21,7 @@ export const CompanyAdminUpdateBody = z.object({
 export type CompanyAdminUpdateBody = z.infer<typeof CompanyAdminUpdateBody>
 
 export const CompanyAdminItemSchema = z.object({
-    id: PublicApiId(AuthUserPublicId, AuthUserId),
+    id: AuthUserPublicId,
     fullName: z.string(),
     email: Email.nullable(),
     phone: Phone.nullable(),

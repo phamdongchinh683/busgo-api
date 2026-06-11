@@ -10,8 +10,7 @@ import { UserListQuery } from '../../../model/body/user/index.js'
 
 export async function findAllDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {
     const { limit, next, phone, status } = query
-    return db
-
+    const rows = await db
         .selectFrom('auth.user as u')
         .innerJoin('organization.company_member as cm', 'cm.userId', 'u.id')
         .innerJoin('organization.bus_company as bc', 'bc.id', 'cm.companyId')
@@ -26,8 +25,8 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
             return eb.and(cond)
         })
         .select([
-            'u.id',
-            'u.publicId',
+            'u.id as cursorId',
+            'u.publicId as id',
             'u.fullName',
             'u.email',
             'u.phone',
@@ -39,10 +38,17 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
         .limit(limit + 1)
         .orderBy('u.id', 'asc')
         .execute()
+
+    return rows
 }
 
 export async function insertOne(params: AuthUserTableInsert) {
-    return db.insertInto('auth.user').values(params).returningAll().executeTakeFirstOrThrow()
+    return db
+        .insertInto('auth.user')
+        .values(params)
+        .returningAll()
+        .returning(['id as internalId', 'publicId as id'])
+        .executeTakeFirstOrThrow()
 }
 
 export async function getPeriod(q: PeriodUserQuery) {
@@ -116,8 +122,8 @@ export function getOne(params: {
         .selectFrom('auth.user as u')
         .leftJoin('organization.company_member as cm', 'u.id', 'cm.userId')
         .select([
-            'u.id',
-            'u.publicId',
+            'u.id as cursorId',
+            'u.publicId as id',
             'u.fullName',
             'u.password',
             'u.email',
@@ -156,7 +162,6 @@ export async function getAuthUser(params: {
 }) {
     const { email, phone, id, facebookId, googleId } = params
 
-
     return db
         .selectFrom('auth.user as u')
         .select([
@@ -188,9 +193,9 @@ export async function getAuthUser(params: {
         .executeTakeFirst()
 }
 
-export function findAll(query: UserListQuery) {
+export async function findAll(query: UserListQuery) {
     const { limit, next, status, role, companyId, email, phone, type } = query
-    return db
+    const rows = await db
         .selectFrom('auth.user as u')
         .leftJoin('organization.company_member as cm', 'cm.userId', 'u.id')
         .where(eb => {
@@ -211,8 +216,8 @@ export function findAll(query: UserListQuery) {
             return eb.and(cond)
         })
         .select([
-            'u.id',
-            'u.publicId',
+            'u.id as cursorId',
+            'u.publicId as id',
             'u.fullName',
             'u.email',
             'u.phone',
@@ -224,6 +229,8 @@ export function findAll(query: UserListQuery) {
         .limit(limit + 1)
         .orderBy('u.id', 'asc')
         .execute()
+
+    return rows
 }
 
 export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {

@@ -7,8 +7,8 @@ export async function findAll(query: PromotionNewsListQuery) {
     let qb = db
         .selectFrom('booking.promotion_new as pn')
         .select([
-            'pn.id',
-            'pn.publicId',
+            'pn.id as cursorId',
+            'pn.publicId as id',
             'pn.title',
             'pn.content',
             'pn.imageUrl',

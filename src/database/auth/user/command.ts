@@ -29,11 +29,12 @@ export async function signUp(params: AuthUserTableInsert) {
             ...params,
             accountStripeId: stripeCustomer.id,
         })
+        const { internalId, ...publicUser } = user
 
         return {
             message: 'Thành công',
-            token: generateToken({ ...user, id: user.publicId }),
-            user: user,
+            token: generateToken({ ...publicUser, id: internalId }),
+            user: publicUser,
         }
     } catch (error) {
         if (error instanceof DatabaseError && error.code === '23505') {
@@ -225,6 +226,10 @@ export async function updateOne(
     return updateUser(userId, params, trx)
 }
 
+export async function updateOneForPublicResponse(userId: AuthUserId, params: AuthUserTableUpdate) {
+    return updateUserForPublicResponse(userId, params)
+}
+
 export async function updateOneForStaffCompany(
     userId: AuthUserId,
     params: AuthUserTableUpdate,
@@ -233,13 +238,21 @@ export async function updateOneForStaffCompany(
     return updateUser(userId, params, undefined, companyId)
 }
 
-async function updateUser(
+export async function updateOneForStaffCompanyPublicResponse(
+    userId: AuthUserId,
+    params: AuthUserTableUpdate,
+    companyId: OrganizationBusCompanyId
+) {
+    return updateUserForPublicResponse(userId, params, companyId)
+}
+
+function updateUserQuery(
     userId: AuthUserId,
     params: AuthUserTableUpdate,
     trx?: Transaction<Database>,
     companyId?: OrganizationBusCompanyId
 ) {
-    const user = await (trx ?? db)
+    return (trx ?? db)
         .updateTable('auth.user')
         .set(params)
         .$if(params.status !== undefined && params.tokenVersion === undefined, qb =>
@@ -259,24 +272,45 @@ async function updateUser(
             )
         )
         .returningAll()
-        .executeTakeFirstOrThrow()
+}
+
+async function updateUser(
+    userId: AuthUserId,
+    params: AuthUserTableUpdate,
+    trx?: Transaction<Database>,
+    companyId?: OrganizationBusCompanyId
+) {
+    const user = await updateUserQuery(userId, params, trx, companyId).executeTakeFirstOrThrow()
 
     if (params.tokenVersion !== undefined || params.status !== undefined) {
-        await utils.cache.delCache(`auth:token-version:${userId}`)
-        if (user.publicId) {
-            await utils.cache.delCache(`auth:token-version:${user.publicId}`)
-        }
+        await clearUserTokenCache(userId, user.publicId)
     }
 
     return user
 }
 
-export async function updateRole(
+async function updateUserForPublicResponse(
+    userId: AuthUserId,
+    params: AuthUserTableUpdate,
+    companyId?: OrganizationBusCompanyId
+) {
+    const user = await updateUserQuery(userId, params, undefined, companyId)
+        .returning('publicId as id')
+        .executeTakeFirstOrThrow()
+
+    if (params.tokenVersion !== undefined || params.status !== undefined) {
+        await clearUserTokenCache(userId, user.publicId)
+    }
+
+    return user
+}
+
+function updateRoleQuery(
     userId: AuthUserId,
     role: AuthOperatorRole,
     companyId: OrganizationBusCompanyId
 ) {
-    const user = await db
+    return db
         .updateTable('auth.user as u')
         .set({
             role,
@@ -294,12 +328,30 @@ export async function updateRole(
             )
         )
         .returningAll()
+}
+
+export async function updateRole(
+    userId: AuthUserId,
+    role: AuthOperatorRole,
+    companyId: OrganizationBusCompanyId
+) {
+    const user = await updateRoleQuery(userId, role, companyId).executeTakeFirstOrThrow()
+
+    await clearUserTokenCache(userId, user.publicId)
+
+    return user
+}
+
+export async function updateRoleForPublicResponse(
+    userId: AuthUserId,
+    role: AuthOperatorRole,
+    companyId: OrganizationBusCompanyId
+) {
+    const user = await updateRoleQuery(userId, role, companyId)
+        .returning('u.publicId as id')
         .executeTakeFirstOrThrow()
 
-    await utils.cache.delCache(`auth:token-version:${userId}`)
-    if (user.publicId) {
-        await utils.cache.delCache(`auth:token-version:${user.publicId}`)
-    }
+    await clearUserTokenCache(userId, user.publicId)
 
     return user
 }
@@ -357,6 +409,26 @@ export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>)
     }
 
     return user
+}
+
+export async function deleteOneForPublicResponse(userId: AuthUserId) {
+    const user = await db
+        .deleteFrom('auth.user')
+        .where('id', '=', userId)
+        .returningAll()
+        .returning('publicId as id')
+        .executeTakeFirstOrThrow()
+
+    await clearUserTokenCache(userId, user.publicId)
+
+    return user
+}
+
+async function clearUserTokenCache(userId: AuthUserId, publicId: string | null) {
+    await utils.cache.delCache(`auth:token-version:${userId}`)
+    if (publicId) {
+        await utils.cache.delCache(`auth:token-version:${publicId}`)
+    }
 }
 
 export async function insertDriver(

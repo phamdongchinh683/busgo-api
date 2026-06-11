@@ -86,7 +86,7 @@ export async function updatePaymentStatusFailed(
         tx
     )
     await dal.booking.seatSegment.cmd.deleteByTicketIds(
-        ticket.map(t => t.id),
+        ticket.map(t => t.internalId),
         tx
     )
 }

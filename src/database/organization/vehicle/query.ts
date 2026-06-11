@@ -24,5 +24,6 @@ export async function findAll(params: VehicleFilter, companyId: OrganizationBusC
         .orderBy('v.id', 'asc')
         .limit(limit + 1)
         .selectAll()
+        .select(['v.id as cursorId', 'v.publicId as id'])
         .execute()
 }

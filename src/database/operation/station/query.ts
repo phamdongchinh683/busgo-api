@@ -20,6 +20,7 @@ export async function findAllByCompanyId(params: {
             return eb.and(cond)
         })
         .selectAll()
+        .select(['s.id as cursorId', 's.publicId as id'])
         .limit(params.q.limit + 1)
         .orderBy('s.id')
         .execute()

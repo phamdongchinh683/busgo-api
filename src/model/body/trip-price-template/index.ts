@@ -6,7 +6,6 @@ import {
     OperationTripPriceTemplateId,
     OperationTripPriceTemplatePublicId,
 } from '../../../database/operation/trip_price_template/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const TripPriceTemplateBody = z.object({
     companyId: OrganizationBusCompanyId.optional(),
@@ -20,14 +19,14 @@ export const TripPriceTemplateBody = z.object({
 export type TripPriceTemplateBody = z.infer<typeof TripPriceTemplateBody>
 
 export const TripPriceTemplateItem = TripPriceTemplateBody.extend({
-    id: PublicApiId(OperationTripPriceTemplatePublicId, OperationTripPriceTemplateId),
+    id: OperationTripPriceTemplatePublicId,
 })
 
 export type TripPriceTemplateItem = z.infer<typeof TripPriceTemplateItem>
 
 export const TripPriceTemplateResponse = z.object({
     tripPriceTemplate: TripPriceTemplateItem.extend({
-        id: PublicApiId(OperationTripPriceTemplatePublicId, OperationTripPriceTemplateId),
+        id: OperationTripPriceTemplatePublicId,
     }),
 })
 

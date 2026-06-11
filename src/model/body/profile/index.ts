@@ -6,7 +6,6 @@ import {
     OrganizationCompanyMemberPublicId,
 } from '../../../database/organization/company_member/type.js'
 import { Email, Otp, Phone, UserInfo } from '../../common.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const ProfileUpdateBody = z.object({
     fullName: z.string().optional(),
@@ -73,7 +72,7 @@ export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
 export const StaffListResponse = z.object({
     staff: z.array(
         ProfileUpdateBody.extend({
-            id: PublicApiId(OrganizationCompanyMemberPublicId, OrganizationCompanyMemberId),
+            id: OrganizationCompanyMemberPublicId,
             fullName: z.string(),
             email: Email.nullable(),
             phone: Phone.nullable(),

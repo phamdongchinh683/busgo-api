@@ -11,5 +11,6 @@ export async function upsertOne(params: OperationStationTableInsert, trx?: Trans
         .values(data)
         .onConflict(oc => oc.columns(['companyId', 'address', 'city']).doUpdateSet(data))
         .returningAll()
+        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

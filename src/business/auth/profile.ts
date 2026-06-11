@@ -61,7 +61,7 @@ export async function updateStaffRole(
     companyId: OrganizationBusCompanyId
 ) {
     return {
-        user: await dal.auth.user.cmd.updateRole(id, role, companyId),
+        user: await dal.auth.user.cmd.updateRoleForPublicResponse(id, role, companyId),
     }
 }
 
@@ -71,7 +71,7 @@ export async function updateStaff(
     companyId: OrganizationBusCompanyId
 ) {
     return {
-        user: await dal.auth.user.cmd.updateOneForStaffCompany(id, params, companyId),
+        user: await dal.auth.user.cmd.updateOneForStaffCompanyPublicResponse(id, params, companyId),
     }
 }
 
@@ -128,7 +128,7 @@ export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileU
     }
 
     const payload = {
-        id: updatedUser.publicId,
+        id: updatedUser.id,
         tokenVersion: updatedUser.tokenVersion,
         email: updatedUser.email,
         phone: updatedUser.phone,
@@ -212,7 +212,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
     })
 
     const payload = {
-        id: updatedUser.publicId,
+        id: updatedUser.id,
         tokenVersion: updatedUser.tokenVersion,
         email: updatedUser.email,
         phone: updatedUser.phone,
@@ -229,7 +229,7 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         token: jwt.auth.generateToken(payload),
         user: {
             ...payload,
-            publicId: updatedUser.publicId,
+            id: updatedUser.publicId,
         },
     }
 }

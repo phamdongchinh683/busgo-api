@@ -4,7 +4,6 @@ import {
     AuthNotificationPublicId,
 } from '../../../database/auth/notification/type.js'
 import { AuthUserId } from '../../../database/auth/user/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const NotificationBody = z.object({
     userId: AuthUserId,
@@ -16,7 +15,7 @@ export const NotificationBody = z.object({
 export type NotificationBody = z.infer<typeof NotificationBody>
 
 export const NotificationResponse = z.object({
-    id: PublicApiId(AuthNotificationPublicId, AuthNotificationId),
+    id: AuthNotificationPublicId,
     userId: AuthUserId,
     title: z.string(),
     body: z.string(),

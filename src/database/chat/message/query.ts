@@ -23,8 +23,8 @@ export async function findAllMessagesByBoxId(
             return eb.and(cond)
         })
         .select([
-            'm.id',
-            'm.publicId',
+            'm.id as cursorId',
+            'm.publicId as id',
             'm.senderId',
             'm.body as message',
             'u.fullName as fullName',

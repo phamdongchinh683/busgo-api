@@ -61,8 +61,8 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
         }
 
         return {
-            id: booking.id,
-            publicId: booking.publicId,
+            id: booking.publicId,
+            internalId: booking.id,
             expiredAt: booking.expiredAt,
             message: 'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
         }
@@ -189,8 +189,8 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
             }
 
             return {
-                id: booking.id,
-                publicId: booking.publicId,
+                id: booking.publicId,
+                internalId: booking.id,
                 expiredAt: booking.expiredAt,
                 message:
                     'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',

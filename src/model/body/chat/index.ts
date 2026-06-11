@@ -14,7 +14,6 @@ import {
 import { BookingCouponId } from '../../../database/booking/coupon/type.js'
 import { BookingTicketId } from '../../../database/booking/ticket/type.js'
 import { BookingId } from '../../../database/booking/booking/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const ChatBoxBody = z.object({
     message: z.string(),
@@ -125,7 +124,7 @@ export type AiChatResponse = z.infer<typeof AiChatResponse>
 export const ChatMessageResponse = z.object({
     messages: z.array(
         z.object({
-            id: PublicApiId(ChatMessagePublicId, ChatMessageId),
+            id: ChatMessagePublicId,
             message: z.string(),
             senderId: AuthUserId,
             fullName: z.string(),
@@ -142,7 +141,7 @@ export type ChatMessageResponse = z.infer<typeof ChatMessageResponse>
 export const ChatBoxResponse = z.object({
     boxes: z.array(
         z.object({
-            id: PublicApiId(ChatBoxPublicId, ChatBoxId),
+            id: ChatBoxPublicId,
             lastMessage: z.string().nullable(),
             senderId: AuthUserId.nullable(),
             receiverId: AuthUserId.nullable(),
@@ -161,7 +160,7 @@ export type ChatBoxResponse = z.infer<typeof ChatBoxResponse>
 
 export const MarkReadResponse = z.object({
     message: z.string(),
-    boxId: PublicApiId(ChatBoxPublicId, ChatBoxId),
+    boxId: ChatBoxPublicId,
     unreadReceiverCount: z.number().int().nonnegative(),
     unreadSenderCount: z.number().int().nonnegative(),
 })

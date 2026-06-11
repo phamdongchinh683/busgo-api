@@ -1,11 +1,10 @@
-import { BookingId, BookingPublicId, BookingType } from '../../../database/booking/booking/type.js'
+import { BookingPublicId, BookingType } from '../../../database/booking/booking/type.js'
 import { BookingCouponId } from '../../../database/booking/coupon/type.js'
 import z from 'zod'
 import { OrganizationSeatId } from '../../../database/organization/seat/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { PublicApiId } from '../../public-id.js'
 
 export const BookingTicketRequest = z.object({
     tripId: OperationTripId,
@@ -27,7 +26,7 @@ export const BookingRequest = z.object({
 export type BookingRequest = z.infer<typeof BookingRequest>
 
 export const BookingResponse = z.object({
-    id: PublicApiId(BookingPublicId, BookingId),
+    id: BookingPublicId,
     expiredAt: z.date().nullable(),
     message: z.string(),
 })

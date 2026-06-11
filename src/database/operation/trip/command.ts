@@ -27,6 +27,7 @@ export async function createTrip(params: OperationTripTableInsert, trx: Transact
             })
         )
         .returningAll()
+        .returning(['id as internalId', 'publicId as id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -44,8 +45,8 @@ export async function findByScheduleIdAndDepartureDate(
             return eb.and(cond)
         })
         .select([
-            't.id',
-            't.publicId',
+            't.id as internalId',
+            't.publicId as id',
             't.status',
             't.departureDate',
             'ts.companyId',
@@ -68,7 +69,7 @@ export async function createTripTransaction({ scheduleId, departureDate, company
             })
             return {
                 id: existingTrip.id,
-                publicId: existingTrip.publicId,
+                internalId: existingTrip.internalId,
                 companyId: existingTrip.companyId,
             }
         }
@@ -104,7 +105,7 @@ export async function createTripTransaction({ scheduleId, departureDate, company
 
         return {
             id: trip.id,
-            publicId: trip.publicId,
+            internalId: trip.internalId,
             companyId: schedule.companyId,
         }
     })
@@ -152,7 +153,16 @@ export async function updateStatus(
         })
         .where('id', '=', params.id)
         .returningAll()
+        .returning(['id as internalId', 'publicId as id'])
         .executeTakeFirstOrThrow()
+}
+
+export async function updateStatusForResponse(params: {
+    id: OperationTripId
+    status: OperationTripStatus
+    userId: AuthUserId
+}) {
+    return updateStatus(params)
 }
 
 export async function deleteTripsBeforeToday() {

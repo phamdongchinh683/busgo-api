@@ -46,8 +46,8 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
         .selectFrom('organization.company_member as cm')
         .innerJoin('auth.user as u', 'cm.userId', 'u.id')
         .select([
-            'cm.id',
-            'cm.publicId',
+            'cm.id as cursorId',
+            'cm.publicId as id',
             'cm.userId',
             'cm.staffCode',
             'cm.position',
@@ -90,8 +90,8 @@ export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
             return eb.and(cond)
         })
         .select([
-            'u.id',
-            'u.publicId',
+            'u.id as cursorId',
+            'u.publicId as id',
             'u.fullName',
             'u.email',
             'u.phone',
