@@ -2,10 +2,12 @@ import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { ChatBoxId } from './type.js'
 import { AuthUserId } from '../../auth/user/type.js'
-import { ChatBoxBody } from '../../../model/body/chat/index.js'
 import { utils } from '../../../utils/index.js'
 
-export async function createOne(params: { body: ChatBoxBody; createdBy: AuthUserId }) {
+export async function createOne(params: {
+    body: { message: string; receiverId: AuthUserId }
+    createdBy: AuthUserId
+}) {
     const { body, createdBy } = params
 
     return db.transaction().execute(async trx => {

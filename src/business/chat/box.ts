@@ -10,19 +10,24 @@ import { ws } from '../../app/index.js'
 export async function createBox(params: { userInfo: UserInfo; body: ChatBoxBody }) {
     const { userInfo, body } = params
 
+    const receiverId = await dal.publicId.query.resolve('user', body.receiverId)
+
     const result = await dal.chat.box.cmd.createOne({
-        body,
+        body: {
+            ...body,
+            receiverId,
+        },
         createdBy: userInfo.id,
     })
 
     await ws.publish.emitEvent({
-        targetId: String(result.receiverId),
+        targetId: String(receiverId),
         event: 'chat:new',
         data: {
             boxId: String(result.boxId),
             senderId: userInfo.id,
             senderName: userInfo.fullName,
-            receiverId: result.receiverId,
+            receiverId,
             body: result.body,
             createdAt: result.createdAt,
         },

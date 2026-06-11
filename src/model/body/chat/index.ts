@@ -1,5 +1,5 @@
 import z from 'zod'
-import { AuthUserId } from '../../../database/auth/user/type.js'
+import { AuthUserId, AuthUserPublicId } from '../../../database/auth/user/type.js'
 import { ChatMessageId, ChatMessagePublicId } from '../../../database/chat/message/type.js'
 import { Email, Phone } from '../../common.js'
 import { ChatBoxId, ChatBoxPublicId } from '../../../database/chat/box/type.js'
@@ -18,7 +18,7 @@ import { PublicApiId } from '../../public-id.js'
 
 export const ChatBoxBody = z.object({
     message: z.string(),
-    receiverId: AuthUserId,
+    receiverId: AuthUserPublicId,
 })
 
 export type ChatBoxBody = z.infer<typeof ChatBoxBody>
