@@ -54,11 +54,6 @@ export const UserInfo = z.object({
 
 export type UserInfo = z.infer<typeof UserInfo>
 
-export const PublicUserInfo = UserInfo.extend({
-    id: PublicApiId(AuthUserPublicId, AuthUserId),
-})
-export type PublicUserInfo = z.infer<typeof PublicUserInfo>
-
 export const OrderBy = z.enum(['asc', 'desc'])
 export type OrderBy = z.infer<typeof OrderBy>
 

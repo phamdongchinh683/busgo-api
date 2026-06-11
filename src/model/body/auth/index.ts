@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { ContactInfo, Email, Otp, Phone, PublicUserInfo } from '../../common.js'
+import { ContactInfo, Email, Otp, Phone, UserInfo } from '../../common.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 
@@ -27,7 +27,7 @@ export type DriverSignUpBody = z.infer<typeof DriverSignUpBody>
 export const AuthResponse = z.object({
     message: z.string().optional(),
     token: z.string(),
-    user: PublicUserInfo.extend({
+    user: UserInfo.extend({
         driverCompanyId: OrganizationBusCompanyId.nullable().optional(),
     }).omit({ tokenVersion: true }),
 })

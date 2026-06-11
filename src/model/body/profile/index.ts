@@ -5,7 +5,7 @@ import {
     OrganizationCompanyMemberId,
     OrganizationCompanyMemberPublicId,
 } from '../../../database/organization/company_member/type.js'
-import { Email, Otp, Phone, PublicUserInfo } from '../../common.js'
+import { Email, Otp, Phone, UserInfo } from '../../common.js'
 import { PublicApiId } from '../../public-id.js'
 
 export const ProfileUpdateBody = z.object({
@@ -44,7 +44,7 @@ export type ProfileUpdateContactBody = z.infer<typeof ProfileUpdateContactBody>
 export const ProfileUpdateContactResponse = z.object({
     message: z.string(),
     token: z.string(),
-    user: PublicUserInfo,
+    user: UserInfo,
 })
 export type ProfileUpdateContactResponse = z.infer<typeof ProfileUpdateContactResponse>
 
@@ -65,7 +65,7 @@ export const ProfileResponseUser = z.object({
 export type ProfileResponseUser = z.infer<typeof ProfileResponseUser>
 
 export const StaffRoleResponse = z.object({
-    user: PublicUserInfo,
+    user: UserInfo,
 })
 
 export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
