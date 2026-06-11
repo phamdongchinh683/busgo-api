@@ -44,6 +44,7 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
         })
         .select([
             't.id',
+            't.publicId',
             'bc.name as companyName',
             'bc.logoUrl',
             'v.plateNumber',
@@ -88,6 +89,7 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
         })
         .select([
             't.id',
+            't.publicId',
             'v.plateNumber',
             'v.type',
             't.status',
@@ -121,6 +123,7 @@ export async function updateOneById(
         })
         .returning([
             't.id',
+            't.publicId',
             't.routeId',
             't.vehicleId',
             't.scheduleId',

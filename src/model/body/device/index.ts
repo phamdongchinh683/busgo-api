@@ -1,5 +1,9 @@
 import z from 'zod'
-import { AuthUserDeviceId } from '../../../database/auth/user_device/type.js'
+import {
+    AuthUserDeviceId,
+    AuthUserDevicePublicId,
+} from '../../../database/auth/user_device/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const DeviceBody = z.object({
     fcmToken: z.string(),
@@ -8,7 +12,7 @@ export const DeviceBody = z.object({
 export type DeviceBody = z.infer<typeof DeviceBody>
 
 export const DeviceResponse = z.object({
-    id: AuthUserDeviceId,
+    id: PublicApiId(AuthUserDevicePublicId, AuthUserDeviceId),
     fcmToken: z.string(),
 })
 

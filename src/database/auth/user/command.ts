@@ -6,9 +6,8 @@ import { generateToken } from '../../../app/jwt/auth/handler.js'
 import { db } from '../../../datasource/db.js'
 import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
-import { AuthStaffProfileRole } from '../staff_profile/type.js'
 import { AuthCompanyAdminSignUpBody } from '../../../model/body/auth/index.js'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
+import { AuthOperatorRole, AuthUserId, AuthUserStatus, OPERATOR_ROLES } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { service } from '../../../service/index.js'
@@ -62,7 +61,7 @@ export async function insertOne(params: AuthUserTableInsert, trx?: Transaction<D
 }
 export async function signUpCompanyAdmin(
     params: AuthCompanyAdminSignUpBody,
-    staffRole: AuthStaffProfileRole
+    role: AuthOperatorRole
 ) {
     const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
 
@@ -77,16 +76,14 @@ export async function signUpCompanyAdmin(
                     isEmailVerified: true,
                     isPhoneVerified: true,
                     status: AuthUserStatus.enum.inactive,
-                    role: AuthUserRole.enum.operator,
+                    role,
                 },
                 trx
             )
 
-            await dal.auth.staffProfile.cmd.upsertOne(
+            await dal.organization.companyMember.cmd.upsertOne(
                 {
                     userId: newUser.id,
-                    role: staffRole,
-                    status: AuthUserStatus.enum.inactive,
                     staffCode: utils.random.generateRandomNumber(6).toString(),
                     position: 'Điều hành',
                     department: 'Phòng điều hành',
@@ -149,7 +146,7 @@ export async function signUpCompanyAdmin(
 
 export async function signUpCompanyAdminWithCompany(
     params: AuthCompanyAdminSignUpBody,
-    staffRole: AuthStaffProfileRole,
+    role: AuthOperatorRole,
     companyId: OrganizationBusCompanyId
 ) {
     const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
@@ -165,16 +162,14 @@ export async function signUpCompanyAdminWithCompany(
                     isEmailVerified: true,
                     isPhoneVerified: true,
                     status: AuthUserStatus.enum.inactive,
-                    role: AuthUserRole.enum.operator,
+                    role,
                 },
                 trx
             )
-            await dal.auth.staffProfile.cmd.upsertOne(
+            await dal.organization.companyMember.cmd.upsertOne(
                 {
                     userId: newUser.id,
-                    role: staffRole,
                     companyId,
-                    status: AuthUserStatus.enum.inactive,
                     staffCode: utils.random.generateRandomNumber(6).toString(),
                     position: 'Giám đốc',
                     department: 'Điều Hành',
@@ -184,7 +179,8 @@ export async function signUpCompanyAdminWithCompany(
                 trx
             )
 
-            const companyAdmin = await dal.auth.staffProfile.cmd.getOneByCompanyId(companyId)
+            const companyAdmin =
+                await dal.organization.companyMember.cmd.getOneByCompanyId(companyId)
 
             await dal.auth.notification.cmd.insertOne({
                 userId: companyAdmin.userId,
@@ -226,16 +222,78 @@ export async function updateOne(
     params: AuthUserTableUpdate,
     trx?: Transaction<Database>
 ) {
+    return updateUser(userId, params, trx)
+}
+
+export async function updateOneForStaffCompany(
+    userId: AuthUserId,
+    params: AuthUserTableUpdate,
+    companyId: OrganizationBusCompanyId
+) {
+    return updateUser(userId, params, undefined, companyId)
+}
+
+async function updateUser(
+    userId: AuthUserId,
+    params: AuthUserTableUpdate,
+    trx?: Transaction<Database>,
+    companyId?: OrganizationBusCompanyId
+) {
     const user = await (trx ?? db)
         .updateTable('auth.user')
         .set(params)
+        .$if(params.status !== undefined && params.tokenVersion === undefined, qb =>
+            qb.set({ tokenVersion: sql<number>`token_version + 1` })
+        )
         .where('id', '=', userId)
+        .$if(Boolean(companyId), qb => qb.where('role', 'in', OPERATOR_ROLES))
+        .$if(Boolean(companyId), qb =>
+            qb.where(eb =>
+                eb.exists(
+                    eb
+                        .selectFrom('organization.company_member as cm')
+                        .select('cm.id')
+                        .whereRef('cm.userId', '=', 'auth.user.id')
+                        .where('cm.companyId', '=', companyId!)
+                )
+            )
+        )
         .returningAll()
         .executeTakeFirstOrThrow()
 
-    if (params.tokenVersion !== undefined) {
+    if (params.tokenVersion !== undefined || params.status !== undefined) {
         await utils.cache.delCache(`auth:token-version:${userId}`)
     }
+
+    return user
+}
+
+export async function updateRole(
+    userId: AuthUserId,
+    role: AuthOperatorRole,
+    companyId: OrganizationBusCompanyId
+) {
+    const user = await db
+        .updateTable('auth.user as u')
+        .set({
+            role,
+            tokenVersion: sql<number>`token_version + 1`,
+        })
+        .where('u.id', '=', userId)
+        .where('u.role', 'in', OPERATOR_ROLES)
+        .where(eb =>
+            eb.exists(
+                eb
+                    .selectFrom('organization.company_member as cm')
+                    .select('cm.id')
+                    .whereRef('cm.userId', '=', 'u.id')
+                    .where('cm.companyId', '=', companyId)
+            )
+        )
+        .returningAll()
+        .executeTakeFirstOrThrow()
+
+    await utils.cache.delCache(`auth:token-version:${userId}`)
 
     return user
 }
@@ -296,9 +354,12 @@ export async function insertDriver(
     return db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
             const user = await dal.auth.user.cmd.insertOne(params, trx)
-            await dal.organization.companyDriver.cmd.insertOne({ userId: user.id, companyId }, trx)
+            await dal.organization.companyMember.cmd.upsertOne({ userId: user.id, companyId }, trx)
 
-            const companyAdmin = await dal.auth.staffProfile.cmd.getOneByCompanyId(companyId, trx)
+            const companyAdmin = await dal.organization.companyMember.cmd.getOneByCompanyId(
+                companyId,
+                trx
+            )
 
             await dal.auth.notification.cmd.insertOne(
                 {
@@ -338,10 +399,10 @@ export async function insertDriver(
                         'PHONE_ALREADY_EXISTS'
                     )
                 }
-                if (error.constraint === 'company_drivers_user_id_company_id_uidx') {
+                if (error.constraint === 'company_member_user_id_uidx') {
                     throw new HttpErr.UnprocessableEntity(
-                        'Tài xế này đã được đăng ký cho công ty này.',
-                        'DRIVER_COMPANY_ALREADY_EXISTS'
+                        'Tài xế này đã thuộc một công ty khác.',
+                        'DRIVER_ALREADY_HAS_COMPANY'
                     )
                 }
             }
@@ -355,26 +416,30 @@ export async function verify(params: {
     status: AuthUserStatus
     companyId?: OrganizationBusCompanyId | null
 }) {
-    return db.transaction().execute(async trx => {
-        await trx
-            .updateTable('auth.staff_profile as sp')
-            .set({ status: params.status })
-            .where(eb => {
-                const cond = []
-                cond.push(eb('sp.userId', '=', params.id))
-                if (params.companyId) {
-                    cond.push(eb('sp.companyId', '=', params.companyId))
-                }
-                return eb.and(cond)
-            })
-            .executeTakeFirstOrThrow()
+    const user = await db
+        .updateTable('auth.user as u')
+        .set({
+            status: params.status,
+            tokenVersion: sql<number>`token_version + 1`,
+        })
+        .where('u.id', '=', params.id)
+        .$if(Boolean(params.companyId), qb =>
+            qb.where(eb =>
+                eb.exists(
+                    eb
+                        .selectFrom('organization.company_member as cm')
+                        .select('cm.id')
+                        .whereRef('cm.userId', '=', 'u.id')
+                        .where('cm.companyId', '=', params.companyId!)
+                )
+            )
+        )
+        .returning(['u.id'])
+        .executeTakeFirstOrThrow()
 
-        await trx
-            .updateTable('auth.user as u')
-            .set({ status: params.status })
-            .where('u.id', '=', params.id)
-            .executeTakeFirstOrThrow()
-    })
+    await utils.cache.delCache(`auth:token-version:${user.id}`)
+
+    return user
 }
 
 export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {

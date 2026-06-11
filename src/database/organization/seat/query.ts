@@ -1,12 +1,12 @@
 import { sql } from 'kysely'
 
 import { db } from '../../../datasource/db.js'
-import { TripSeatParam } from '../../../model/params/trip/index.js'
 import { OperationTripId } from '../../operation/trip/type.js'
 import { OrganizationVehicleId } from '../vehicle/type.js'
 import { OrganizationSeatTableInsert } from './table.js'
 import { SeatCreateBody } from '../../../model/body/seat/index.js'
 import { OrganizationSeatType } from './type.js'
+import type { TripSeatParam } from '../../../model/params/trip/index.js'
 
 type SeatLabel = {
     seatNumber: string
@@ -37,28 +37,22 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
     return db
         .selectFrom('organization.seat as s')
         .where('s.vehicleId', '=', vehicleId)
-        .select(['s.id', 's.seatNumber', 's.type'])
+        .select(['s.id', 's.publicId', 's.seatNumber', 's.type'])
         .orderBy('s.type', 'asc')
         .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
         .orderBy('s.seatNumber', 'asc')
         .execute()
 }
 
-function getVehicleIdByTrip(tripId: OperationTripId) {
-    return db
-        .selectFrom('operation.trip')
-        .select('vehicleId')
-        .where('id', '=', tripId)
-        .executeTakeFirstOrThrow()
-}
-
 export async function getSeatsWithAvailability(params: TripSeatParam) {
-    const { vehicleId } = await getVehicleIdByTrip(params.id)
+    const tripPublicId = params.id
+    const { stopOrderPickup, stopOrderDropoff } = params
 
     return db
         .selectFrom('organization.seat as s')
         .select(eb => [
             's.id',
+            's.publicId',
             's.seatNumber',
             's.type',
             eb
@@ -79,15 +73,64 @@ export async function getSeatsWithAvailability(params: TripSeatParam) {
                             )
                             .select('ss.id')
                             .whereRef('ss.seatId', '=', 's.id')
-                            .where('ss.tripId', '=', params.id)
-                            .where('fromStop.stopOrder', '<', params.stopOrderDropoff)
-                            .where('toStop.stopOrder', '>', params.stopOrderPickup)
+                            .where('t.publicId', '=', tripPublicId)
+                            .where('fromStop.stopOrder', '<', stopOrderDropoff)
+                            .where('toStop.stopOrder', '>', stopOrderPickup)
                     )
                 )
                 .$castTo<boolean>()
                 .as('isAvailable'),
         ])
-        .where('s.vehicleId', '=', vehicleId)
+        .where('s.vehicleId', '=', eb =>
+            eb.selectFrom('operation.trip').select('vehicleId').where('publicId', '=', tripPublicId)
+        )
+        .orderBy('s.type', 'asc')
+        .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
+        .orderBy('s.seatNumber')
+        .execute()
+}
+
+export async function getSeatsWithAvailabilityByTripId(
+    tripId: OperationTripId,
+    stopOrderPickup: number,
+    stopOrderDropoff: number
+) {
+    return db
+        .selectFrom('organization.seat as s')
+        .select(eb => [
+            's.id',
+            's.publicId',
+            's.seatNumber',
+            's.type',
+            eb
+                .not(
+                    eb.exists(
+                        eb
+                            .selectFrom('booking.seat_segment as ss')
+                            .innerJoin('operation.trip as t', 't.id', 'ss.tripId')
+                            .innerJoin('operation.trip_stop_template as fromStop', join =>
+                                join
+                                    .onRef('fromStop.scheduleId', '=', 't.scheduleId')
+                                    .onRef('fromStop.stationId', '=', 'ss.fromStationId')
+                            )
+                            .innerJoin('operation.trip_stop_template as toStop', join =>
+                                join
+                                    .onRef('toStop.scheduleId', '=', 't.scheduleId')
+                                    .onRef('toStop.stationId', '=', 'ss.toStationId')
+                            )
+                            .select('ss.id')
+                            .whereRef('ss.seatId', '=', 's.id')
+                            .where('ss.tripId', '=', tripId)
+                            .where('fromStop.stopOrder', '<', stopOrderDropoff)
+                            .where('toStop.stopOrder', '>', stopOrderPickup)
+                    )
+                )
+                .$castTo<boolean>()
+                .as('isAvailable'),
+        ])
+        .where('s.vehicleId', '=', eb =>
+            eb.selectFrom('operation.trip').select('vehicleId').where('id', '=', tripId)
+        )
         .orderBy('s.type', 'asc')
         .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
         .orderBy('s.seatNumber')

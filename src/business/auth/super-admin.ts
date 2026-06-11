@@ -1,7 +1,6 @@
 import { dal } from '../../database/index.js'
 import { CompanyAdminQuery } from '../../model/query/company-admin/index.js'
 import { CompanyAdminCreateBody } from '../../model/body/company-admin/index.js'
-import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
 import { utils } from '../../utils/index.js'
 import { AuthUserId, AuthUserStatus } from '../../database/auth/user/type.js'
 import { UserBody, UserUpdateBody } from '../../model/body/user/index.js'
@@ -28,7 +27,7 @@ export async function getDashboard() {
 }
 
 export async function listCompanyAdmins(query: CompanyAdminQuery) {
-    const result = await dal.auth.staffProfile.query.findAllCompanyAdmins(query)
+    const result = await dal.organization.companyMember.query.findAllCompanyAdmins(query)
     const { data, next } = utils.common.paginateByCursor(result, query.limit)
     return {
         admins: data,

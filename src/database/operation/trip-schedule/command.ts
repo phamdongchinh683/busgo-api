@@ -78,7 +78,14 @@ export async function updateOneById(params: {
             cond.push(eb('ts.companyId', '=', companyId))
             return eb.and(cond)
         })
-        .returning(['ts.id', 'ts.departureTime', 'ts.startDate', 'ts.endDate', 'ts.status'])
+        .returning([
+            'ts.id',
+            'ts.publicId',
+            'ts.departureTime',
+            'ts.startDate',
+            'ts.endDate',
+            'ts.status',
+        ])
         .executeTakeFirstOrThrow()
 }
 

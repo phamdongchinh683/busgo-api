@@ -2,9 +2,8 @@ import { api, endpoint, tags, bearer } from '../../../../../app/api.js'
 import { bus } from '../../../../../business/index.js'
 import { TripResponse } from '../../../../../model/body/trip/index.js'
 import { jwt } from '../../../../../app/index.js'
-import { AuthUserRole } from '../../../../../database/auth/user/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../../database/auth/user/type.js'
 import { TripFilter } from '../../../../../model/query/trip/index.js'
-import { AuthStaffProfileRole } from '../../../../../database/auth/staff_profile/type.js'
 import { TripScheduleIdParam } from '../../../../../model/params/trip-schedule/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
@@ -13,12 +12,9 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.dispatcher]
-        )
-        return bus.operation.trip.getTripByScheduleId(request.query, request.params.id)
+        await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.operations)
+        const scheduleId = await bus.publicId.resolve('tripSchedule', request.params.id)
+        return bus.operation.trip.getTripByScheduleId(request.query, scheduleId)
     },
 
     schema: {

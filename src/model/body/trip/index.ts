@@ -1,23 +1,33 @@
 import z from 'zod'
-import { OperationTripId, OperationTripStatus } from '../../../database/operation/trip/type.js'
+import {
+    OperationTripId,
+    OperationTripPublicId,
+    OperationTripStatus,
+} from '../../../database/operation/trip/type.js'
 import {
     OrganizationVehicleId,
     OrganizationVehicleType,
 } from '../../../database/organization/vehicle/type.js'
 import {
     OrganizationSeatId,
+    OrganizationSeatPublicId,
     OrganizationSeatType,
 } from '../../../database/organization/seat/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
-import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
+import {
+    BookingTicketId,
+    BookingTicketPublicId,
+    BookingTicketStatus,
+} from '../../../database/booking/ticket/type.js'
 import { BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { AuthUserId } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const TripItem = z.object({
-    id: OperationTripId,
+    id: PublicApiId(OperationTripPublicId, OperationTripId),
     routeId: OperationRouteId.optional(),
     vehicleId: OrganizationVehicleId.optional(),
     driverIds: z.array(AuthUserId).nullable().optional(),
@@ -31,7 +41,7 @@ export type TripItem = z.infer<typeof TripItem>
 export const TripResponse = z.object({
     trips: z.array(
         z.object({
-            id: OperationTripId,
+            id: PublicApiId(OperationTripPublicId, OperationTripId),
             fromLocation: z.string(),
             toLocation: z.string(),
             distanceKm: z.number(),
@@ -82,7 +92,7 @@ export type TripStopPickupResponse = z.infer<typeof TripStopPickupResponse>
 export const TripSeatResponse = z.object({
     seats: z.array(
         z.object({
-            id: OrganizationSeatId,
+            id: PublicApiId(OrganizationSeatPublicId, OrganizationSeatId),
             seatNumber: z.string(),
             type: OrganizationSeatType,
             isAvailable: z.boolean(),
@@ -114,7 +124,7 @@ export const TripBody = z.object({
 export type TripBody = z.infer<typeof TripBody>
 
 export const TripPrepareResponse = z.object({
-    id: OperationTripId,
+    id: PublicApiId(OperationTripPublicId, OperationTripId),
     companyId: OrganizationBusCompanyId,
 })
 
@@ -123,7 +133,7 @@ export type TripPrepareResponse = z.infer<typeof TripPrepareResponse>
 export const DriverTripBody = z.object({
     trips: z.array(
         z.object({
-            id: OperationTripId,
+            id: PublicApiId(OperationTripPublicId, OperationTripId),
             type: OrganizationVehicleType,
             totalSeats: z.number(),
             fromLocation: z.string(),
@@ -144,7 +154,7 @@ export type DriverTripBody = z.infer<typeof DriverTripBody>
 export const TripPassengerResponse = z.object({
     passengers: z.array(
         z.object({
-            id: BookingTicketId,
+            id: PublicApiId(BookingTicketPublicId, BookingTicketId),
             fullName: z.string(),
             phoneNumber: z.string().nullable(),
             seatNumber: z.string().nullable(),
@@ -168,7 +178,7 @@ export const TripUpdateStatusBody = z.object({
 export type TripUpdateStatusBody = z.infer<typeof TripUpdateStatusBody>
 
 export const TripUpdateStatusResponse = z.object({
-    id: OperationTripId,
+    id: PublicApiId(OperationTripPublicId, OperationTripId),
     status: OperationTripStatus,
 })
 

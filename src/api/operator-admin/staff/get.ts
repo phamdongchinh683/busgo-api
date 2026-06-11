@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
-import { AuthUserRole } from '../../../database/auth/user/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../database/auth/user/type.js'
 import { jwt } from '../../../app/index.js'
-import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
 import { AuthProfileQuery } from '../../../model/query/staff/index.js'
 import { StaffListResponse } from '../../../model/body/profile/index.js'
 
@@ -12,10 +11,9 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin]
+            OPERATOR_FEATURE_ROLES.administration
         )
         return bus.auth.profile.getStaffRole(request.query, userInfo.companyId)
     },

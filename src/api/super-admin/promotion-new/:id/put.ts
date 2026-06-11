@@ -12,7 +12,8 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return bus.booking.promotionNew.updateOne({ id: request.params.id, body: request.body })
+        const id = await bus.publicId.resolve('promotionNews', request.params.id)
+        return bus.booking.promotionNew.updateOne({ id, body: request.body })
     },
     schema: {
         params: PromotionNewsIdParam,

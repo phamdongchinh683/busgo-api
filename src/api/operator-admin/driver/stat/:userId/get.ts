@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../../app/api.js'
 import { bus } from '../../../../../business/index.js'
 import { jwt } from '../../../../../app/index.js'
-import { AuthUserRole } from '../../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../../database/auth/user/type.js'
 import { DriverStatsResponse } from '../../../../../model/body/driver/index.js'
 import { UserIdParam } from '../../../../../model/params/user/index.js'
 
@@ -12,12 +11,12 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin]
+            OPERATOR_FEATURE_ROLES.administration
         )
-        return bus.organization.driverMonthlyStat.getDriverDetail(request.params.userId)
+        const userId = await bus.publicId.resolve('user', request.params.userId)
+        return bus.organization.driverMonthlyStat.getDriverDetail(userId)
     },
 
     schema: {

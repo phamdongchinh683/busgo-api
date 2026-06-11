@@ -1,8 +1,7 @@
 import { api, endpoint, bearer, tags } from '../../../app/api.js'
 import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
-import { AuthUserRole } from '../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../database/auth/user/type.js'
 import { TicketSupportFilter } from '../../../model/query/ticket/index.js'
 import { TicketsResponse } from '../../../model/body/ticket/index.js'
 
@@ -12,10 +11,9 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.support]
+            OPERATOR_FEATURE_ROLES.support
         )
         return bus.booking.ticket.getTicketsSupport(request.query, userInfo.companyId)
     },

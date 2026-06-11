@@ -1,33 +1,23 @@
 import { jwt } from '../../app/index.js'
-import { AuthUserRole } from '../../database/auth/user/type.js'
+import { AuthOperatorRole, AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import type { AuthResponse } from '../../model/body/auth/index.js'
 
 type AuthUser = NonNullable<Awaited<ReturnType<typeof dal.auth.user.query.getAuthUser>>>
 
 async function getAuthContext(user: AuthUser) {
-    if (user.role === AuthUserRole.enum.operator) {
-        const staffProfile = await dal.auth.staffProfile.query.getAuthContext(user.id)
+    if (AuthOperatorRole.safeParse(user.role).success || user.role === AuthUserRole.enum.driver) {
+        const membership = await dal.organization.companyMember.query.getAuthContext(user.id)
         return {
-            companyId: staffProfile?.companyId ?? null,
-            driverCompanyId: null,
-            staffProfileRole: staffProfile?.staffProfileRole ?? null,
-        }
-    }
-
-    if (user.role === AuthUserRole.enum.driver) {
-        const driver = await dal.organization.companyDriver.query.getAuthContext(user.id)
-        return {
-            companyId: driver?.companyId ?? null,
-            driverCompanyId: driver?.companyId ?? null,
-            staffProfileRole: null,
+            companyId: membership?.companyId ?? null,
+            driverCompanyId:
+                user.role === AuthUserRole.enum.driver ? (membership?.companyId ?? null) : null,
         }
     }
 
     return {
         companyId: null,
         driverCompanyId: null,
-        staffProfileRole: null,
     }
 }
 
@@ -42,7 +32,6 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
         googleId: user.googleId,
         facebookId: user.facebookId,
         tokenVersion: user.tokenVersion,
-        staffProfileRole: context.staffProfileRole,
         companyId: context.companyId,
         status: user.status,
         accountStripeId: user.accountStripeId,
@@ -50,24 +39,26 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
         lastChangePhone: user.lastChangePhone,
     }
 
+    const responseUser = {
+        id: tokenPayload.id,
+        publicId: user.publicId,
+        email: tokenPayload.email,
+        phone: tokenPayload.phone,
+        role: tokenPayload.role,
+        fullName: tokenPayload.fullName,
+        companyId: tokenPayload.companyId,
+        facebookId: tokenPayload.facebookId,
+        googleId: tokenPayload.googleId,
+        status: tokenPayload.status,
+        accountStripeId: tokenPayload.accountStripeId,
+        lastChangeEmail: tokenPayload.lastChangeEmail,
+        lastChangePhone: tokenPayload.lastChangePhone,
+        driverCompanyId: context.driverCompanyId,
+    }
+
     return {
         message: 'Thành công',
         token: jwt.auth.generateToken(tokenPayload),
-        user: {
-            id: tokenPayload.id,
-            email: tokenPayload.email,
-            phone: tokenPayload.phone,
-            role: tokenPayload.role,
-            fullName: tokenPayload.fullName,
-            staffProfileRole: tokenPayload.staffProfileRole,
-            companyId: tokenPayload.companyId,
-            facebookId: tokenPayload.facebookId,
-            googleId: tokenPayload.googleId,
-            status: tokenPayload.status,
-            accountStripeId: tokenPayload.accountStripeId,
-            lastChangeEmail: tokenPayload.lastChangeEmail,
-            lastChangePhone: tokenPayload.lastChangePhone,
-            driverCompanyId: context.driverCompanyId,
-        },
+        user: responseUser,
     }
 }

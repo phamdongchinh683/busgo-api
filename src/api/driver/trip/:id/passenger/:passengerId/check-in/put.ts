@@ -14,11 +14,14 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.driver])
-        const { passengerId, id } = request.params
+        const [passengerId, tripId] = await Promise.all([
+            bus.publicId.resolve('ticket', request.params.passengerId),
+            request.params.id ? bus.publicId.resolve('trip', request.params.id) : undefined,
+        ])
         return bus.booking.ticket.checkInTicket({
             id: passengerId,
             status: request.body.ticketStatus,
-            tripId: id,
+            tripId,
         })
     },
     schema: {

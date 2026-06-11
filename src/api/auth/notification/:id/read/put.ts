@@ -11,7 +11,8 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
-        return bus.auth.notification.markNotificationAsRead(request.params.id, userInfo.id)
+        const id = await bus.publicId.resolve('notification', request.params.id)
+        return bus.auth.notification.markNotificationAsRead(id, userInfo.id)
     },
     schema: {
         params: NotificationIdParam,

@@ -1,6 +1,6 @@
 export * as vehicle from './vehicle/index.js'
 export * as seat from './seat/index.js'
 export * as busCompany from './bus_company/index.js'
-export * as companyDriver from './company_driver/index.js'
+export * as companyMember from './company_member/index.js'
 export * as busCompanyReview from './bus_company_review/index.js'
 export * as driverMonthlyStat from './driver_monthly_stat/index.js'

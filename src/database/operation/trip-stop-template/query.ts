@@ -23,6 +23,7 @@ export async function getStoppingPointByScheduleId(params: {
         })
         .select([
             'ts.id',
+            'ts.publicId',
             'ts.stopOrder',
             'ts.stationId',
             's.address',

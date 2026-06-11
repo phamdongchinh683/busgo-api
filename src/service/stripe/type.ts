@@ -1,5 +1,9 @@
 import { z } from 'zod'
-import { PaymentCustomerPaymentMethodId } from '../../database/payment/customer_payment_method/type.js'
+import {
+    PaymentCustomerPaymentMethodId,
+    PaymentCustomerPaymentMethodPublicId,
+} from '../../database/payment/customer_payment_method/type.js'
+import { PublicApiId } from '../../model/public-id.js'
 
 export const StripeStatusResponse = z.object({
     chargesEnabled: z.boolean(),
@@ -18,7 +22,7 @@ export type StripeAttachPaymentMethodRequest = z.infer<typeof StripeAttachPaymen
 export const StripeGetPaymentMethodsResponse = z.object({
     paymentMethods: z.array(
         z.object({
-            id: PaymentCustomerPaymentMethodId,
+            id: PublicApiId(PaymentCustomerPaymentMethodPublicId, PaymentCustomerPaymentMethodId),
             brand: z.string().nullable(),
             last4: z.string().nullable(),
             expMonth: z.number().nullable(),

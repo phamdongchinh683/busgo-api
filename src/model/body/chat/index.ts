@@ -1,8 +1,8 @@
 import z from 'zod'
 import { AuthUserId } from '../../../database/auth/user/type.js'
-import { ChatMessageId } from '../../../database/chat/message/type.js'
+import { ChatMessageId, ChatMessagePublicId } from '../../../database/chat/message/type.js'
 import { Email, Phone } from '../../common.js'
-import { ChatBoxId } from '../../../database/chat/box/type.js'
+import { ChatBoxId, ChatBoxPublicId } from '../../../database/chat/box/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
@@ -14,6 +14,7 @@ import {
 import { BookingCouponId } from '../../../database/booking/coupon/type.js'
 import { BookingTicketId } from '../../../database/booking/ticket/type.js'
 import { BookingId } from '../../../database/booking/booking/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const ChatBoxBody = z.object({
     message: z.string(),
@@ -124,7 +125,7 @@ export type AiChatResponse = z.infer<typeof AiChatResponse>
 export const ChatMessageResponse = z.object({
     messages: z.array(
         z.object({
-            id: ChatMessageId,
+            id: PublicApiId(ChatMessagePublicId, ChatMessageId),
             message: z.string(),
             senderId: AuthUserId,
             fullName: z.string(),
@@ -141,7 +142,7 @@ export type ChatMessageResponse = z.infer<typeof ChatMessageResponse>
 export const ChatBoxResponse = z.object({
     boxes: z.array(
         z.object({
-            id: ChatBoxId,
+            id: PublicApiId(ChatBoxPublicId, ChatBoxId),
             lastMessage: z.string().nullable(),
             senderId: AuthUserId.nullable(),
             receiverId: AuthUserId.nullable(),
@@ -160,7 +161,7 @@ export type ChatBoxResponse = z.infer<typeof ChatBoxResponse>
 
 export const MarkReadResponse = z.object({
     message: z.string(),
-    boxId: ChatBoxId,
+    boxId: PublicApiId(ChatBoxPublicId, ChatBoxId),
     unreadReceiverCount: z.number().int().nonnegative(),
     unreadSenderCount: z.number().int().nonnegative(),
 })

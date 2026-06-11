@@ -1,9 +1,10 @@
 import { ColumnType, GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
+import { AuthUserId, AuthUserPublicId, AuthUserRole, AuthUserStatus } from './type.js'
 
 export interface AuthUserTable extends Timestamps {
     id: GeneratedAlways<AuthUserId>
+    publicId: GeneratedAlways<AuthUserPublicId>
     password: string
     fullName: string
     email: string | null

@@ -24,6 +24,7 @@ export async function findAllMessagesByBoxId(
         })
         .select([
             'm.id',
+            'm.publicId',
             'm.senderId',
             'm.body as message',
             'u.fullName as fullName',

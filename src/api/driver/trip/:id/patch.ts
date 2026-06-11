@@ -14,8 +14,9 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.driver])
+        const id = await bus.publicId.resolve('trip', request.params.id)
         return bus.operation.trip.updateTripStatusAndCount({
-            id: request.params.id,
+            id,
             status: request.body.status,
             companyId: userInfo.companyId,
             userId: userInfo.id,

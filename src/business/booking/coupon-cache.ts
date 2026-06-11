@@ -41,12 +41,12 @@ function hydrateDate(value: unknown) {
     return Number.isNaN(date.getTime()) ? null : date
 }
 
-export function hydrateCoupon(coupon: CouponResponse): CouponResponse {
+export function hydrateCoupon<T extends CouponResponse>(coupon: T): T {
     return {
         ...coupon,
         startDate: hydrateDate(coupon.startDate),
         endDate: hydrateDate(coupon.endDate),
-    }
+    } as T
 }
 
 export function hydrateCouponsResponse<T extends CouponsResponse>(response: T): T {

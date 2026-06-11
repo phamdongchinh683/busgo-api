@@ -12,7 +12,8 @@ api.route({
 
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return bus.auth.superAdmin.updateOne(request.params.userId, request.body)
+        const userId = await bus.publicId.resolve('user', request.params.userId)
+        return bus.auth.superAdmin.updateOne(userId, request.body)
     },
 
     schema: {

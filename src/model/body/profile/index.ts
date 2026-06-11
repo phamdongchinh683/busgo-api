@@ -1,15 +1,15 @@
 import z from 'zod'
-import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
+import { AuthOperatorRole, AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import {
-    AuthStaffProfileId,
-    AuthStaffProfileRole,
-} from '../../../database/auth/staff_profile/type.js'
-import { Email, Otp, Phone, UserInfo } from '../../common.js'
+    OrganizationCompanyMemberId,
+    OrganizationCompanyMemberPublicId,
+} from '../../../database/organization/company_member/type.js'
+import { Email, Otp, Phone, PublicUserInfo } from '../../common.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const ProfileUpdateBody = z.object({
     fullName: z.string().optional(),
-    status: AuthUserStatus.optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
     staffCode: z.string().nullable().optional(),
     position: z.string().nullable().optional(),
@@ -44,7 +44,7 @@ export type ProfileUpdateContactBody = z.infer<typeof ProfileUpdateContactBody>
 export const ProfileUpdateContactResponse = z.object({
     message: z.string(),
     token: z.string(),
-    user: UserInfo,
+    user: PublicUserInfo,
 })
 export type ProfileUpdateContactResponse = z.infer<typeof ProfileUpdateContactResponse>
 
@@ -65,7 +65,7 @@ export const ProfileResponseUser = z.object({
 export type ProfileResponseUser = z.infer<typeof ProfileResponseUser>
 
 export const StaffRoleResponse = z.object({
-    user: ProfileUpdateBody,
+    user: PublicUserInfo,
 })
 
 export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
@@ -73,16 +73,16 @@ export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
 export const StaffListResponse = z.object({
     staff: z.array(
         ProfileUpdateBody.extend({
-            id: AuthStaffProfileId,
+            id: PublicApiId(OrganizationCompanyMemberPublicId, OrganizationCompanyMemberId),
             fullName: z.string(),
             email: Email.nullable(),
             phone: Phone.nullable(),
             userId: AuthUserId,
-            role: AuthStaffProfileRole,
+            role: AuthOperatorRole,
             status: AuthUserStatus,
         })
     ),
-    next: AuthStaffProfileId.nullable(),
+    next: OrganizationCompanyMemberId.nullable(),
 })
 
 export type StaffListResponse = z.infer<typeof StaffListResponse>

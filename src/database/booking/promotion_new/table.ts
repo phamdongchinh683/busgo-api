@@ -1,10 +1,11 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { BookingPromotionNewsId } from './type.js'
+import { BookingPromotionNewsId, BookingPromotionNewsPublicId } from './type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 
 export interface BookingPromotionNewsTable extends Timestamps {
     id: GeneratedAlways<BookingPromotionNewsId>
+    publicId: GeneratedAlways<BookingPromotionNewsPublicId>
     title: string
     content: string
     imageUrl: string | null

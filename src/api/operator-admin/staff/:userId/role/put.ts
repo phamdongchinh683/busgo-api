@@ -1,9 +1,8 @@
 import { api, endpoint, tags, bearer } from '../../../../../app/api.js'
 import { bus } from '../../../../../business/index.js'
 import { jwt } from '../../../../../app/index.js'
-import { AuthUserRole } from '../../../../../database/auth/user/type.js'
+import { AuthOperatorRole, OPERATOR_FEATURE_ROLES } from '../../../../../database/auth/user/type.js'
 import { UserIdParam } from '../../../../../model/params/user/index.js'
-import { AuthStaffProfileRole } from '../../../../../database/auth/staff_profile/type.js'
 import { StaffRoleResponse } from '../../../../../model/body/profile/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
@@ -12,17 +11,17 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin]
+            OPERATOR_FEATURE_ROLES.administration
         )
-        return bus.auth.profile.updateStaffRole(request.params.userId, request.body)
+        const userId = await bus.publicId.resolve('user', request.params.userId)
+        return bus.auth.profile.updateStaffRole(userId, request.body, userInfo.companyId)
     },
 
     schema: {
         params: UserIdParam,
-        body: AuthStaffProfileRole,
+        body: AuthOperatorRole,
         response: { 200: StaffRoleResponse },
         tags: tags(__filename),
         security: bearer,

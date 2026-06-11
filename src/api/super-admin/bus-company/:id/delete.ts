@@ -12,7 +12,8 @@ api.route({
 
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        return bus.organization.busCompany.deleteOne(request.params.id)
+        const id = await bus.publicId.resolve('busCompany', request.params.id)
+        return bus.organization.busCompany.deleteOne(id)
     },
 
     schema: {

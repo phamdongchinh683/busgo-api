@@ -49,7 +49,7 @@ export async function markRead(boxId: ChatBoxId, userId: AuthUserId) {
 
     return {
         message: 'Thành công',
-        boxId: row.id,
+        boxId: row.publicId,
         unreadReceiverCount: row.unreadReceiverCount,
         unreadSenderCount: row.unreadSenderCount,
     }

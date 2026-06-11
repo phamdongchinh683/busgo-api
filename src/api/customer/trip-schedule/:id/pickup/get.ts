@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
-        const { id } = request.params
+        const id = await bus.publicId.resolve('tripSchedule', request.params.id)
         return bus.operation.tripSchedule.getPickupStops(id)
     },
 

@@ -1,6 +1,4 @@
-import { CompanyAdminQuery } from '../../../model/query/company-admin/index.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
-import { AuthStaffProfileRole } from '../staff_profile/type.js'
 import { db } from '../../../datasource/db.js'
 import { DriverQuery } from '../../../model/query/driver/index.js'
 import { AuthUserId, AuthUserRole } from '../user/type.js'
@@ -10,40 +8,13 @@ import { PeriodUserQuery } from '../../../model/query/user/index.js'
 import { AuthUserTableInsert } from './table.js'
 import { UserListQuery } from '../../../model/body/user/index.js'
 
-export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
-    const { limit, next } = query
-    return db
-        .selectFrom('auth.user as u')
-        .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
-        .leftJoin('organization.bus_company as bc', 'bc.id', 'sp.companyId')
-        .where(eb => {
-            const cond = []
-            cond.push(eb('sp.role', '=', AuthStaffProfileRole.enum.company_admin))
-            if (next) cond.push(eb('u.id', '>', next))
-            return eb.and(cond)
-        })
-        .select([
-            'u.id',
-            'u.fullName',
-            'u.email',
-            'u.phone',
-            'u.status',
-            'sp.role',
-            'sp.companyId',
-            'bc.name as companyName',
-        ])
-        .limit(limit + 1)
-        .orderBy('u.id', 'asc')
-        .execute()
-}
-
 export async function findAllDrivers(query: DriverQuery, companyId: OrganizationBusCompanyId) {
     const { limit, next, phone, status } = query
     return db
 
         .selectFrom('auth.user as u')
-        .innerJoin('organization.company_driver as cd', 'cd.userId', 'u.id')
-        .innerJoin('organization.bus_company as bc', 'bc.id', 'cd.companyId')
+        .innerJoin('organization.company_member as cm', 'cm.userId', 'u.id')
+        .innerJoin('organization.bus_company as bc', 'bc.id', 'cm.companyId')
         .innerJoin('organization.driver_monthly_stat as dms', 'dms.driverId', 'u.id')
         .where(eb => {
             const cond = []
@@ -51,11 +22,12 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
             if (next) cond.push(eb('u.id', '>', next))
             if (phone) cond.push(eb('u.phone', '=', phone))
             if (status) cond.push(eb('u.status', '=', status))
-            if (companyId) cond.push(eb('cd.companyId', '=', companyId))
+            if (companyId) cond.push(eb('cm.companyId', '=', companyId))
             return eb.and(cond)
         })
         .select([
             'u.id',
+            'u.publicId',
             'u.fullName',
             'u.email',
             'u.phone',
@@ -81,7 +53,6 @@ export async function getPeriod(q: PeriodUserQuery) {
     if (q.type === 'monthly') {
         const rows = await db
             .selectFrom('auth.user as u')
-            .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
             .select([
                 sql<number>`EXTRACT(MONTH FROM u.created_at)::int`.as('month'),
                 sql<number>`count(*)::int`.as('count'),
@@ -108,7 +79,6 @@ export async function getPeriod(q: PeriodUserQuery) {
 
     const rows = await db
         .selectFrom('auth.user as u')
-        .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
         .select([
             sql<number>`EXTRACT(YEAR FROM u.created_at)::int`.as('year'),
             sql<number>`count(*)::int`.as('total'),
@@ -144,10 +114,10 @@ export function getOne(params: {
     const { email, phone, id, facebookId, googleId } = params
     return db
         .selectFrom('auth.user as u')
-        .leftJoin('auth.staff_profile', 'u.id', 'auth.staff_profile.userId')
-        .leftJoin('organization.company_driver', 'u.id', 'organization.company_driver.userId')
+        .leftJoin('organization.company_member as cm', 'u.id', 'cm.userId')
         .select([
             'u.id',
+            'u.publicId',
             'u.fullName',
             'u.password',
             'u.email',
@@ -162,9 +132,8 @@ export function getOne(params: {
             'u.isPhoneVerified',
             'u.lastChangeEmail',
             'u.lastChangePhone',
-            'auth.staff_profile.companyId',
-            'auth.staff_profile.role as staffProfileRole',
-            'organization.company_driver.companyId as driverCompanyId',
+            'cm.companyId',
+            'cm.companyId as driverCompanyId',
         ])
         .where(eb => {
             const cond = []
@@ -195,6 +164,7 @@ export async function getAuthUser(params: {
         .selectFrom('auth.user as u')
         .select([
             'u.id',
+            'u.publicId',
             'u.fullName',
             'u.password',
             'u.email',
@@ -225,8 +195,7 @@ export function findAll(query: UserListQuery) {
     const { limit, next, status, role, companyId, email, phone, type } = query
     return db
         .selectFrom('auth.user as u')
-        .leftJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
-        .leftJoin('organization.company_driver as cd', 'cd.userId', 'u.id')
+        .leftJoin('organization.company_member as cm', 'cm.userId', 'u.id')
         .where(eb => {
             const cond = []
             cond.push(eb('u.role', '!=', AuthUserRole.enum.super_admin))
@@ -235,9 +204,7 @@ export function findAll(query: UserListQuery) {
             }
             if (status) cond.push(eb('u.status', '=', status))
             if (companyId) {
-                cond.push(
-                    eb.or([eb('sp.companyId', '=', companyId), eb('cd.companyId', '=', companyId)])
-                )
+                cond.push(eb('cm.companyId', '=', companyId))
             }
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
@@ -248,6 +215,7 @@ export function findAll(query: UserListQuery) {
         })
         .select([
             'u.id',
+            'u.publicId',
             'u.fullName',
             'u.email',
             'u.phone',
@@ -255,7 +223,6 @@ export function findAll(query: UserListQuery) {
             'u.googleId',
             'u.role',
             'u.status',
-            'sp.role as staffProfileRole',
         ])
         .limit(limit + 1)
         .orderBy('u.id', 'asc')
@@ -265,14 +232,14 @@ export function findAll(query: UserListQuery) {
 export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {
     return db
         .selectFrom('auth.user as u')
-        .innerJoin('auth.staff_profile as sp', 'sp.userId', 'u.id')
+        .innerJoin('organization.company_member as cm', 'cm.userId', 'u.id')
         .select(['u.accountStripeId'])
         .where(eb => {
             const cond = []
             cond.push(eb('u.accountStripeId', 'is not', null))
             cond.push(eb('u.status', '=', 'active'))
-            cond.push(eb('sp.companyId', '=', companyId))
-            cond.push(eb('sp.role', '=', AuthStaffProfileRole.enum.company_admin))
+            cond.push(eb('cm.companyId', '=', companyId))
+            cond.push(eb('u.role', '=', AuthUserRole.enum.operator_admin))
             return eb.and(cond)
         })
         .executeTakeFirstOrThrow()

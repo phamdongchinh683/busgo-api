@@ -28,6 +28,7 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
     return qb
         .select([
             'b.id',
+            'b.publicId',
             'b.lastMessage',
             'b.senderId',
             'b.receiverId',

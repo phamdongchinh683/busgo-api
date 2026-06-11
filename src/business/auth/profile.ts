@@ -2,16 +2,17 @@ import { dal } from '../../database/index.js'
 import { UserInfo } from '../../model/common.js'
 import _ from 'lodash'
 import { AuthUserId } from '../../database/auth/user/type.js'
-import { AuthStaffProfileTableUpdate } from '../../database/auth/staff_profile/table.js'
+import { OrganizationCompanyMemberTableUpdate } from '../../database/organization/company_member/table.js'
 import { AuthProfileQuery } from '../../model/query/staff/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { utils } from '../../utils/index.js'
-import { AuthStaffProfileRole } from '../../database/auth/staff_profile/type.js'
+import { AuthOperatorRole } from '../../database/auth/user/type.js'
 import {
     ProfileUpdateBody,
     ProfileUpdateContactBody,
     ProfileUpdateCustomerBody,
 } from '../../model/body/profile/index.js'
+import { UserUpdateBody } from '../../model/body/user/index.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { jwt } from '../../app/index.js'
@@ -19,15 +20,17 @@ import { verifyOtp } from './otp.js'
 
 export async function getProfile(userInfo: UserInfo) {
     return {
-        user: (await dal.auth.staffProfile.cmd.getOne(userInfo.id)) ?? null,
+        user: (await dal.organization.companyMember.cmd.getOne(userInfo.id)) ?? null,
     }
 }
 
 export async function updateProfile(id: AuthUserId, params: ProfileUpdateBody) {
+    if (!params.companyId) {
+        throw new HttpErr.Forbidden()
+    }
+
     const data = _.omitBy(
         {
-            status: params.status,
-            companyId: params.companyId ?? undefined,
             staffCode: params.staffCode ?? undefined,
             position: params.position ?? undefined,
             department: params.department ?? undefined,
@@ -35,15 +38,15 @@ export async function updateProfile(id: AuthUserId, params: ProfileUpdateBody) {
             hireDate: params.hireDate ?? undefined,
         },
         v => _.isNil(v)
-    ) as AuthStaffProfileTableUpdate
+    ) as OrganizationCompanyMemberTableUpdate
 
     return {
-        user: await dal.auth.staffProfile.cmd.updateOne(id, data),
+        user: await dal.organization.companyMember.cmd.updateOne(id, params.companyId, data),
     }
 }
 
 export async function getStaffRole(query: AuthProfileQuery, companyId: OrganizationBusCompanyId) {
-    const result = await dal.auth.staffProfile.query.findAll(query, companyId)
+    const result = await dal.organization.companyMember.query.findAll(query, companyId)
     const { data, next } = utils.common.paginateByCursor(result, query.limit)
 
     return {
@@ -52,9 +55,23 @@ export async function getStaffRole(query: AuthProfileQuery, companyId: Organizat
     }
 }
 
-export async function updateStaffRole(id: AuthUserId, role: AuthStaffProfileRole) {
+export async function updateStaffRole(
+    id: AuthUserId,
+    role: AuthOperatorRole,
+    companyId: OrganizationBusCompanyId
+) {
     return {
-        user: await dal.auth.staffProfile.query.updateRole(id, role),
+        user: await dal.auth.user.cmd.updateRole(id, role, companyId),
+    }
+}
+
+export async function updateStaff(
+    id: AuthUserId,
+    params: UserUpdateBody,
+    companyId: OrganizationBusCompanyId
+) {
+    return {
+        user: await dal.auth.user.cmd.updateOneForStaffCompany(id, params, companyId),
     }
 }
 
@@ -210,6 +227,9 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
     return {
         message: 'Thành công',
         token: jwt.auth.generateToken(payload),
-        user: payload,
+        user: {
+            ...payload,
+            publicId: updatedUser.publicId,
+        },
     }
 }

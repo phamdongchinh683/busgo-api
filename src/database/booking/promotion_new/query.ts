@@ -8,6 +8,7 @@ export async function findAll(query: PromotionNewsListQuery) {
         .selectFrom('booking.promotion_new as pn')
         .select([
             'pn.id',
+            'pn.publicId',
             'pn.title',
             'pn.content',
             'pn.imageUrl',

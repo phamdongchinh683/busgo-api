@@ -2,7 +2,11 @@ import { OrganizationBusCompanyId } from '../../../database/organization/bus_com
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
 import z from 'zod'
-import { OperationTripPriceTemplateId } from '../../../database/operation/trip_price_template/type.js'
+import {
+    OperationTripPriceTemplateId,
+    OperationTripPriceTemplatePublicId,
+} from '../../../database/operation/trip_price_template/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const TripPriceTemplateBody = z.object({
     companyId: OrganizationBusCompanyId.optional(),
@@ -16,14 +20,14 @@ export const TripPriceTemplateBody = z.object({
 export type TripPriceTemplateBody = z.infer<typeof TripPriceTemplateBody>
 
 export const TripPriceTemplateItem = TripPriceTemplateBody.extend({
-    id: OperationTripPriceTemplateId,
+    id: PublicApiId(OperationTripPriceTemplatePublicId, OperationTripPriceTemplateId),
 })
 
 export type TripPriceTemplateItem = z.infer<typeof TripPriceTemplateItem>
 
 export const TripPriceTemplateResponse = z.object({
     tripPriceTemplate: TripPriceTemplateItem.extend({
-        id: OperationTripPriceTemplateId,
+        id: PublicApiId(OperationTripPriceTemplatePublicId, OperationTripPriceTemplateId),
     }),
 })
 

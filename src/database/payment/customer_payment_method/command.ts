@@ -33,6 +33,7 @@ export async function findMany(userId: AuthUserId) {
         .selectFrom('payment.customer_payment_method')
         .select([
             'id',
+            'publicId',
             'brand',
             'last4',
             'expMonth',

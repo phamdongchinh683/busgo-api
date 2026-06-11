@@ -1,9 +1,11 @@
 import {
     OrganizationVehicleId,
+    OrganizationVehiclePublicId,
     OrganizationVehicleStatus,
     OrganizationVehicleType,
 } from '../../../database/organization/vehicle/type.js'
 import z from 'zod'
+import { PublicApiId } from '../../public-id.js'
 
 export const VehicleBody = z.object({
     plateNumber: z.string(),
@@ -17,7 +19,7 @@ export type VehicleBody = z.infer<typeof VehicleBody>
 
 export const VehicleResponse = z.object({
     vehicle: VehicleBody.extend({
-        id: OrganizationVehicleId,
+        id: PublicApiId(OrganizationVehiclePublicId, OrganizationVehicleId),
     }),
 })
 
@@ -26,7 +28,7 @@ export type VehicleResponse = z.infer<typeof VehicleResponse>
 export const VehicleListResponse = z.object({
     vehicles: z.array(
         VehicleBody.extend({
-            id: OrganizationVehicleId,
+            id: PublicApiId(OrganizationVehiclePublicId, OrganizationVehicleId),
         })
     ),
     next: OrganizationVehicleId.nullable(),

@@ -1,8 +1,13 @@
-import { BookingCouponId, BookingDiscountType } from '../../../database/booking/coupon/type.js'
+import {
+    BookingCouponId,
+    BookingCouponPublicId,
+    BookingDiscountType,
+} from '../../../database/booking/coupon/type.js'
 import z from 'zod'
+import { PublicApiId } from '../../public-id.js'
 
 export const CouponResponse = z.object({
-    id: BookingCouponId,
+    id: PublicApiId(BookingCouponPublicId, BookingCouponId),
     code: z.string(),
     discountType: BookingDiscountType,
     discountValue: z.number(),
@@ -25,7 +30,7 @@ export const CouponsResponse = z.object({
 export type CouponsResponse = z.infer<typeof CouponsResponse>
 
 export const CouponApplyResponse = z.object({
-    id: BookingCouponId,
+    id: PublicApiId(BookingCouponPublicId, BookingCouponId),
     discountAmount: z.number(),
     finalTotal: z.number(),
 })

@@ -43,7 +43,14 @@ export async function findByScheduleIdAndDepartureDate(
             cond.push(eb('t.departureDate', '=', params.departureDate))
             return eb.and(cond)
         })
-        .select(['t.id', 't.status', 't.departureDate', 'ts.companyId', 'ts.departureTime'])
+        .select([
+            't.id',
+            't.publicId',
+            't.status',
+            't.departureDate',
+            'ts.companyId',
+            'ts.departureTime',
+        ])
         .executeTakeFirst()
 }
 
@@ -61,6 +68,7 @@ export async function createTripTransaction({ scheduleId, departureDate, company
             })
             return {
                 id: existingTrip.id,
+                publicId: existingTrip.publicId,
                 companyId: existingTrip.companyId,
             }
         }
@@ -96,6 +104,7 @@ export async function createTripTransaction({ scheduleId, departureDate, company
 
         return {
             id: trip.id,
+            publicId: trip.publicId,
             companyId: schedule.companyId,
         }
     })

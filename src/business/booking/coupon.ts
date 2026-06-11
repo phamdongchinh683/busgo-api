@@ -40,7 +40,7 @@ export async function getCouponByCode(params: CouponCheckCodeQuery) {
     const { discountAmount, finalTotal } = applyCoupon(coupon, params.orderTotal)
 
     return {
-        id: coupon.id,
+        id: coupon.publicId,
         discountAmount: discountAmount,
         finalTotal: finalTotal,
     }

@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { jwt } from '../../../../app/index.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../database/auth/user/type.js'
 import { PaymentDeleteResponse } from '../../../../model/body/payment/index.js'
 import { PaymentTransactionCodeParam } from '../../../../model/query/payment/index.js'
 
@@ -12,11 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin]
-        )
+        await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.administration)
         return bus.payment.payment.updateByTransactionCode(request.params.code)
     },
 

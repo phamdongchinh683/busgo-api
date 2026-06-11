@@ -1,8 +1,7 @@
 import { api, endpoint, bearer, tags } from '../../../../app/api.js'
 import { jwt } from '../../../../app/index.js'
 import { bus } from '../../../../business/index.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../database/auth/user/type.js'
 import { TicketIdParam } from '../../../../model/params/ticket/index.js'
 import { TicketCancelResponse } from '../../../../model/body/ticket/index.js'
 
@@ -12,12 +11,9 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireStaffProfileRole(
-            request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.support]
-        )
-        return bus.booking.ticket.deleteTicket(request.params.id)
+        await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.support)
+        const id = await bus.publicId.resolve('ticket', request.params.id)
+        return bus.booking.ticket.deleteTicket(id)
     },
 
     schema: {

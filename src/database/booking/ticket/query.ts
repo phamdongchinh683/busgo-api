@@ -35,6 +35,7 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
         })
         .select([
             't.id',
+            't.publicId',
             'trip.id as tripId',
             'b.code',
             'b.bookingType',
@@ -72,6 +73,7 @@ export async function findById(id: BookingTicketId, userId: AuthUserId) {
         })
         .select([
             't.id',
+            't.publicId',
             'b.code',
             'b.bookingType',
             'b.originalAmount',
@@ -128,6 +130,7 @@ export async function findPassengersByDriverAndTripId(
         })
         .select([
             't.id',
+            't.publicId',
             'u.phone as phoneNumber',
             'u.fullName as fullName',
             'seat.seatNumber',
@@ -196,6 +199,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
         })
         .select([
             't.id',
+            't.publicId',
             'b.code',
             'b.bookingType',
             'b.originalAmount',
@@ -227,6 +231,7 @@ export async function findByIdSupport(id: BookingTicketId, companyId: Organizati
         })
         .select([
             't.id',
+            't.publicId',
             'b.code',
             'b.bookingType',
             'b.originalAmount',

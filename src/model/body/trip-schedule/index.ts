@@ -1,10 +1,14 @@
 import z from 'zod'
-import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
+import {
+    OperationTripScheduleId,
+    OperationTripSchedulePublicId,
+} from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const TripScheduleItemResponse = z.object({
-    id: OperationTripScheduleId,
+    id: PublicApiId(OperationTripSchedulePublicId, OperationTripScheduleId),
     routeId: OperationRouteId,
     companyId: OrganizationBusCompanyId,
     departureTime: z.string(),
@@ -18,7 +22,7 @@ export type TripScheduleItemResponse = z.infer<typeof TripScheduleItemResponse>
 export const TripScheduleResponse = z.object({
     trip: z.array(
         z.object({
-            id: OperationTripScheduleId,
+            id: PublicApiId(OperationTripSchedulePublicId, OperationTripScheduleId),
             departureTime: z.string(),
             name: z.string(),
             logoUrl: z.string(),

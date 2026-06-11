@@ -30,6 +30,7 @@ export async function findAllByCompanyId(params: {
         })
         .select([
             'tpt.id',
+            'tpt.publicId',
             'tpt.price',
             'tpt.status',
             'r.id as routeId',

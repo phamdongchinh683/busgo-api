@@ -1,9 +1,14 @@
-import { Email, MessageResponse, Phone, UserInfo } from '../../common.js'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from '../../../database/auth/user/type.js'
+import { Email, MessageResponse, Phone, PublicUserInfo } from '../../common.js'
+import {
+    AuthUserId,
+    AuthUserPublicId,
+    AuthUserRole,
+    AuthUserStatus,
+} from '../../../database/auth/user/type.js'
 import z from 'zod'
 import { AuthPassword } from '../auth/index.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const UserBody = z.object({
     fullName: z.string().min(7),
@@ -26,7 +31,7 @@ export const UserUpdateBody = z.object({
 export type UserUpdateBody = z.infer<typeof UserUpdateBody>
 
 export const UserResponse = z.object({
-    user: UserInfo,
+    user: PublicUserInfo,
 })
 
 export type UserResponse = z.infer<typeof UserResponse>
@@ -57,11 +62,10 @@ export type UserLoginProvider = z.infer<typeof UserLoginProvider>
 export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
-            id: AuthUserId,
+            id: PublicApiId(AuthUserPublicId, AuthUserId),
             email: Email.nullable(),
             facebookId: z.string().nullable(),
             googleId: z.string().nullable(),
-            staffProfileRole: AuthStaffProfileRole.nullable(),
         }).omit({ password: true })
     ),
     next: AuthUserId.nullable(),
@@ -85,7 +89,7 @@ export type UserListQuery = z.infer<typeof UserListQuery>
 export const UserResponseMessage = z.object({
     ...MessageResponse.shape,
     user: UserBody.extend({
-        id: AuthUserId,
+        id: PublicApiId(AuthUserPublicId, AuthUserId),
         email: Email.nullable(),
     }).omit({ password: true }),
 })

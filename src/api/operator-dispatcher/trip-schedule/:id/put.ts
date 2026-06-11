@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { jwt } from '../../../../app/index.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../database/auth/user/type.js'
 import { TripScheduleIdParam } from '../../../../model/params/trip-schedule/index.js'
 import {
     TripScheduleUpdateResponse,
@@ -15,13 +14,13 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin, AuthStaffProfileRole.enum.dispatcher]
+            OPERATOR_FEATURE_ROLES.operations
         )
+        const id = await bus.publicId.resolve('tripSchedule', request.params.id)
         return bus.operation.tripSchedule.updateTripSchedule({
-            id: request.params.id,
+            id,
             body: request.body,
             companyId: userInfo.companyId,
         })

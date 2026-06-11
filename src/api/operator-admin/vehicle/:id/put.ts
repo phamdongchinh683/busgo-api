@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { jwt } from '../../../../app/index.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../database/auth/user/type.js'
 import { VehicleBody, VehicleResponse } from '../../../../model/body/vehicle/index.js'
 import { VehicleIdParam } from '../../../../model/params/vehicle/index.js'
 
@@ -12,12 +11,12 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin]
+            OPERATOR_FEATURE_ROLES.administration
         )
-        return bus.organization.vehicle.updateVehicle(request.params.id, {
+        const id = await bus.publicId.resolve('vehicle', request.params.id)
+        return bus.organization.vehicle.updateVehicle(id, {
             ...request.body,
             companyId: userInfo.companyId,
         })

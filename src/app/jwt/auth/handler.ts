@@ -89,15 +89,3 @@ export const requireRoles = async (headers: Headers, roleNames: string[]): Promi
     if (!roleNames.includes(role)) throw new HttpErr.Forbidden()
     return userInfo
 }
-
-export const requireStaffProfileRole = async (
-    headers: Headers,
-    roleNames: string[],
-    companyRoleNames: string[]
-): Promise<any> => {
-    const userInfo = await requiredAuthenticate(headers)
-    const { staffProfileRole, role } = userInfo
-    if (!roleNames.includes(role)) throw new HttpErr.Forbidden()
-    if (!companyRoleNames.includes(staffProfileRole)) throw new HttpErr.Forbidden()
-    return userInfo
-}

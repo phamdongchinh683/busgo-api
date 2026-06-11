@@ -51,6 +51,7 @@ export async function getPayment(
         .innerJoin('booking.booking as b', 'b.id', 'pp.bookingId')
         .select([
             'pp.id',
+            'pp.publicId',
             'pp.bookingId',
             'pp.amount',
             'pp.method',
@@ -114,6 +115,7 @@ export async function getPayments(
         .innerJoin('auth.user as u', 'u.id', 'b.userId')
         .select([
             'pp.id',
+            'pp.publicId',
             'pp.bookingId',
             'pp.amount',
             'pp.method',

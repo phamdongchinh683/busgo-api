@@ -1,10 +1,16 @@
 import z from 'zod'
-import { BookingId } from '../../../database/booking/booking/type.js'
-import { PaymentId, PaymentMethod, PaymentStatus } from '../../../database/payment/payment/type.js'
+import { BookingId, BookingPublicId } from '../../../database/booking/booking/type.js'
+import {
+    PaymentId,
+    PaymentMethod,
+    PaymentPublicId,
+    PaymentStatus,
+} from '../../../database/payment/payment/type.js'
 import { PeriodFilter, Phone } from '../../common.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const PaymentIdParam = z.object({
-    id: PaymentId,
+    id: PaymentPublicId,
 })
 
 export type PaymentIdParam = z.infer<typeof PaymentIdParam>
@@ -16,7 +22,7 @@ export const PaymentTransactionCodeParam = z.object({
 export type PaymentTransactionCodeParam = z.infer<typeof PaymentTransactionCodeParam>
 
 export const PaymentMethodRequest = z.object({
-    id: BookingId,
+    id: BookingPublicId,
     method: PaymentMethod,
 })
 
@@ -52,7 +58,7 @@ export const PaymentFilter = z.object({
 export type PaymentFilter = z.infer<typeof PaymentFilter>
 
 export const PaymentResponse = z.object({
-    id: PaymentId,
+    id: PublicApiId(PaymentPublicId, PaymentId),
     bookingId: BookingId,
     amount: z.number(),
     method: PaymentMethod.nullable(),

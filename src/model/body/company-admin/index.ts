@@ -1,9 +1,14 @@
 import z from 'zod'
 import { AuthCompanyAdminSignUpBody } from '../auth/index.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { AuthStaffProfileRole } from '../../../database/auth/staff_profile/type.js'
-import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
+import {
+    AuthOperatorRole,
+    AuthUserId,
+    AuthUserPublicId,
+    AuthUserStatus,
+} from '../../../database/auth/user/type.js'
 import { Email, Phone } from '../../common.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const CompanyAdminCreateBody = AuthCompanyAdminSignUpBody.extend({
     companyId: OrganizationBusCompanyId,
@@ -11,18 +16,18 @@ export const CompanyAdminCreateBody = AuthCompanyAdminSignUpBody.extend({
 export type CompanyAdminCreateBody = z.infer<typeof CompanyAdminCreateBody>
 
 export const CompanyAdminUpdateBody = z.object({
-    role: AuthStaffProfileRole.optional(),
+    role: AuthOperatorRole.optional(),
     status: AuthUserStatus.optional(),
 })
 export type CompanyAdminUpdateBody = z.infer<typeof CompanyAdminUpdateBody>
 
 export const CompanyAdminItemSchema = z.object({
-    id: AuthUserId,
+    id: PublicApiId(AuthUserPublicId, AuthUserId),
     fullName: z.string(),
     email: Email.nullable(),
     phone: Phone.nullable(),
     status: AuthUserStatus,
-    role: AuthStaffProfileRole,
+    role: AuthOperatorRole,
     companyId: OrganizationBusCompanyId.nullable(),
     companyName: z.string().nullable(),
 })

@@ -539,6 +539,7 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
 
     let tripId = state.tripId
     let companyId = state.companyId ?? state.selectedSchedule?.companyId
+
     if (!tripId) {
         const scheduleId = state.selectedSchedule?.scheduleId ?? state.scheduleId
         if (!scheduleId || !companyId || !state.departureDate) {
@@ -557,11 +558,7 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
         companyId = preparedTrip.companyId
     }
 
-    const result = await seat.getSeats({
-        id: OperationTripId.parse(tripId),
-        stopOrderPickup,
-        stopOrderDropoff,
-    })
+    const result = await seat.getSeatsByTripId(tripId, stopOrderPickup, stopOrderDropoff)
     const seatOptions = result.seats
         .filter(item => item.isAvailable)
         .slice(0, MAX_SEAT_OPTIONS)

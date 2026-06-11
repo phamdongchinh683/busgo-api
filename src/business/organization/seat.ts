@@ -1,5 +1,6 @@
 import { dal } from '../../database/index.js'
 import { OrganizationVehicleId } from '../../database/organization/vehicle/type.js'
+import { OperationTripId } from '../../database/operation/trip/type.js'
 import { SeatCreateBody } from '../../model/body/seat/index.js'
 import { TripSeatParam } from '../../model/params/trip/index.js'
 import { HttpErr } from '../../app/index.js'
@@ -7,6 +8,20 @@ import { HttpErr } from '../../app/index.js'
 export async function getSeats(params: TripSeatParam) {
     return {
         seats: await dal.organization.seat.cmd.findAll(params),
+    }
+}
+
+export async function getSeatsByTripId(
+    tripId: OperationTripId,
+    stopOrderPickup: number,
+    stopOrderDropoff: number
+) {
+    return {
+        seats: await dal.organization.seat.cmd.findAllByTripId({
+            tripId,
+            stopOrderPickup,
+            stopOrderDropoff,
+        }),
     }
 }
 

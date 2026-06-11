@@ -3,7 +3,11 @@ import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { OperationTripStopTemplateId } from '../../../database/operation/trip-stop-template/type.js'
+import {
+    OperationTripStopTemplateId,
+    OperationTripStopTemplatePublicId,
+} from '../../../database/operation/trip-stop-template/type.js'
+import { PublicApiId } from '../../public-id.js'
 
 export const TripStopTemplateBody = z.object({
     companyId: OrganizationBusCompanyId,
@@ -22,7 +26,7 @@ export const TripStopTemplateResponse = z.object({
         TripStopTemplateBody.extend({
             address: z.string(),
             city: z.string(),
-            id: OperationTripStopTemplateId,
+            id: PublicApiId(OperationTripStopTemplatePublicId, OperationTripStopTemplateId),
         }).omit({ companyId: true, routeId: true })
     ),
 })
@@ -31,7 +35,7 @@ export type TripStopTemplateResponse = z.infer<typeof TripStopTemplateResponse>
 
 export const TripStopTemplateUpdateResponse = z.object({
     stoppingPoint: TripStopTemplateBody.extend({
-        id: OperationTripStopTemplateId,
+        id: PublicApiId(OperationTripStopTemplatePublicId, OperationTripStopTemplateId),
     }),
 })
 

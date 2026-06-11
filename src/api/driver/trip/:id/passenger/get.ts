@@ -12,10 +12,11 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.driver])
+        const tripId = await bus.publicId.resolve('trip', request.params.id)
         return bus.operation.trip.getPassengerList(
             {
                 driverId: userInfo.id,
-                tripId: request.params.id,
+                tripId,
             },
             request.query
         )

@@ -114,10 +114,11 @@ async function preparePayment(
 
 export async function createPayment(params: PaymentMethodRequest, userId: AuthUserId, ip: string) {
     const { method } = params
+    const bookingId = await dal.publicId.query.resolve('booking', params.id)
 
     const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
         userId: userId,
-        bookingId: params.id,
+        bookingId,
     })
 
     if (!bookingInfo) {
@@ -136,11 +137,11 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
 
     switch (method) {
         case PaymentMethod.enum.vnpay:
-            return createVnpayPayment(params, ip)
+            return createVnpayPayment(params, ip, bookingId)
         case PaymentMethod.enum.cash:
-            return createCashPayment(params)
+            return createCashPayment(params, bookingId)
         case PaymentMethod.enum.stripe:
-            return createStripePayment(params, userId)
+            return createStripePayment(params, userId, bookingId)
         default:
             throw new HttpErr.UnprocessableEntity(
                 'Phương thức thanh toán không hợp lệ.',
@@ -149,10 +150,10 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
     }
 }
 
-export async function createCashPayment(params: PaymentMethodRequest) {
+export async function createCashPayment(params: PaymentMethodRequest, bookingId: BookingId) {
     const payment = await db.transaction().execute(async tx => {
-        const result = await preparePayment(params.id, PaymentMethod.enum.cash, tx)
-        await dal.booking.booking.cmd.updateExpiredBooking(params.id, tx)
+        const result = await preparePayment(bookingId, PaymentMethod.enum.cash, tx)
+        await dal.booking.booking.cmd.updateExpiredBooking(bookingId, tx)
         return result
     })
 
@@ -162,8 +163,12 @@ export async function createCashPayment(params: PaymentMethodRequest) {
     }
 }
 
-export async function createVnpayPayment(params: PaymentMethodRequest, ip: string) {
-    const payment = await preparePayment(params.id, PaymentMethod.enum.vnpay)
+export async function createVnpayPayment(
+    params: PaymentMethodRequest,
+    ip: string,
+    bookingId: BookingId
+) {
+    const payment = await preparePayment(bookingId, PaymentMethod.enum.vnpay)
 
     return {
         message: 'Thành công',
@@ -292,10 +297,14 @@ export async function stripeStatus(p: UserInfo): Promise<StripeStatusResponse> {
     })
 }
 
-async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {
+async function createStripePayment(
+    params: PaymentMethodRequest,
+    userId: AuthUserId,
+    bookingId: BookingId
+) {
     const payment = await db.transaction().execute(async tx => {
-        await dal.booking.booking.query.lockBookingForPayment(params.id, tx)
-        return preparePayment(params.id, PaymentMethod.enum.stripe, tx)
+        await dal.booking.booking.query.lockBookingForPayment(bookingId, tx)
+        return preparePayment(bookingId, PaymentMethod.enum.stripe, tx)
     })
 
     const user = await dal.auth.user.query.getOne({ id: userId })
@@ -306,7 +315,7 @@ async function createStripePayment(params: PaymentMethodRequest, userId: AuthUse
         )
     }
 
-    const companyRow = await dal.payment.payment.query.getCompanyIdByBookingId(params.id)
+    const companyRow = await dal.payment.payment.query.getCompanyIdByBookingId(bookingId)
     if (!companyRow?.companyId) {
         throw new HttpErr.UnprocessableEntity(
             'Không tìm thấy công ty cho đặt vé này.',

@@ -1,8 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../../app/api.js'
 import { bus } from '../../../../business/index.js'
 import { jwt } from '../../../../app/index.js'
-import { AuthUserRole } from '../../../../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../../../../database/auth/staff_profile/type.js'
+import { OPERATOR_FEATURE_ROLES } from '../../../../database/auth/user/type.js'
 import { UserIdParam } from '../../../../model/params/user/index.js'
 import { UserResponse, UserUpdateBody } from '../../../../model/body/user/index.js'
 
@@ -12,12 +11,12 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireStaffProfileRole(
+        const userInfo = await jwt.auth.requireRoles(
             request.headers,
-            [AuthUserRole.enum.operator],
-            [AuthStaffProfileRole.enum.company_admin]
+            OPERATOR_FEATURE_ROLES.administration
         )
-        return bus.auth.superAdmin.updateOne(request.params.userId, request.body)
+        const userId = await bus.publicId.resolve('user', request.params.userId)
+        return bus.auth.profile.updateStaff(userId, request.body, userInfo.companyId)
     },
 
     schema: {

@@ -1,7 +1,12 @@
 import z from 'zod'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from '../database/auth/user/type.js'
-import { AuthStaffProfileRole } from '../database/auth/staff_profile/type.js'
+import {
+    AuthUserId,
+    AuthUserPublicId,
+    AuthUserRole,
+    AuthUserStatus,
+} from '../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../database/organization/bus_company/type.js'
+import { PublicApiId } from './public-id.js'
 
 function emailDomain(email: string): string {
     const i = email.lastIndexOf('@')
@@ -39,7 +44,6 @@ export const UserInfo = z.object({
     googleId: z.string().nullable().optional(),
     firstName: z.string().nullable().optional(),
     tokenVersion: z.number().int().nonnegative(),
-    staffProfileRole: AuthStaffProfileRole.nullable().optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
     status: AuthUserStatus,
     accountStripeId: z.string().nullable(),
@@ -48,6 +52,11 @@ export const UserInfo = z.object({
 })
 
 export type UserInfo = z.infer<typeof UserInfo>
+
+export const PublicUserInfo = UserInfo.extend({
+    id: PublicApiId(AuthUserPublicId, AuthUserId),
+})
+export type PublicUserInfo = z.infer<typeof PublicUserInfo>
 
 export const OrderBy = z.enum(['asc', 'desc'])
 export type OrderBy = z.infer<typeof OrderBy>
