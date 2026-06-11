@@ -14,7 +14,7 @@ api.route({
             AuthUserRole.enum.super_admin,
         ])
 
-        return bus.payment.stripe.withdrawBalance({
+        return bus.payment.stripe.withdrawPlatformBalance({
             amount: request.body.amount,
             userInfo,
         })

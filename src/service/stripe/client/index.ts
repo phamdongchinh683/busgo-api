@@ -1,4 +1,5 @@
 import Stripe from 'stripe'
+import { StripePayoutListRequest } from '../type.js'
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY ?? ''
 
@@ -59,6 +60,25 @@ export async function getPaymentMethods(params: { customerId: string }) {
 
 export async function detachPaymentMethod(params: { paymentMethodId: string }) {
     return stripe.paymentMethods.detach(params.paymentMethodId)
+}
+
+export async function getPlatformBalance() {
+    return stripe.balance.retrieve()
+}
+
+export async function payoutPlatform(params: { amount: number }) {
+    return stripe.payouts.create({
+        amount: params.amount,
+        currency: 'usd',
+    })
+}
+
+export async function listPlatformPayouts(q: StripePayoutListRequest) {
+    return stripe.payouts.list({
+        starting_after: q.next,
+        status: q.status,
+        limit: q.limit,
+    })
 }
 
 function getStripePaymentAmounts(amount: number) {

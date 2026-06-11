@@ -13,7 +13,7 @@ api.route({
         const userInfo = await jwt.auth.requireRoles(request.headers, [
             AuthUserRole.enum.super_admin,
         ])
-        return bus.payment.stripe.getBalance(userInfo)
+        return bus.payment.stripe.getPlatformBalance(userInfo)
     },
 
     schema: {

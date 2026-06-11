@@ -13,11 +13,9 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireRoles(request.headers, [
-            AuthUserRole.enum.super_admin,
-        ])
+        await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
 
-        return bus.payment.stripe.getPayouts(request.query, userInfo.accountStripeId)
+        return bus.payment.stripe.getPlatformPayouts(request.query)
     },
 
     schema: {
