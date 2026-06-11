@@ -24,7 +24,7 @@ async function getAuthContext(user: AuthUser) {
 export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
     const context = await getAuthContext(user)
     const tokenPayload = {
-        id: user.publicId,
+        id: user.id,
         email: user.email,
         phone: user.phone,
         role: user.role,
@@ -34,6 +34,7 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
         tokenVersion: user.tokenVersion,
         companyId: context.companyId,
         status: user.status,
+        publicId: user.publicId,
         accountStripeId: user.accountStripeId,
         lastChangeEmail: user.lastChangeEmail,
         lastChangePhone: user.lastChangePhone,
@@ -49,6 +50,7 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
         facebookId: tokenPayload.facebookId,
         googleId: tokenPayload.googleId,
         status: tokenPayload.status,
+        publicId: tokenPayload.publicId,
         accountStripeId: tokenPayload.accountStripeId,
         lastChangeEmail: tokenPayload.lastChangeEmail,
         lastChangePhone: tokenPayload.lastChangePhone,

@@ -156,9 +156,6 @@ export async function getAuthUser(params: {
 }) {
     const { email, phone, id, facebookId, googleId } = params
 
-    if (!email && !phone && !id && !facebookId && !googleId) {
-        return undefined
-    }
 
     return db
         .selectFrom('auth.user as u')
