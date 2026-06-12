@@ -9,14 +9,11 @@ async function getAuthContext(user: AuthUser) {
         const membership = await dal.organization.companyMember.query.getAuthContext(user.id)
         return {
             companyId: membership?.companyId ?? null,
-            driverCompanyId:
-                user.role === AuthUserRole.enum.driver ? (membership?.companyId ?? null) : null,
         }
     }
 
     return {
         companyId: null,
-        driverCompanyId: null,
     }
 }
 
@@ -53,7 +50,6 @@ export async function buildAuthResponse(user: AuthUser): Promise<AuthResponse> {
         accountStripeId: tokenPayload.accountStripeId,
         lastChangeEmail: tokenPayload.lastChangeEmail,
         lastChangePhone: tokenPayload.lastChangePhone,
-        driverCompanyId: context.driverCompanyId,
     }
 
     return {

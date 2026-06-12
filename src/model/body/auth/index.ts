@@ -30,9 +30,7 @@ export type DriverSignUpBody = z.infer<typeof DriverSignUpBody>
 export const AuthResponse = z.object({
     message: z.string().optional(),
     token: z.string(),
-    user: UserInfo.extend({
-        driverCompanyId: OrganizationBusCompanyId.nullable().optional(),
-    }).omit({ tokenVersion: true }),
+    user: UserInfo.omit({ tokenVersion: true }),
 })
 
 export type AuthResponse = z.infer<typeof AuthResponse>

@@ -139,7 +139,6 @@ export function getOne(params: {
             'u.lastChangeEmail',
             'u.lastChangePhone',
             'cm.companyId',
-            'cm.companyId as driverCompanyId',
         ])
         .where(eb => {
             const cond = []
