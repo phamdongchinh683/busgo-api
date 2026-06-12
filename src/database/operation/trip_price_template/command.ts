@@ -68,10 +68,15 @@ export async function createOne(
         .executeTakeFirstOrThrow()
 }
 
-export async function deleteOneById(id: OperationTripPriceTemplateId, trx?: Transaction<Database>) {
+export async function deleteOneById(
+    id: OperationTripPriceTemplateId,
+    companyId: OrganizationBusCompanyId,
+    trx?: Transaction<Database>
+) {
     return (trx ?? db)
         .deleteFrom('operation.trip_price_template')
         .where('id', '=', id)
+        .where('companyId', '=', companyId)
         .returningAll()
         .returning('publicId as id')
         .executeTakeFirstOrThrow()

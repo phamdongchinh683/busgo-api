@@ -1,6 +1,9 @@
 import z from 'zod'
 import { AuthUserId } from '../../../database/auth/user/type.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 
 export const CompanyAdminQuery = z.object({
     limit: z.coerce.number().min(1).max(100).optional().default(10),
@@ -9,3 +12,9 @@ export const CompanyAdminQuery = z.object({
 })
 
 export type CompanyAdminQuery = z.infer<typeof CompanyAdminQuery>
+
+export const CompanyAdminRequestQuery = CompanyAdminQuery.extend({
+    companyId: OrganizationBusCompanyPublicId.optional(),
+})
+
+export type CompanyAdminRequestQuery = z.infer<typeof CompanyAdminRequestQuery>

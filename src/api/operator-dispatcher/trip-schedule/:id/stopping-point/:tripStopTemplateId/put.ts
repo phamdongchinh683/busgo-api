@@ -14,7 +14,10 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.operations)
+        const userInfo = await jwt.auth.requireRoles(
+            request.headers,
+            OPERATOR_FEATURE_ROLES.operations
+        )
         const [scheduleId, tripStopTemplateId] = await Promise.all([
             bus.publicId.resolve('tripSchedule', request.params.id),
             bus.publicId.resolve('tripStopTemplate', request.params.tripStopTemplateId),
@@ -22,12 +25,13 @@ api.route({
         return bus.operation.tripStopTemplate.updateStoppingPointById(tripStopTemplateId, {
             ...request.body,
             scheduleId,
+            companyId: userInfo.companyId,
         })
     },
 
     schema: {
         params: TripStopTemplateIdParam,
-        body: TripStopTemplateBody,
+        body: TripStopTemplateBody.omit({ companyId: true, scheduleId: true }),
         response: { 200: TripStopTemplateUpdateResponse },
         tags: tags(__filename),
         security: bearer,

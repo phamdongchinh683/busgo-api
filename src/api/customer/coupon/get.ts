@@ -2,7 +2,7 @@ import { api, endpoint, bearer, tags } from '../../../app/api.js'
 import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
-import { CouponFilter } from '../../../model/query/coupon/index.js'
+import { CouponRequestFilter } from '../../../model/query/coupon/index.js'
 import { CouponsResponse } from '../../../model/body/coupon/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
@@ -12,11 +12,18 @@ api.route({
 
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
-        return bus.booking.coupon.getCoupons(request.query)
+        const companyId = request.query.companyId
+            ? await bus.publicId.resolve('busCompany', request.query.companyId)
+            : undefined
+
+        return bus.booking.coupon.getCoupons({
+            ...request.query,
+            companyId,
+        })
     },
 
     schema: {
-        querystring: CouponFilter,
+        querystring: CouponRequestFilter,
         response: { 200: CouponsResponse },
         tags: tags(__filename),
         security: bearer,

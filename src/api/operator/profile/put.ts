@@ -18,7 +18,7 @@ api.route({
     },
 
     schema: {
-        body: ProfileUpdateBody,
+        body: ProfileUpdateBody.omit({ companyId: true }),
         response: { 200: ProfileResponseUser },
         tags: tags(__filename),
         security: bearer,

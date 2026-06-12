@@ -23,7 +23,7 @@ api.route({
     },
     schema: {
         params: VehicleIdParam,
-        body: VehicleBody,
+        body: VehicleBody.omit({ companyId: true }),
         response: { 200: VehicleResponse },
         tags: tags(__filename),
         security: bearer,

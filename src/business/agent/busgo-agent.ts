@@ -1,5 +1,6 @@
 import type { UserInfo } from '../../model/common.js'
 import type { AiChatResponse, AiChatState } from '../../model/body/chat/index.js'
+import { dal } from '../../database/index.js'
 import { service } from '../../service/index.js'
 import { utils } from '../../utils/index.js'
 import * as coupon from '../booking/coupon.js'
@@ -379,9 +380,12 @@ async function executeDecision(params: {
 
 async function getPromotions(state: AiChatState): Promise<AiChatResponse> {
     if (state.orderTotal !== undefined) {
+        const companyId = state.companyId
+            ? await dal.publicId.query.resolve('busCompany', state.companyId)
+            : undefined
         const result = await coupon.getCoupons({
             orderTotal: state.orderTotal,
-            ...(state.companyId ? { companyId: state.companyId } : {}),
+            ...(companyId ? { companyId } : {}),
         })
 
         if (result.coupons.length === 0) {

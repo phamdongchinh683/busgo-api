@@ -18,7 +18,7 @@ export const TripPriceTemplateBody = z.object({
 
 export type TripPriceTemplateBody = z.infer<typeof TripPriceTemplateBody>
 
-export const TripPriceTemplateItem = TripPriceTemplateBody.extend({
+export const TripPriceTemplateItem = TripPriceTemplateBody.omit({ companyId: true }).extend({
     id: OperationTripPriceTemplatePublicId,
 })
 

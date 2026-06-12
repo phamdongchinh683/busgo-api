@@ -4,7 +4,10 @@ import z from 'zod'
 import { OrganizationSeatId } from '../../../database/organization/seat/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 
 export const BookingTicketRequest = z.object({
     tripId: OperationTripId,
@@ -16,6 +19,10 @@ export const BookingTicketRequest = z.object({
 
 export type BookingTicketRequest = z.infer<typeof BookingTicketRequest>
 
+export const BookingTicketRequestBody = BookingTicketRequest.extend({
+    companyId: OrganizationBusCompanyPublicId,
+})
+
 export const BookingRequest = z.object({
     couponId: BookingCouponId.optional(),
     type: BookingType,
@@ -24,6 +31,13 @@ export const BookingRequest = z.object({
 })
 
 export type BookingRequest = z.infer<typeof BookingRequest>
+
+export const BookingRequestBody = BookingRequest.extend({
+    outBound: BookingTicketRequestBody,
+    returnBound: BookingTicketRequestBody.optional(),
+})
+
+export type BookingRequestBody = z.infer<typeof BookingRequestBody>
 
 export const BookingResponse = z.object({
     id: BookingPublicId,

@@ -30,7 +30,7 @@ api.route({
 
     schema: {
         params: TripPriceTemplateIdParam,
-        body: TripPriceTemplateBody,
+        body: TripPriceTemplateBody.omit({ companyId: true }),
         response: { 200: TripPriceTemplateResponse },
         tags: tags(__filename),
         security: bearer,

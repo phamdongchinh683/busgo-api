@@ -8,6 +8,7 @@ import { OperationTripPriceTemplateId } from '../../database/operation/trip_pric
 import { UserInfo } from '../../model/common.js'
 import { TripPriceTemplateFilter } from '../../model/query/trip-price-template/index.js'
 import { utils } from '../../utils/index.js'
+import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 
 const TRIP_PRICE_TEMPLATE_CACHE_PREFIX = 'trip-price-template:list'
 
@@ -72,8 +73,14 @@ export async function updateTripPriceTemplates(params: {
     }
 }
 
-export async function deleteTripPriceTemplate(params: { id: OperationTripPriceTemplateId }) {
-    const tripPriceTemplate = await dal.operation.tripPriceTemplate.cmd.deleteOneById(params.id)
+export async function deleteTripPriceTemplate(params: {
+    id: OperationTripPriceTemplateId
+    companyId: OrganizationBusCompanyId
+}) {
+    const tripPriceTemplate = await dal.operation.tripPriceTemplate.cmd.deleteOneById(
+        params.id,
+        params.companyId
+    )
 
     await utils.cache.delCacheByPattern(
         `${TRIP_PRICE_TEMPLATE_CACHE_PREFIX}:${tripPriceTemplate.companyId}:*`

@@ -33,7 +33,7 @@ export async function findAllByFilter(
             'ts.routeId',
             'r.fromLocation',
             'r.toLocation',
-            'ts.companyId',
+            'bc.publicId as companyId',
             'r.distanceKm',
             'ts.status',
             sql<string>`to_char(ts.start_date, 'YYYY-MM-DD')`.as('startDate'),

@@ -18,13 +18,16 @@ api.route({
             OPERATOR_FEATURE_ROLES.operations
         )
         return bus.operation.tripSchedule.createTripSchedule({
-            body: request.body,
+            body: {
+                ...request.body,
+                companyId: userInfo.companyId,
+            },
             user: userInfo,
         })
     },
 
     schema: {
-        body: TripScheduleBody,
+        body: TripScheduleBody.omit({ companyId: true }),
         response: { 200: TripScheduleUpdateResponse },
         tags: tags(__filename),
         security: bearer,

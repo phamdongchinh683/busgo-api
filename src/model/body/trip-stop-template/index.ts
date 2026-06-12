@@ -33,7 +33,7 @@ export const TripStopTemplateResponse = z.object({
 export type TripStopTemplateResponse = z.infer<typeof TripStopTemplateResponse>
 
 export const TripStopTemplateUpdateResponse = z.object({
-    stoppingPoint: TripStopTemplateBody.extend({
+    stoppingPoint: TripStopTemplateBody.omit({ companyId: true }).extend({
         id: OperationTripStopTemplatePublicId,
     }),
 })

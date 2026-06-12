@@ -49,16 +49,18 @@ export type ProfileUpdateContactResponse = z.infer<typeof ProfileUpdateContactRe
 
 export const ProfileResponse = z
     .object({
-        user: ProfileUpdateBody.extend({
-            accountStripeId: z.string().nullable(),
-        }).nullable(),
+        user: ProfileUpdateBody.omit({ companyId: true })
+            .extend({
+                accountStripeId: z.string().nullable(),
+            })
+            .nullable(),
     })
     .optional()
 
 export type ProfileResponse = z.infer<typeof ProfileResponse>
 
 export const ProfileResponseUser = z.object({
-    user: ProfileUpdateBody,
+    user: ProfileUpdateBody.omit({ companyId: true }),
 })
 
 export type ProfileResponseUser = z.infer<typeof ProfileResponseUser>
@@ -71,7 +73,7 @@ export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
 
 export const StaffListResponse = z.object({
     staff: z.array(
-        ProfileUpdateBody.extend({
+        ProfileUpdateBody.omit({ companyId: true }).extend({
             id: OrganizationCompanyMemberPublicId,
             fullName: z.string(),
             email: Email.nullable(),

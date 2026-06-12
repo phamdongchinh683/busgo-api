@@ -7,7 +7,10 @@ import {
 } from '../../../database/auth/user/type.js'
 import z from 'zod'
 import { AuthPassword } from '../auth/index.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 
 export const UserBody = z.object({
     fullName: z.string().min(7),
@@ -84,6 +87,12 @@ export const UserListQuery = z.object({
 })
 
 export type UserListQuery = z.infer<typeof UserListQuery>
+
+export const UserListRequestQuery = UserListQuery.extend({
+    companyId: OrganizationBusCompanyPublicId.optional(),
+})
+
+export type UserListRequestQuery = z.infer<typeof UserListRequestQuery>
 
 export const UserResponseMessage = z.object({
     ...MessageResponse.shape,

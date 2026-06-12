@@ -4,7 +4,10 @@ import {
     OperationTripSchedulePublicId,
 } from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 
 export const TripScheduleItemResponse = z.object({
     id: OperationTripSchedulePublicId,
@@ -32,7 +35,7 @@ export const TripScheduleResponse = z.object({
             startDate: z.coerce.date(),
             endDate: z.coerce.date(),
             status: z.boolean(),
-            companyId: OrganizationBusCompanyId,
+            companyId: OrganizationBusCompanyPublicId,
             durationMinutes: z.number(),
             totalStars: z.number().min(0).max(5),
         })

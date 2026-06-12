@@ -11,10 +11,14 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.operations)
+        const userInfo = await jwt.auth.requireRoles(
+            request.headers,
+            OPERATOR_FEATURE_ROLES.operations
+        )
         const id = await bus.publicId.resolve('tripSchedule', request.params.id)
         return bus.operation.tripSchedule.deleteTripSchedule({
             id,
+            companyId: userInfo.companyId,
         })
     },
 

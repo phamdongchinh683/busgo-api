@@ -6,7 +6,7 @@ import { ChatBoxId, ChatBoxPublicId } from '../../../database/chat/box/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
 import { OperationStationId } from '../../../database/operation/station/type.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { OrganizationBusCompanyPublicId } from '../../../database/organization/bus_company/type.js'
 import {
     OrganizationSeatId,
     OrganizationSeatType,
@@ -47,7 +47,7 @@ export type AiChatAwaitingField = z.infer<typeof AiChatAwaitingField>
 
 export const AiChatScheduleOption = z.object({
     scheduleId: OperationTripScheduleId,
-    companyId: OrganizationBusCompanyId,
+    companyId: OrganizationBusCompanyPublicId,
     name: z.string(),
     fromLocation: z.string(),
     toLocation: z.string(),
@@ -93,7 +93,7 @@ export const AiChatState = z.object({
     selectedSeat: AiChatSeatOption.optional(),
     bookingId: BookingId.optional(),
     expiredAt: z.coerce.date().optional(),
-    companyId: OrganizationBusCompanyId.optional(),
+    companyId: OrganizationBusCompanyPublicId.optional(),
     couponId: BookingCouponId.optional(),
     fromStationId: OperationStationId.optional(),
     orderTotal: z.coerce.number().nonnegative().optional(),

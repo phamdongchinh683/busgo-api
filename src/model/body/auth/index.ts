@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { ContactInfo, Email, Otp, Phone, UserInfo } from '../../common.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 import { AuthUserId, AuthUserPublicId, AuthUserStatus } from '../../../database/auth/user/type.js'
 
 const regPassword = `^(?=.*[a-z])(?=.*\\d)(?=.*[#@\\$%&!\\*\\?\\^_])(?!.*\\s).+$`
@@ -19,7 +22,7 @@ export const AuthBody = z.object({
 export type AuthBody = z.infer<typeof AuthBody>
 
 export const DriverSignUpBody = AuthBody.extend({
-    companyId: OrganizationBusCompanyId,
+    companyId: OrganizationBusCompanyPublicId,
 })
 
 export type DriverSignUpBody = z.infer<typeof DriverSignUpBody>
@@ -50,6 +53,12 @@ export const AuthCompanyAdminSignUpBody = z.object({
 })
 
 export type AuthCompanyAdminSignUpBody = z.infer<typeof AuthCompanyAdminSignUpBody>
+
+export const AuthCompanyAdminSignUpRequestBody = AuthCompanyAdminSignUpBody.extend({
+    companyId: OrganizationBusCompanyPublicId,
+})
+
+export type AuthCompanyAdminSignUpRequestBody = z.infer<typeof AuthCompanyAdminSignUpRequestBody>
 
 export const AuthOperatorStaffSignUpBody = AuthCompanyAdminSignUpBody.omit({ companyId: true })
 export type AuthOperatorStaffSignUpBody = z.infer<typeof AuthOperatorStaffSignUpBody>

@@ -1,6 +1,9 @@
 import z from 'zod'
 import { OrganizationBusCompanyReviewId } from '../../../database/organization/bus_company_review/type.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 
 export const BusCompanyReviewFilter = z.object({
     companyId: OrganizationBusCompanyId,
@@ -10,3 +13,9 @@ export const BusCompanyReviewFilter = z.object({
 })
 
 export type BusCompanyReviewFilter = z.infer<typeof BusCompanyReviewFilter>
+
+export const BusCompanyReviewRequestFilter = BusCompanyReviewFilter.extend({
+    companyId: OrganizationBusCompanyPublicId,
+})
+
+export type BusCompanyReviewRequestFilter = z.infer<typeof BusCompanyReviewRequestFilter>

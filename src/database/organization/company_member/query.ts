@@ -97,7 +97,7 @@ export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
             'u.phone',
             'u.status',
             sql<AuthOperatorRole>`u.role`.as('role'),
-            'cm.companyId',
+            'bc.publicId as companyId',
             'bc.name as companyName',
         ])
         .limit(limit + 1)

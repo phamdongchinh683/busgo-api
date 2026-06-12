@@ -55,6 +55,9 @@ export async function updateOrganizationVehicle(
         .where(eb => {
             const cond = []
             cond.push(eb('v.id', '=', id))
+            if (params.companyId) {
+                cond.push(eb('v.companyId', '=', params.companyId))
+            }
             return eb.and(cond)
         })
         .returningAll()

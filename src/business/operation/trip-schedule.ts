@@ -9,8 +9,8 @@ import { HttpErr } from '../../app/index.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
 import { TripStopPickUpItem } from '../../model/body/trip/index.js'
 
-const TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX = 'trip-schedule:public:list'
-const TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX = 'trip-schedule:company:list'
+const TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX = 'trip-schedule:public:list:v2'
+const TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX = 'trip-schedule:company:list:v2'
 const TRIP_SCHEDULE_LIST_CACHE_TTL_SECONDS = 3600
 
 function getTripScheduleCompanyListCachePrefix(companyId: OrganizationBusCompanyId) {
@@ -153,8 +153,14 @@ export async function getDropoffStops(
     }
 }
 
-export async function deleteTripSchedule(params: { id: OperationTripScheduleId }) {
-    const tripSchedule = await dal.operation.tripSchedule.cmd.deleteOneById(params.id)
+export async function deleteTripSchedule(params: {
+    id: OperationTripScheduleId
+    companyId: OrganizationBusCompanyId
+}) {
+    const tripSchedule = await dal.operation.tripSchedule.cmd.deleteOneById(
+        params.id,
+        params.companyId
+    )
 
     await Promise.all([
         clearTripScheduleListCache(tripSchedule.companyId),

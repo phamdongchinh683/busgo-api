@@ -46,6 +46,9 @@ export async function updateOneById(
         .where(eb => {
             const cond = []
             cond.push(eb('ts.id', '=', id))
+            if (data.companyId) {
+                cond.push(eb('ts.companyId', '=', data.companyId))
+            }
             return eb.and(cond)
         })
         .returningAll()

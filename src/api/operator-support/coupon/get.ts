@@ -11,12 +11,18 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.support)
-        return bus.booking.coupon.getCouponsSupport(request.query)
+        const userInfo = await jwt.auth.requireRoles(
+            request.headers,
+            OPERATOR_FEATURE_ROLES.support
+        )
+        return bus.booking.coupon.getCouponsSupport({
+            ...request.query,
+            companyId: userInfo.companyId,
+        })
     },
 
     schema: {
-        querystring: CouponSupportFilter,
+        querystring: CouponSupportFilter.omit({ companyId: true }),
         response: { 200: CouponsResponse },
         tags: tags(__filename),
         security: bearer,

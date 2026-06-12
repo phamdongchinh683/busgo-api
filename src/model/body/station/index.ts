@@ -1,5 +1,4 @@
 import z from 'zod'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import {
     OperationStationId,
     OperationStationPublicId,
@@ -16,7 +15,6 @@ export const StationResponse = z.object({
     stations: z.array(
         StationBody.extend({
             id: OperationStationPublicId,
-            companyId: OrganizationBusCompanyId,
         })
     ),
     next: OperationStationId.nullable(),
@@ -27,7 +25,6 @@ export type StationResponse = z.infer<typeof StationResponse>
 export const StationUpsertResponse = z.object({
     station: StationBody.extend({
         id: OperationStationPublicId,
-        companyId: OrganizationBusCompanyId,
     }),
 })
 

@@ -18,17 +18,19 @@ api.route({
             request.headers,
             OPERATOR_FEATURE_ROLES.operations
         )
+        const scheduleId = await bus.publicId.resolve('tripSchedule', request.params.id)
         return bus.operation.tripStopTemplate.createStoppingPoint({
             body: {
                 ...request.body,
                 companyId: userInfo.companyId,
+                scheduleId,
             },
             user: userInfo,
         })
     },
     schema: {
         params: TripScheduleIdParam,
-        body: TripStopTemplateBody.omit({ companyId: true }),
+        body: TripStopTemplateBody.omit({ companyId: true, scheduleId: true }),
         response: { 200: TripStopTemplateUpdateResponse },
         tags: tags(__filename),
         security: bearer,

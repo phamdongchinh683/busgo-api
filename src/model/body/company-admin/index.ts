@@ -1,6 +1,6 @@
 import z from 'zod'
 import { AuthCompanyAdminSignUpBody } from '../auth/index.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { OrganizationBusCompanyPublicId } from '../../../database/organization/bus_company/type.js'
 import {
     AuthOperatorRole,
     AuthUserId,
@@ -10,7 +10,7 @@ import {
 import { Email, Phone } from '../../common.js'
 
 export const CompanyAdminCreateBody = AuthCompanyAdminSignUpBody.extend({
-    companyId: OrganizationBusCompanyId,
+    companyId: OrganizationBusCompanyPublicId,
 })
 export type CompanyAdminCreateBody = z.infer<typeof CompanyAdminCreateBody>
 
@@ -27,7 +27,7 @@ export const CompanyAdminItemSchema = z.object({
     phone: Phone.nullable(),
     status: AuthUserStatus,
     role: AuthOperatorRole,
-    companyId: OrganizationBusCompanyId.nullable(),
+    companyId: OrganizationBusCompanyPublicId.nullable(),
     companyName: z.string().nullable(),
 })
 export type CompanyAdminItemSchema = z.infer<typeof CompanyAdminItemSchema>

@@ -2,8 +2,8 @@ import { BookingCouponId } from '../../database/booking/coupon/type.js'
 import { BookingType } from '../../database/booking/booking/type.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
 import { OperationTripId } from '../../database/operation/trip/type.js'
-import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { OrganizationSeatId } from '../../database/organization/seat/type.js'
+import { dal } from '../../database/index.js'
 import type {
     AiChatResponse,
     AiChatScheduleOption,
@@ -538,7 +538,7 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
     }
 
     let tripId = state.tripId
-    let companyId = state.companyId ?? state.selectedSchedule?.companyId
+    const companyId = state.companyId ?? state.selectedSchedule?.companyId
 
     if (!tripId) {
         const scheduleId = state.selectedSchedule?.scheduleId ?? state.scheduleId
@@ -549,13 +549,13 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
             }
         }
 
+        const internalCompanyId = await dal.publicId.query.resolve('busCompany', companyId)
         const preparedTrip = await operationTrip.prepareTrip({
             scheduleId,
-            companyId,
+            companyId: internalCompanyId,
             departureDate: state.departureDate,
         })
         tripId = preparedTrip.internalId
-        companyId = preparedTrip.companyId
     }
 
     const result = await seat.getSeatsByTripId(tripId, stopOrderPickup, stopOrderDropoff)
@@ -614,6 +614,7 @@ async function createBookingFromState(params: {
         }
     }
 
+    const companyId = await dal.publicId.query.resolve('busCompany', params.state.companyId)
     const result = await booking.initBooking(
         {
             ...(params.state.couponId
@@ -624,7 +625,7 @@ async function createBookingFromState(params: {
                 tripId: OperationTripId.parse(params.state.tripId),
                 seatId: OrganizationSeatId.parse(selectedSeat.seatId),
                 fromStationId: OperationStationId.parse(params.state.selectedPickup.stationId),
-                companyId: OrganizationBusCompanyId.parse(params.state.companyId),
+                companyId,
                 toStationId: OperationStationId.parse(params.state.selectedDropoff.stationId),
             },
         },

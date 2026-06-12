@@ -103,10 +103,15 @@ export async function findAllDropoffStop(
     return dal.operation.tripSchedule.query.getDropoffStopsWithPrice(id, fromStationId, stopOrder)
 }
 
-export async function deleteOneById(id: OperationTripScheduleId, trx?: Transaction<Database>) {
+export async function deleteOneById(
+    id: OperationTripScheduleId,
+    companyId: OrganizationBusCompanyId,
+    trx?: Transaction<Database>
+) {
     return (trx ?? db)
         .deleteFrom('operation.trip_schedule')
         .where('id', '=', id)
+        .where('companyId', '=', companyId)
         .returningAll()
         .returning('publicId as id')
         .executeTakeFirstOrThrow()

@@ -55,7 +55,13 @@ export async function updateOneById(
     return db
         .updateTable('operation.trip_price_template as tpt')
         .set(body)
-        .where('tpt.id', '=', id)
+        .where(eb => {
+            const cond = [eb('tpt.id', '=', id)]
+            if (body.companyId) {
+                cond.push(eb('tpt.companyId', '=', body.companyId))
+            }
+            return eb.and(cond)
+        })
         .returningAll()
         .returning('publicId as id')
         .executeTakeFirstOrThrow()
