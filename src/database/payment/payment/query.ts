@@ -116,7 +116,7 @@ export async function getPayments(
         .select([
             'pp.id as cursorId',
             'pp.publicId as id',
-            'pp.bookingId',
+            'b.publicId as bookingId',
             'pp.amount',
             'pp.method',
             'pp.status',

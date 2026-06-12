@@ -4,9 +4,16 @@ import {
     BookingTicketPublicId,
     BookingTicketStatus,
 } from '../../../database/booking/ticket/type.js'
-import { BookingId, BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
+import {
+    BookingPublicId,
+    BookingStatus,
+    BookingType,
+} from '../../../database/booking/booking/type.js'
 import { OrganizationVehicleType } from '../../../database/organization/vehicle/type.js'
-import { OperationTripId, OperationTripStatus } from '../../../database/operation/trip/type.js'
+import {
+    OperationTripPublicId,
+    OperationTripStatus,
+} from '../../../database/operation/trip/type.js'
 
 export const TicketBody = z.object({
     id: BookingTicketPublicId,
@@ -34,9 +41,9 @@ export type TicketCancelResponse = z.infer<typeof TicketCancelResponse>
 export const TicketsResponse = z.object({
     tickets: z.array(
         TicketBody.extend({
-            bookingId: BookingId,
+            bookingId: BookingPublicId,
             departureDate: z.date().nullable(),
-            tripId: OperationTripId.nullable(),
+            tripId: OperationTripPublicId.nullable(),
             tripStatus: OperationTripStatus.nullable(),
             expiredAt: z.date().nullable(),
         })

@@ -25,7 +25,7 @@ export async function findAllMessagesByBoxId(
         .select([
             'm.id as cursorId',
             'm.publicId as id',
-            'm.senderId',
+            'u.publicId as senderId',
             'm.body as message',
             'u.fullName as fullName',
             'u.phone as phone',

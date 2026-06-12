@@ -3,7 +3,7 @@ import { bus } from '../../../business/index.js'
 import { jwt } from '../../../app/index.js'
 import { OPERATOR_FEATURE_ROLES } from '../../../database/auth/user/type.js'
 import {
-    TripScheduleBody,
+    TripScheduleRequestBody,
     TripScheduleUpdateResponse,
 } from '../../../model/body/trip-schedule/index.js'
 
@@ -17,9 +17,11 @@ api.route({
             request.headers,
             OPERATOR_FEATURE_ROLES.operations
         )
+        const routeId = await bus.publicId.resolve('route', request.body.routeId)
         return bus.operation.tripSchedule.createTripSchedule({
             body: {
                 ...request.body,
+                routeId,
                 companyId: userInfo.companyId,
             },
             user: userInfo,
@@ -27,7 +29,7 @@ api.route({
     },
 
     schema: {
-        body: TripScheduleBody.omit({ companyId: true }),
+        body: TripScheduleRequestBody.omit({ companyId: true }),
         response: { 200: TripScheduleUpdateResponse },
         tags: tags(__filename),
         security: bearer,

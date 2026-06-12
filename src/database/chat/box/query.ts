@@ -20,6 +20,9 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
                 ])
             )
         )
+        .leftJoin('auth.user as sender', 'sender.id', 'b.senderId')
+        .leftJoin('auth.user as receiver', 'receiver.id', 'b.receiverId')
+        .leftJoin('auth.user as lastSender', 'lastSender.id', 'b.lastMessageSenderId')
 
     if (next) {
         qb = qb.where('b.id', '>', next)
@@ -30,14 +33,14 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
             'b.id as cursorId',
             'b.publicId as id',
             'b.lastMessage',
-            'b.senderId',
-            'b.receiverId',
+            'sender.publicId as senderId',
+            'receiver.publicId as receiverId',
             'peer.fullName as displayName',
             'b.senderMessageCount',
             'b.receiverMessageCount',
             'b.unreadReceiverCount',
             'b.unreadSenderCount',
-            'b.lastMessageSenderId',
+            'lastSender.publicId as lastMessageSenderId',
         ])
         .orderBy('b.unreadReceiverCount', 'desc')
         .limit(limit + 1)

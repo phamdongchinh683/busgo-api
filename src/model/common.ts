@@ -5,7 +5,10 @@ import {
     AuthUserRole,
     AuthUserStatus,
 } from '../database/auth/user/type.js'
-import { OrganizationBusCompanyId } from '../database/organization/bus_company/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../database/organization/bus_company/type.js'
 
 function emailDomain(email: string): string {
     const i = email.lastIndexOf('@')
@@ -54,6 +57,13 @@ export const UserInfo = z.object({
 export type UserInfo = Omit<z.infer<typeof UserInfo>, 'id'> & {
     id: AuthUserId
 }
+
+export const PublicUserInfo = UserInfo.extend({
+    id: AuthUserPublicId,
+    companyId: OrganizationBusCompanyPublicId.nullable().optional(),
+}).omit({ publicId: true })
+
+export type PublicUserInfo = z.infer<typeof PublicUserInfo>
 
 export const OrderBy = z.enum(['asc', 'desc'])
 export type OrderBy = z.infer<typeof OrderBy>

@@ -12,12 +12,23 @@ import { applyTicketNaturalLanguageFilter } from './ticket-search.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {
     const filter = applyTicketNaturalLanguageFilter(q)
-    const tickets = await dal.booking.ticket.query.findAll(filter, userId)
+    const tickets = await dal.booking.ticket.query.findAllPublic(filter, userId)
     const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
 
     return {
         tickets: data,
         next: next,
+    }
+}
+
+export async function getTicketsInternal(q: TicketFilter, userId: AuthUserId) {
+    const filter = applyTicketNaturalLanguageFilter(q)
+    const tickets = await dal.booking.ticket.query.findAll(filter, userId)
+    const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
+
+    return {
+        tickets: data,
+        next,
     }
 }
 

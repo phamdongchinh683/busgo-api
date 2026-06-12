@@ -1,5 +1,5 @@
 import z from 'zod'
-import { OperationRouteId } from '../../../database/operation/route/type.js'
+import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
 
 export const RouteFilter = z.object({
     limit: z.coerce.number().optional().default(10),
@@ -13,3 +13,9 @@ export const OperationRouteQuery = z.object({
 })
 
 export type OperationRouteQuery = z.infer<typeof OperationRouteQuery>
+
+export const OperationRouteRequestQuery = OperationRouteQuery.extend({
+    routeId: OperationRoutePublicId.optional(),
+})
+
+export type OperationRouteRequestQuery = z.infer<typeof OperationRouteRequestQuery>

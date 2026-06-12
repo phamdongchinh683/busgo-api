@@ -3,7 +3,7 @@ import {
     OperationTripScheduleId,
     OperationTripSchedulePublicId,
 } from '../../../database/operation/trip-schedule/type.js'
-import { OperationRouteId } from '../../../database/operation/route/type.js'
+import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
 import {
     OrganizationBusCompanyId,
     OrganizationBusCompanyPublicId,
@@ -11,8 +11,8 @@ import {
 
 export const TripScheduleItemResponse = z.object({
     id: OperationTripSchedulePublicId,
-    routeId: OperationRouteId,
-    companyId: OrganizationBusCompanyId,
+    routeId: OperationRoutePublicId,
+    companyId: OrganizationBusCompanyPublicId,
     departureTime: z.string(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
@@ -70,3 +70,10 @@ export const TripScheduleUpdateBody = z.object({
 export type TripScheduleUpdateBody = z.infer<typeof TripScheduleUpdateBody>
 
 export type TripScheduleBody = z.infer<typeof TripScheduleBody>
+
+export const TripScheduleRequestBody = TripScheduleBody.extend({
+    routeId: OperationRoutePublicId,
+    companyId: OrganizationBusCompanyPublicId,
+})
+
+export type TripScheduleRequestBody = z.infer<typeof TripScheduleRequestBody>

@@ -22,7 +22,9 @@ export async function createTripPriceTemplate(params: {
     )
 
     return {
-        tripPriceTemplate,
+        tripPriceTemplate: await dal.operation.tripPriceTemplate.query.getPublicById(
+            tripPriceTemplate.internalId
+        ),
     }
 }
 
@@ -69,7 +71,9 @@ export async function updateTripPriceTemplates(params: {
     )
 
     return {
-        tripPriceTemplate,
+        tripPriceTemplate: await dal.operation.tripPriceTemplate.query.getPublicById(
+            tripPriceTemplate.internalId
+        ),
     }
 }
 
@@ -77,6 +81,9 @@ export async function deleteTripPriceTemplate(params: {
     id: OperationTripPriceTemplateId
     companyId: OrganizationBusCompanyId
 }) {
+    const publicTripPriceTemplate = await dal.operation.tripPriceTemplate.query.getPublicById(
+        params.id
+    )
     const tripPriceTemplate = await dal.operation.tripPriceTemplate.cmd.deleteOneById(
         params.id,
         params.companyId
@@ -87,6 +94,6 @@ export async function deleteTripPriceTemplate(params: {
     )
 
     return {
-        tripPriceTemplate,
+        tripPriceTemplate: publicTripPriceTemplate,
     }
 }

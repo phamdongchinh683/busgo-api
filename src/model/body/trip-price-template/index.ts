@@ -1,6 +1,12 @@
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { OperationRouteId } from '../../../database/operation/route/type.js'
-import { OperationStationId } from '../../../database/operation/station/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
+import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
+import {
+    OperationStationId,
+    OperationStationPublicId,
+} from '../../../database/operation/station/type.js'
 import z from 'zod'
 import {
     OperationTripPriceTemplateId,
@@ -18,7 +24,16 @@ export const TripPriceTemplateBody = z.object({
 
 export type TripPriceTemplateBody = z.infer<typeof TripPriceTemplateBody>
 
-export const TripPriceTemplateItem = TripPriceTemplateBody.omit({ companyId: true }).extend({
+export const TripPriceTemplateRequestBody = TripPriceTemplateBody.extend({
+    companyId: OrganizationBusCompanyPublicId.optional(),
+    routeId: OperationRoutePublicId.optional(),
+    fromStationId: OperationStationPublicId.optional(),
+    toStationId: OperationStationPublicId.optional(),
+})
+
+export type TripPriceTemplateRequestBody = z.infer<typeof TripPriceTemplateRequestBody>
+
+export const TripPriceTemplateItem = TripPriceTemplateRequestBody.omit({ companyId: true }).extend({
     id: OperationTripPriceTemplatePublicId,
 })
 

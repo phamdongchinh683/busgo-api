@@ -19,6 +19,39 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
         .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
         .leftJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .where(eb => {
+            const cond = [eb('b.userId', '=', userId)]
+            if (next) cond.push(eb('t.id', '<', next))
+            if (q.type) cond.push(eb('b.bookingType', '=', q.type))
+            if (q.status) cond.push(eb('t.status', '=', q.status))
+            return eb.and(cond)
+        })
+        .select([
+            't.id as cursorId',
+            't.publicId as id',
+            'trip.id as tripId',
+            'b.code',
+            'b.bookingType',
+            'b.id as bookingId',
+            'trip.departureDate',
+            'b.originalAmount',
+            'b.discountAmount',
+            'b.totalAmount',
+            'b.status',
+            'trip.status as tripStatus',
+            'b.expiredAt',
+        ])
+        .orderBy('t.id', 'desc')
+        .limit(limit + 1)
+        .execute()
+}
+
+export async function findAllPublic(q: TicketFilter, userId: AuthUserId) {
+    const { limit, next } = q
+    return db
+        .selectFrom('booking.ticket as t')
+        .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
+        .leftJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .where(eb => {
             const cond = []
             cond.push(eb('b.userId', '=', userId))
             if (next) {
@@ -36,10 +69,10 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
         .select([
             't.id as cursorId',
             't.publicId as id',
-            'trip.id as tripId',
+            'trip.publicId as tripId',
             'b.code',
             'b.bookingType',
-            'b.id as bookingId',
+            'b.publicId as bookingId',
             'trip.departureDate',
             'b.originalAmount',
             'b.discountAmount',
@@ -204,9 +237,9 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'b.originalAmount',
             'b.discountAmount',
             'b.totalAmount',
-            'trip.id as tripId',
+            'trip.publicId as tripId',
             'trip.status as tripStatus',
-            'b.id as bookingId',
+            'b.publicId as bookingId',
             'b.status',
             'trip.departureDate',
             'b.expiredAt',

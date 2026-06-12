@@ -1,5 +1,5 @@
 import z from 'zod'
-import { BookingId, BookingPublicId } from '../../../database/booking/booking/type.js'
+import { BookingPublicId } from '../../../database/booking/booking/type.js'
 import {
     PaymentId,
     PaymentMethod,
@@ -58,7 +58,7 @@ export type PaymentFilter = z.infer<typeof PaymentFilter>
 
 export const PaymentResponse = z.object({
     id: PaymentPublicId,
-    bookingId: BookingId,
+    bookingId: BookingPublicId,
     amount: z.number(),
     method: PaymentMethod.nullable(),
     status: PaymentStatus,

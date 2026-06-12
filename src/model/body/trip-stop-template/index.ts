@@ -1,8 +1,17 @@
 import z from 'zod'
-import { OperationStationId } from '../../../database/operation/station/type.js'
-import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
-import { OperationRouteId } from '../../../database/operation/route/type.js'
-import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import {
+    OperationStationId,
+    OperationStationPublicId,
+} from '../../../database/operation/station/type.js'
+import {
+    OperationTripScheduleId,
+    OperationTripSchedulePublicId,
+} from '../../../database/operation/trip-schedule/type.js'
+import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
+import {
+    OrganizationBusCompanyId,
+    OrganizationBusCompanyPublicId,
+} from '../../../database/organization/bus_company/type.js'
 import {
     OperationTripStopTemplateId,
     OperationTripStopTemplatePublicId,
@@ -20,9 +29,18 @@ export const TripStopTemplateBody = z.object({
 
 export type TripStopTemplateBody = z.infer<typeof TripStopTemplateBody>
 
+export const TripStopTemplateRequestBody = TripStopTemplateBody.extend({
+    companyId: OrganizationBusCompanyPublicId,
+    scheduleId: OperationTripSchedulePublicId,
+    routeId: OperationRoutePublicId,
+    stationId: OperationStationPublicId,
+})
+
+export type TripStopTemplateRequestBody = z.infer<typeof TripStopTemplateRequestBody>
+
 export const TripStopTemplateResponse = z.object({
     stoppingPoints: z.array(
-        TripStopTemplateBody.extend({
+        TripStopTemplateRequestBody.extend({
             address: z.string(),
             city: z.string(),
             id: OperationTripStopTemplatePublicId,
@@ -33,7 +51,7 @@ export const TripStopTemplateResponse = z.object({
 export type TripStopTemplateResponse = z.infer<typeof TripStopTemplateResponse>
 
 export const TripStopTemplateUpdateResponse = z.object({
-    stoppingPoint: TripStopTemplateBody.omit({ companyId: true }).extend({
+    stoppingPoint: TripStopTemplateRequestBody.omit({ companyId: true }).extend({
         id: OperationTripStopTemplatePublicId,
     }),
 })

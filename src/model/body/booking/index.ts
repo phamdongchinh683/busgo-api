@@ -1,9 +1,15 @@
 import { BookingPublicId, BookingType } from '../../../database/booking/booking/type.js'
-import { BookingCouponId } from '../../../database/booking/coupon/type.js'
+import { BookingCouponId, BookingCouponPublicId } from '../../../database/booking/coupon/type.js'
 import z from 'zod'
-import { OrganizationSeatId } from '../../../database/organization/seat/type.js'
-import { OperationStationId } from '../../../database/operation/station/type.js'
-import { OperationTripId } from '../../../database/operation/trip/type.js'
+import {
+    OrganizationSeatId,
+    OrganizationSeatPublicId,
+} from '../../../database/organization/seat/type.js'
+import {
+    OperationStationId,
+    OperationStationPublicId,
+} from '../../../database/operation/station/type.js'
+import { OperationTripId, OperationTripPublicId } from '../../../database/operation/trip/type.js'
 import {
     OrganizationBusCompanyId,
     OrganizationBusCompanyPublicId,
@@ -20,7 +26,11 @@ export const BookingTicketRequest = z.object({
 export type BookingTicketRequest = z.infer<typeof BookingTicketRequest>
 
 export const BookingTicketRequestBody = BookingTicketRequest.extend({
+    tripId: OperationTripPublicId,
+    seatId: OrganizationSeatPublicId,
+    fromStationId: OperationStationPublicId,
     companyId: OrganizationBusCompanyPublicId,
+    toStationId: OperationStationPublicId,
 })
 
 export const BookingRequest = z.object({
@@ -33,6 +43,7 @@ export const BookingRequest = z.object({
 export type BookingRequest = z.infer<typeof BookingRequest>
 
 export const BookingRequestBody = BookingRequest.extend({
+    couponId: BookingCouponPublicId.optional(),
     outBound: BookingTicketRequestBody,
     returnBound: BookingTicketRequestBody.optional(),
 })

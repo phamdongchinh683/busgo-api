@@ -1,7 +1,7 @@
 import { api, bearer, endpoint, tags } from '../../../app/api.js'
 import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
-import { NotificationBody } from '../../../model/body/notification/index.js'
+import { NotificationRequestBody } from '../../../model/body/notification/index.js'
 import { MessageResponse } from '../../../model/common.js'
 
 const __filename = new URL('', import.meta.url).pathname
@@ -11,10 +11,11 @@ api.route({
     handler: async request => {
         await jwt.auth.requiredAuthenticate(request.headers)
         const { title, body, userId } = request.body
-        return bus.auth.notification.createNotification({ title, body, userId })
+        const internalUserId = await bus.publicId.resolve('user', userId)
+        return bus.auth.notification.createNotification({ title, body, userId: internalUserId })
     },
     schema: {
-        body: NotificationBody,
+        body: NotificationRequestBody,
         response: { 200: MessageResponse },
         tags: tags(__filename),
         security: bearer,

@@ -4,7 +4,7 @@ import { jwt } from '../../../../../app/index.js'
 import { OPERATOR_FEATURE_ROLES } from '../../../../../database/auth/user/type.js'
 import { TripScheduleIdParam } from '../../../../../model/params/trip-schedule/index.js'
 import {
-    TripStopTemplateBody,
+    TripStopTemplateRequestBody,
     TripStopTemplateUpdateResponse,
 } from '../../../../../model/body/trip-stop-template/index.js'
 
@@ -18,19 +18,25 @@ api.route({
             request.headers,
             OPERATOR_FEATURE_ROLES.operations
         )
-        const scheduleId = await bus.publicId.resolve('tripSchedule', request.params.id)
+        const [scheduleId, routeId, stationId] = await Promise.all([
+            bus.publicId.resolve('tripSchedule', request.params.id),
+            bus.publicId.resolve('route', request.body.routeId),
+            bus.publicId.resolve('station', request.body.stationId),
+        ])
         return bus.operation.tripStopTemplate.createStoppingPoint({
             body: {
                 ...request.body,
                 companyId: userInfo.companyId,
                 scheduleId,
+                routeId,
+                stationId,
             },
             user: userInfo,
         })
     },
     schema: {
         params: TripScheduleIdParam,
-        body: TripStopTemplateBody.omit({ companyId: true, scheduleId: true }),
+        body: TripStopTemplateRequestBody.omit({ companyId: true, scheduleId: true }),
         response: { 200: TripStopTemplateUpdateResponse },
         tags: tags(__filename),
         security: bearer,

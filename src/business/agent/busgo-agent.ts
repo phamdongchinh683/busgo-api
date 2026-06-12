@@ -435,7 +435,7 @@ async function getBooking(params: {
     state: AiChatState
     userInfo: UserInfo
 }): Promise<AiChatResponse> {
-    const result = await ticket.getTickets({ limit: 10 }, params.userInfo.id)
+    const result = await ticket.getTicketsInternal({ limit: 10 }, params.userInfo.id)
     const bookingCode =
         getStringArg(params.args, 'bookingCode') ?? extractBookingCode(params.message)
     let tickets = result.tickets

@@ -48,7 +48,7 @@ export async function findAll(query: AuthProfileQuery, companyId: OrganizationBu
         .select([
             'cm.id as cursorId',
             'cm.publicId as id',
-            'cm.userId',
+            'u.publicId as userId',
             'cm.staffCode',
             'cm.position',
             'cm.department',

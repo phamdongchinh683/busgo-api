@@ -100,7 +100,7 @@ export async function getPickupStopsByScheduleId(id: OperationTripScheduleId) {
         .selectFrom('operation.trip_stop_template as ts')
         .innerJoin('operation.station as s', 'ts.stationId', 's.id')
         .where(eb => eb.and([eb('ts.scheduleId', '=', id), eb('ts.allowPickup', '=', true)]))
-        .select(['ts.stopOrder', 'ts.stationId', 's.address', 's.city', 'ts.stopOrder'])
+        .select(['ts.stopOrder', 'ts.stationId', 's.address', 's.city'])
         .orderBy('ts.stopOrder')
         .execute()
 }
@@ -128,6 +128,43 @@ export async function getDropoffStopsWithPrice(
             ])
         )
         .select(['ts.stationId', 's.address', 's.city', 'ts.stopOrder', 'tp.price'])
+        .orderBy('ts.stopOrder')
+        .execute()
+}
+
+export async function getPickupStopsPublicByScheduleId(id: OperationTripScheduleId) {
+    return db
+        .selectFrom('operation.trip_stop_template as ts')
+        .innerJoin('operation.station as s', 'ts.stationId', 's.id')
+        .where(eb => eb.and([eb('ts.scheduleId', '=', id), eb('ts.allowPickup', '=', true)]))
+        .select(['ts.stopOrder', 's.publicId as stationId', 's.address', 's.city'])
+        .orderBy('ts.stopOrder')
+        .execute()
+}
+
+export async function getDropoffStopsPublicWithPrice(
+    scheduleId: OperationTripScheduleId,
+    fromStationId: OperationStationId,
+    stopOrder: number
+) {
+    return db
+        .selectFrom('operation.trip_stop_template as ts')
+        .innerJoin('operation.station as s', 'ts.stationId', 's.id')
+        .innerJoin('operation.trip_price_template as tp', join =>
+            join
+                .onRef('tp.routeId', '=', 'ts.routeId')
+                .onRef('tp.companyId', '=', 'ts.companyId')
+                .on('tp.fromStationId', '=', fromStationId)
+                .onRef('tp.toStationId', '=', 'ts.stationId')
+        )
+        .where(eb =>
+            eb.and([
+                eb('ts.scheduleId', '=', scheduleId),
+                eb('ts.allowDropoff', '=', true),
+                eb('ts.stopOrder', '>', stopOrder),
+            ])
+        )
+        .select(['s.publicId as stationId', 's.address', 's.city', 'ts.stopOrder', 'tp.price'])
         .orderBy('ts.stopOrder')
         .execute()
 }

@@ -10,21 +10,22 @@ export async function findAllByUserId(query: {
 }) {
     const { limit, next, userId, status } = query
     return db
-        .selectFrom('auth.notification')
-        .selectAll()
-        .select(['id as cursorId', 'publicId as id'])
+        .selectFrom('auth.notification as n')
+        .innerJoin('auth.user as u', 'u.id', 'n.userId')
+        .selectAll('n')
+        .select(['n.id as cursorId', 'n.publicId as id', 'u.publicId as userId'])
         .where(eb => {
             const cond = []
             if (next) {
-                cond.push(eb('id', '>', next))
+                cond.push(eb('n.id', '>', next))
             }
             if (status !== undefined) {
-                cond.push(eb('isRead', '=', status))
+                cond.push(eb('n.isRead', '=', status))
             }
-            cond.push(eb('userId', '=', userId))
+            cond.push(eb('n.userId', '=', userId))
             return eb.and(cond)
         })
-        .orderBy('createdAt', 'desc')
+        .orderBy('n.createdAt', 'desc')
         .limit(limit + 1)
         .execute()
 }

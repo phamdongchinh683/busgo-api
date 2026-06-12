@@ -88,6 +88,14 @@ interface PublicResourceMap {
 }
 
 export type PublicResource = keyof PublicResourceMap
+export type PublicLookupResource =
+    | 'booking'
+    | 'coupon'
+    | 'ticket'
+    | 'seat'
+    | 'station'
+    | 'trip'
+    | 'tripSchedule'
 
 export async function resolve<K extends PublicResource>(
     resource: K,
@@ -257,4 +265,69 @@ export async function resolve<K extends PublicResource>(
     }
 
     return row.id as PublicResourceMap[K]['id']
+}
+
+export async function toPublicId<K extends PublicLookupResource>(
+    resource: K,
+    id: PublicResourceMap[K]['id']
+): Promise<PublicResourceMap[K]['publicId']> {
+    let row: { publicId: string } | undefined
+
+    switch (resource) {
+        case 'booking':
+            row = await db
+                .selectFrom('booking.booking')
+                .select('publicId')
+                .where('id', '=', id as BookingId)
+                .executeTakeFirst()
+            break
+        case 'coupon':
+            row = await db
+                .selectFrom('booking.coupon')
+                .select('publicId')
+                .where('id', '=', id as BookingCouponId)
+                .executeTakeFirst()
+            break
+        case 'ticket':
+            row = await db
+                .selectFrom('booking.ticket')
+                .select('publicId')
+                .where('id', '=', id as BookingTicketId)
+                .executeTakeFirst()
+            break
+        case 'seat':
+            row = await db
+                .selectFrom('organization.seat')
+                .select('publicId')
+                .where('id', '=', id as OrganizationSeatId)
+                .executeTakeFirst()
+            break
+        case 'station':
+            row = await db
+                .selectFrom('operation.station')
+                .select('publicId')
+                .where('id', '=', id as OperationStationId)
+                .executeTakeFirst()
+            break
+        case 'trip':
+            row = await db
+                .selectFrom('operation.trip')
+                .select('publicId')
+                .where('id', '=', id as OperationTripId)
+                .executeTakeFirst()
+            break
+        case 'tripSchedule':
+            row = await db
+                .selectFrom('operation.trip_schedule')
+                .select('publicId')
+                .where('id', '=', id as OperationTripScheduleId)
+                .executeTakeFirst()
+            break
+    }
+
+    if (!row) {
+        throw new HttpErr.NotFound('Không tìm thấy tài nguyên.', {}, 'RESOURCE_NOT_FOUND')
+    }
+
+    return row.publicId as PublicResourceMap[K]['publicId']
 }

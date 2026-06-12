@@ -1,4 +1,4 @@
-import { Email, MessageResponse, Phone, UserInfo } from '../../common.js'
+import { Email, MessageResponse, Phone, PublicUserInfo } from '../../common.js'
 import {
     AuthUserId,
     AuthUserPublicId,
@@ -33,7 +33,7 @@ export const UserUpdateBody = z.object({
 export type UserUpdateBody = z.infer<typeof UserUpdateBody>
 
 export const UserResponse = z.object({
-    user: UserInfo,
+    user: PublicUserInfo,
 })
 
 export type UserResponse = z.infer<typeof UserResponse>

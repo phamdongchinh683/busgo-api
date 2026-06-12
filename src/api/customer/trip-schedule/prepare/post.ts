@@ -10,9 +10,13 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
-        const companyId = await bus.publicId.resolve('busCompany', request.body.companyId)
+        const [scheduleId, companyId] = await Promise.all([
+            bus.publicId.resolve('tripSchedule', request.body.scheduleId),
+            bus.publicId.resolve('busCompany', request.body.companyId),
+        ])
         const trip = await bus.operation.trip.prepareTrip({
             ...request.body,
+            scheduleId,
             companyId,
         })
 

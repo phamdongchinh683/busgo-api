@@ -3,9 +3,7 @@ import { service } from '../../service/index.js'
 import { AuthGoogleBody, AuthResponse } from '../../model/body/auth/index.js'
 import { signInByGoogle } from './social.js'
 
-export async function verifyToken(params: {
-    payload: AuthGoogleBody
-}): Promise<AuthResponse> {
+export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<AuthResponse> {
     const {
         payload: { idToken },
     } = params

@@ -33,19 +33,37 @@ export async function findAllByCompanyId(params: {
             'tpt.publicId as id',
             'tpt.price',
             'tpt.status',
-            'r.id as routeId',
+            'r.publicId as routeId',
             'r.fromLocation as routeFromLocation',
             'r.toLocation as routeToLocation',
-            's.id as fromStationId',
+            's.publicId as fromStationId',
             's.address as fromStationAddress',
             's.city as fromStationCity',
-            's2.id as toStationId',
+            's2.publicId as toStationId',
             's2.address as toStationAddress',
             's2.city as toStationCity',
         ])
         .limit(q.limit + 1)
         .orderBy('tpt.id')
         .execute()
+}
+
+export async function getPublicById(id: OperationTripPriceTemplateId) {
+    return db
+        .selectFrom('operation.trip_price_template as tpt')
+        .innerJoin('operation.route as r', 'r.id', 'tpt.routeId')
+        .innerJoin('operation.station as fromStation', 'fromStation.id', 'tpt.fromStationId')
+        .innerJoin('operation.station as toStation', 'toStation.id', 'tpt.toStationId')
+        .select([
+            'tpt.publicId as id',
+            'r.publicId as routeId',
+            'fromStation.publicId as fromStationId',
+            'toStation.publicId as toStationId',
+            'tpt.price',
+            'tpt.status',
+        ])
+        .where('tpt.id', '=', id)
+        .executeTakeFirstOrThrow()
 }
 
 export async function updateOneById(
@@ -63,6 +81,6 @@ export async function updateOneById(
             return eb.and(cond)
         })
         .returningAll()
-        .returning('publicId as id')
+        .returning(['id as internalId', 'publicId as id'])
         .executeTakeFirstOrThrow()
 }

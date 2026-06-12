@@ -7,7 +7,13 @@ import { TripScheduleBody, TripScheduleUpdateBody } from '../../model/body/trip-
 import { UserInfo } from '../../model/common.js'
 import { HttpErr } from '../../app/index.js'
 import { OperationStationId } from '../../database/operation/station/type.js'
-import { TripStopPickUpItem } from '../../model/body/trip/index.js'
+
+type InternalTripStopPickUpItem = {
+    stationId: OperationStationId
+    stopOrder: number
+    address: string
+    city: string
+}
 
 const TRIP_SCHEDULE_PUBLIC_LIST_CACHE_PREFIX = 'trip-schedule:public:list:v2'
 const TRIP_SCHEDULE_COMPANY_LIST_CACHE_PREFIX = 'trip-schedule:company:list:v2'
@@ -122,7 +128,7 @@ export async function createTripSchedule(params: { body: TripScheduleBody; user:
 export async function getPickupStops(id: OperationTripScheduleId) {
     const cacheKey = `trip-schedule:pickup-stops:${id}`
 
-    const cached = await utils.cache.getCache<TripStopPickUpItem[]>(cacheKey)
+    const cached = await utils.cache.getCache<InternalTripStopPickUpItem[]>(cacheKey)
 
     if (cached !== null) {
         return {
@@ -139,6 +145,12 @@ export async function getPickupStops(id: OperationTripScheduleId) {
     }
 }
 
+export async function getPickupStopsPublic(id: OperationTripScheduleId) {
+    return {
+        tripStops: await dal.operation.tripSchedule.query.getPickupStopsPublicByScheduleId(id),
+    }
+}
+
 export async function getDropoffStops(
     id: OperationTripScheduleId,
     fromStationId: OperationStationId,
@@ -146,6 +158,20 @@ export async function getDropoffStops(
 ) {
     return {
         tripStops: await dal.operation.tripSchedule.cmd.findAllDropoffStop(
+            id,
+            fromStationId,
+            stopOrder
+        ),
+    }
+}
+
+export async function getDropoffStopsPublic(
+    id: OperationTripScheduleId,
+    fromStationId: OperationStationId,
+    stopOrder: number
+) {
+    return {
+        tripStops: await dal.operation.tripSchedule.query.getDropoffStopsPublicWithPrice(
             id,
             fromStationId,
             stopOrder

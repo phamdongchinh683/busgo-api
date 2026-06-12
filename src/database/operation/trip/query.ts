@@ -1,7 +1,7 @@
 import { db } from '../../../datasource/db.js'
 import { DriverTripQuery, TripFilter } from '../../../model/query/trip/index.js'
 import { OperationTripId, OperationTripStatus } from './type.js'
-import { AuthUserId } from '../../auth/user/type.js'
+import { AuthUserId, AuthUserPublicId } from '../../auth/user/type.js'
 import { utils } from '../../../utils/index.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { OperationTripTableUpdate } from './table.js'
@@ -53,7 +53,14 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
             'r.fromLocation',
             'r.toLocation',
             'r.distanceKm',
-            't.driverIds',
+            sql<AuthUserPublicId[]>`coalesce(
+                (
+                    select array_agg(u.public_id order by u.id)
+                    from auth.user u
+                    where u.id = any(t.driver_ids)
+                ),
+                array[]::uuid[]
+            )`.as('driverIds'),
             'r.durationMinutes',
             't.status',
         ])
@@ -112,7 +119,7 @@ export async function updateOneById(
 ) {
     const data = _.omitBy(body, v => _.isNil(v))
 
-    return db
+    await db
         .updateTable('operation.trip as t')
         .set(data)
         .where(eb => {
@@ -121,15 +128,30 @@ export async function updateOneById(
             cond.push(eb('t.id', '=', params.tripId))
             return eb.and(cond)
         })
-        .returning([
+        .executeTakeFirstOrThrow()
+
+    return db
+        .selectFrom('operation.trip as t')
+        .innerJoin('operation.route as r', 'r.id', 't.routeId')
+        .leftJoin('organization.vehicle as v', 'v.id', 't.vehicleId')
+        .innerJoin('operation.trip_schedule as ts', 'ts.id', 't.scheduleId')
+        .select([
             't.publicId as id',
-            't.routeId',
-            't.vehicleId',
-            't.scheduleId',
-            't.driverIds',
+            'r.publicId as routeId',
+            'v.publicId as vehicleId',
+            'ts.publicId as scheduleId',
+            sql<AuthUserPublicId[]>`coalesce(
+                (
+                    select array_agg(u.public_id order by u.id)
+                    from auth.user u
+                    where u.id = any(t.driver_ids)
+                ),
+                array[]::uuid[]
+            )`.as('driverIds'),
             't.departureDate',
             't.status',
         ])
+        .where('t.id', '=', params.tripId)
         .executeTakeFirstOrThrow()
 }
 

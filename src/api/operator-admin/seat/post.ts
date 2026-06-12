@@ -1,7 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { MessageResponse } from '../../../model/common.js'
-import { SeatCreateBody } from '../../../model/body/seat/index.js'
+import { SeatCreateRequestBody } from '../../../model/body/seat/index.js'
 import { OPERATOR_FEATURE_ROLES } from '../../../database/auth/user/type.js'
 import { jwt } from '../../../app/index.js'
 
@@ -12,11 +12,12 @@ api.route({
 
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, OPERATOR_FEATURE_ROLES.administration)
-        return bus.organization.seat.createSeat(request.body)
+        const vehicleId = await bus.publicId.resolve('vehicle', request.body.vehicleId)
+        return bus.organization.seat.createSeat({ ...request.body, vehicleId })
     },
 
     schema: {
-        body: SeatCreateBody,
+        body: SeatCreateRequestBody,
         response: { 200: MessageResponse },
         tags: tags(__filename),
         security: bearer,
