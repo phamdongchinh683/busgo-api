@@ -51,8 +51,9 @@ import type {
 import type { PaymentId, PaymentPublicId } from '../payment/payment/type.js'
 import { utils } from '../../utils/index.js'
 
-const RESOLVE_CACHE_PREFIX = 'public-id:resolve'
 const RESOLVE_CACHE_TTL_SECONDS = 60 * 5
+const HOT_TRIP_THRESHOLD = 3
+const HOT_TRIP_WINDOW_SECONDS = 60
 
 interface PublicResourceMap {
     user: { id: AuthUserId; publicId: AuthUserPublicId }
@@ -92,6 +93,19 @@ interface PublicResourceMap {
 }
 
 export type PublicResource = keyof PublicResourceMap
+type CachedResolveResource = 'user' | 'busCompany' | 'station' | 'route'
+
+const resolveCacheConfig: Record<CachedResolveResource, { prefix: string; ttl: number }> = {
+    user: { prefix: 'public-id:userUuid:userId', ttl: RESOLVE_CACHE_TTL_SECONDS },
+    busCompany: { prefix: 'public-id:companyUuid:companyId', ttl: RESOLVE_CACHE_TTL_SECONDS },
+    station: { prefix: 'public-id:stationUuid:stationId', ttl: RESOLVE_CACHE_TTL_SECONDS },
+    route: { prefix: 'public-id:routeUuid:routeId', ttl: RESOLVE_CACHE_TTL_SECONDS },
+}
+
+const cachedResolveResources = new Set<PublicResource>(
+    Object.keys(resolveCacheConfig) as PublicResource[]
+)
+
 export type PublicLookupResource =
     | 'booking'
     | 'coupon'
@@ -271,16 +285,48 @@ async function resolveFromDatabase<K extends PublicResource>(
     return row.id as PublicResourceMap[K]['id']
 }
 
-export function resolve<K extends PublicResource>(
+async function resolveHotTrip(
+    publicId: OperationTripPublicId
+): Promise<PublicResourceMap['trip']['id']> {
+    const cacheKey = utils.cache.cacheKey('public-id:tripUuid:tripId', publicId)
+    const cachedId = await utils.cache.getCache<OperationTripId>(cacheKey)
+    if (cachedId !== null) {
+        return cachedId
+    }
+
+    const id = await resolveFromDatabase('trip', publicId)
+    const countKey = utils.cache.cacheKey('public-id:tripUuid:hot-count', publicId)
+    const count = await utils.cache.incrementCacheCounter(countKey, HOT_TRIP_WINDOW_SECONDS)
+
+    if (count !== null && count >= HOT_TRIP_THRESHOLD) {
+        await utils.cache.setCache(cacheKey, id, RESOLVE_CACHE_TTL_SECONDS)
+    }
+
+    return id
+}
+
+export async function resolve<K extends PublicResource>(
     resource: K,
     publicId: PublicResourceMap[K]['publicId']
 ): Promise<PublicResourceMap[K]['id']> {
-    return utils.cache.cacheQuery({
-        prefix: RESOLVE_CACHE_PREFIX,
-        query: { resource, publicId },
-        ttl: RESOLVE_CACHE_TTL_SECONDS,
-        queryFn: () => resolveFromDatabase(resource, publicId),
-    })
+    if (resource === 'trip') {
+        return resolveHotTrip(publicId as OperationTripPublicId) as Promise<
+            PublicResourceMap[K]['id']
+        >
+    }
+
+    if (cachedResolveResources.has(resource)) {
+        const cacheConfig = resolveCacheConfig[resource as CachedResolveResource]
+
+        return utils.cache.cacheQuery({
+            prefix: cacheConfig.prefix,
+            query: publicId,
+            ttl: cacheConfig.ttl,
+            queryFn: () => resolveFromDatabase(resource, publicId),
+        })
+    }
+
+    return resolveFromDatabase(resource, publicId)
 }
 
 export async function toPublicId<K extends PublicLookupResource>(

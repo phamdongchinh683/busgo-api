@@ -66,6 +66,23 @@ export async function setCache(key: string, value: unknown, ttlSeconds = 60) {
     }
 }
 
+export async function incrementCacheCounter(key: string, ttlSeconds = 60) {
+    const ttl = normalizeTtlSeconds(ttlSeconds)
+    if (ttl === null) return null
+
+    try {
+        const count = await redis.incr(key)
+        if (count === 1) {
+            await redis.expire(key, ttl)
+        }
+
+        return count
+    } catch (error) {
+        logCacheError('increment', key, error)
+        return null
+    }
+}
+
 export async function delCache(key: string) {
     try {
         await redis.del(key)
