@@ -49,6 +49,10 @@ import type {
     PaymentCustomerPaymentMethodPublicId,
 } from '../payment/customer_payment_method/type.js'
 import type { PaymentId, PaymentPublicId } from '../payment/payment/type.js'
+import { utils } from '../../utils/index.js'
+
+const RESOLVE_CACHE_PREFIX = 'public-id:resolve'
+const RESOLVE_CACHE_TTL_SECONDS = 60 * 5
 
 interface PublicResourceMap {
     user: { id: AuthUserId; publicId: AuthUserPublicId }
@@ -97,7 +101,7 @@ export type PublicLookupResource =
     | 'trip'
     | 'tripSchedule'
 
-export async function resolve<K extends PublicResource>(
+async function resolveFromDatabase<K extends PublicResource>(
     resource: K,
     publicId: PublicResourceMap[K]['publicId']
 ): Promise<PublicResourceMap[K]['id']> {
@@ -265,6 +269,18 @@ export async function resolve<K extends PublicResource>(
     }
 
     return row.id as PublicResourceMap[K]['id']
+}
+
+export function resolve<K extends PublicResource>(
+    resource: K,
+    publicId: PublicResourceMap[K]['publicId']
+): Promise<PublicResourceMap[K]['id']> {
+    return utils.cache.cacheQuery({
+        prefix: RESOLVE_CACHE_PREFIX,
+        query: { resource, publicId },
+        ttl: RESOLVE_CACHE_TTL_SECONDS,
+        queryFn: () => resolveFromDatabase(resource, publicId),
+    })
 }
 
 export async function toPublicId<K extends PublicLookupResource>(
