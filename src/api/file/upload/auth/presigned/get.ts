@@ -11,7 +11,6 @@ api.route({
 
     handler: async request => {
         await jwt.auth.requiredAuthenticate(request.headers)
-
         const { folder, id } = request.query
         return service.cloudinary.presigned.presignedUpload(folder, id)
     },

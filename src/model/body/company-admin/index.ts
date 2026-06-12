@@ -14,12 +14,6 @@ export const CompanyAdminCreateBody = AuthCompanyAdminSignUpBody.extend({
 })
 export type CompanyAdminCreateBody = z.infer<typeof CompanyAdminCreateBody>
 
-export const CompanyAdminUpdateBody = z.object({
-    role: AuthOperatorRole.optional(),
-    status: AuthUserStatus.optional(),
-})
-export type CompanyAdminUpdateBody = z.infer<typeof CompanyAdminUpdateBody>
-
 export const CompanyAdminItemSchema = z.object({
     id: AuthUserPublicId,
     fullName: z.string(),

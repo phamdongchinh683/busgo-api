@@ -1,5 +1,5 @@
 import { HttpErr } from '../../app/index.js'
-import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
+import { AUTH_USER_STATUS, AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import type { AuthResponse } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
@@ -35,7 +35,7 @@ export async function signInByGoogle(userData: GoogleSignInUser): Promise<AuthRe
             fullName: getFullName(userData),
             isEmailVerified: userData.isEmailVerified ?? false,
             role: AuthUserRole.enum.customer,
-            status: AuthUserStatus.enum.active,
+            status: AUTH_USER_STATUS.active,
         },
     })
 
@@ -52,7 +52,7 @@ export async function signInByFacebook(userData: FacebookSignInUser): Promise<Au
                 fullName: getFullName(userData),
                 isEmailVerified: false,
                 role: AuthUserRole.enum.customer,
-                status: AuthUserStatus.enum.active,
+                status: AUTH_USER_STATUS.active,
             },
         })
 
@@ -67,7 +67,7 @@ export async function signInByFacebook(userData: FacebookSignInUser): Promise<Au
             fullName: getFullName(userData),
             isEmailVerified: userData.isEmailVerified ?? Boolean(userData.email),
             role: AuthUserRole.enum.customer,
-            status: AuthUserStatus.enum.active,
+            status: AUTH_USER_STATUS.active,
         },
     })
 
@@ -87,5 +87,5 @@ async function buildSocialAuthResponse(user: AuthUser): Promise<AuthResponse> {
 }
 
 function canSignIn(user: { role: AuthUserRole; status: AuthUserStatus }) {
-    return user.role !== AuthUserRole.enum.super_admin && user.status === AuthUserStatus.enum.active
+    return user.role !== AuthUserRole.enum.super_admin && user.status === AUTH_USER_STATUS.active
 }

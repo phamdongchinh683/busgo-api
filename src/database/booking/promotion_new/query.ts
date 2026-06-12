@@ -18,7 +18,7 @@ export async function findAll(query: PromotionNewsListQuery) {
         ])
 
     if (status !== undefined) {
-        qb = qb.where('pn.isActive', '=', status === 'true')
+        qb = qb.where('pn.isActive', '=', status === 1)
     }
 
     if (next) {

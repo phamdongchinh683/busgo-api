@@ -7,6 +7,7 @@ import { OrganizationSeatTableInsert } from './table.js'
 import { SeatCreateBody } from '../../../model/body/seat/index.js'
 import { OrganizationSeatType } from './type.js'
 import type { TripSeatParam } from '../../../model/params/trip/index.js'
+import { OrganizationBusCompanyId } from '../bus_company/type.js'
 
 type SeatLabel = {
     seatNumber: string
@@ -148,9 +149,21 @@ export async function createOne(body: SeatCreateBody) {
     return db.insertInto('organization.seat').values(values).returningAll().execute()
 }
 
-export async function deleteByVehicleId(vehicleId: OrganizationVehicleId) {
+export async function deleteByVehicleId(
+    vehicleId: OrganizationVehicleId,
+    companyId: OrganizationBusCompanyId
+) {
     return db
-        .deleteFrom('organization.seat')
-        .where('vehicleId', '=', vehicleId)
+        .deleteFrom('organization.seat as s')
+        .where('s.vehicleId', '=', vehicleId)
+        .where(eb =>
+            eb.exists(
+                eb
+                    .selectFrom('organization.vehicle as v')
+                    .select('v.id')
+                    .whereRef('v.id', '=', 's.vehicleId')
+                    .where('v.companyId', '=', companyId)
+            )
+        )
         .executeTakeFirstOrThrow()
 }

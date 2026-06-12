@@ -51,7 +51,6 @@ export async function updateNewPassword(id: AuthUserId, password: AuthPassword) 
     })
     return {
         message: 'Thành công',
-        password: password,
     }
 }
 

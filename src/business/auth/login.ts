@@ -1,5 +1,5 @@
 import { HttpErr } from '../../app/index.js'
-import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
+import { AUTH_USER_STATUS, AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { AuthSignInBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
@@ -21,13 +21,9 @@ async function signIn(params: AuthSignInBody, isSuperAdminSignIn: boolean) {
 
     const isSuperAdmin = user?.role === AuthUserRole.enum.super_admin
 
-    if (
-        !user ||
-        user.status !== AuthUserStatus.enum.active ||
-        isSuperAdmin !== isSuperAdminSignIn
-    ) {
+    if (!user || user.status !== AUTH_USER_STATUS.active || isSuperAdmin !== isSuperAdminSignIn) {
         throw new HttpErr.NotFound(
-            user?.status === AuthUserStatus.enum.inactive
+            user?.status === AUTH_USER_STATUS.inactive
                 ? 'Tài khoản chưa được kích hoạt.'
                 : 'Không tìm thấy người dùng.',
             {
@@ -35,7 +31,7 @@ async function signIn(params: AuthSignInBody, isSuperAdminSignIn: boolean) {
                 phone: params.phone,
                 status: user?.status,
             },
-            user?.status === AuthUserStatus.enum.inactive ? 'USER_INACTIVE' : 'USER_NOT_FOUND',
+            user?.status === AUTH_USER_STATUS.inactive ? 'USER_INACTIVE' : 'USER_NOT_FOUND',
             404
         )
     }

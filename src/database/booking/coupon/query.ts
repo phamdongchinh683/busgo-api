@@ -85,7 +85,7 @@ export async function findAllSupportCoupons(filter: CouponSupportFilter) {
                 filters.push(eb('c.discountType', '=', type))
             }
             if (status !== undefined) {
-                const isActive = status === 'true'
+                const isActive = status === 1
                 filters.push(eb('c.isActive', '=', isActive))
             }
             if (filter.companyId) {

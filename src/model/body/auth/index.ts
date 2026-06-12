@@ -60,9 +60,6 @@ export const AuthCompanyAdminSignUpRequestBody = AuthCompanyAdminSignUpBody.exte
 
 export type AuthCompanyAdminSignUpRequestBody = z.infer<typeof AuthCompanyAdminSignUpRequestBody>
 
-export const AuthOperatorStaffSignUpBody = AuthCompanyAdminSignUpBody.omit({ companyId: true })
-export type AuthOperatorStaffSignUpBody = z.infer<typeof AuthOperatorStaffSignUpBody>
-
 export const AuthCompanyAdminSignUpResponse = z.object({
     message: z.string(),
 })

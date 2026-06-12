@@ -1,7 +1,7 @@
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { db } from '../../../datasource/db.js'
 import { DriverQuery } from '../../../model/query/driver/index.js'
-import { AuthUserId, AuthUserRole } from '../user/type.js'
+import { AUTH_USER_STATUS, AuthUserId, AuthUserRole } from '../user/type.js'
 import { utils } from '../../../utils/index.js'
 import { sql } from 'kysely'
 import { PeriodUserQuery } from '../../../model/query/user/index.js'
@@ -20,7 +20,7 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
             cond.push(eb('u.role', '=', AuthUserRole.enum.driver))
             if (next) cond.push(eb('u.id', '>', next))
             if (phone) cond.push(eb('u.phone', '=', phone))
-            if (status) cond.push(eb('u.status', '=', status))
+            if (status !== undefined) cond.push(eb('u.status', '=', status))
             if (companyId) cond.push(eb('cm.companyId', '=', companyId))
             return eb.and(cond)
         })
@@ -67,7 +67,7 @@ export async function getPeriod(q: PeriodUserQuery) {
                 const cond = []
                 cond.push(eb('u.createdAt', '>=', start))
                 cond.push(eb('u.createdAt', '<=', end))
-                if (q.status) cond.push(eb('u.status', '=', q.status))
+                if (q.status !== undefined) cond.push(eb('u.status', '=', q.status))
                 if (q.role) cond.push(eb('u.role', '=', q.role))
                 return eb.and(cond)
             })
@@ -91,7 +91,7 @@ export async function getPeriod(q: PeriodUserQuery) {
         ])
         .where(eb => {
             const cond = []
-            if (q.status) cond.push(eb('u.status', '=', q.status))
+            if (q.status !== undefined) cond.push(eb('u.status', '=', q.status))
             if (q.role) cond.push(eb('u.role', '=', q.role))
             return eb.and(cond)
         })
@@ -204,7 +204,7 @@ export async function findAll(query: UserListQuery) {
             if (role && role !== AuthUserRole.enum.super_admin) {
                 cond.push(eb('u.role', '=', role))
             }
-            if (status) cond.push(eb('u.status', '=', status))
+            if (status !== undefined) cond.push(eb('u.status', '=', status))
             if (companyId) {
                 cond.push(eb('cm.companyId', '=', companyId))
             }
@@ -241,9 +241,9 @@ export function getCompanyStripeAccountId(companyId: OrganizationBusCompanyId) {
         .where(eb => {
             const cond = []
             cond.push(eb('u.accountStripeId', 'is not', null))
-            cond.push(eb('u.status', '=', 'active'))
+            cond.push(eb('u.status', '=', AUTH_USER_STATUS.active))
             cond.push(eb('cm.companyId', '=', companyId))
-            cond.push(eb('u.role', '=', AuthUserRole.enum.operator_admin))
+            cond.push(eb('u.role', '=', AuthUserRole.enum.operator))
             return eb.and(cond)
         })
         .executeTakeFirstOrThrow()

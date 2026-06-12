@@ -1,8 +1,8 @@
 import _ from 'lodash'
-import { sql, Transaction } from 'kysely'
+import { Transaction } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { Database } from '../../../datasource/type.js'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from '../../auth/user/type.js'
+import { AuthUserId } from '../../auth/user/type.js'
 import { OrganizationBusCompanyId } from '../bus_company/type.js'
 import {
     OrganizationCompanyMemberTableInsert,
@@ -47,23 +47,4 @@ export async function getOne(userId: AuthUserId, trx?: Transaction<Database>) {
         .select(['u.accountStripeId'])
         .where('cm.userId', '=', userId)
         .executeTakeFirst()
-}
-
-export async function getOneByCompanyId(
-    companyId: OrganizationBusCompanyId,
-    trx?: Transaction<Database>
-) {
-    return (trx ?? db)
-        .selectFrom('organization.company_member as cm')
-        .innerJoin('auth.user as u', 'cm.userId', 'u.id')
-        .selectAll('cm')
-        .where(eb => {
-            const cond = []
-            cond.push(eb('cm.companyId', '=', companyId))
-            cond.push(eb('u.status', '=', AuthUserStatus.enum.active))
-            cond.push(eb('u.role', '=', AuthUserRole.enum.operator_admin))
-            return eb.and(cond)
-        })
-        .orderBy(sql`random()`)
-        .executeTakeFirstOrThrow()
 }

@@ -3,9 +3,9 @@ import { OperationTripId } from '../trip/type.js'
 import { Transaction, sql } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
-import { OperationRouteTableInsert, OperationRouteTableUpdate } from './table.js'
+import { OperationRouteTableInsert } from './table.js'
 import _ from 'lodash'
-import { OperationRouteId } from './type.js'
+import { HttpErr } from '../../../app/index.js'
 
 export async function getRouterByDriverIdAndTripId(
     params: {
@@ -33,25 +33,17 @@ export async function getRouterByDriverIdAndTripId(
 
 export async function createRoute(params: OperationRouteTableInsert, trx?: Transaction<Database>) {
     const data = _.omitBy(params, v => _.isNil(v)) as OperationRouteTableInsert
-    return (trx ?? db)
+    const route = await (trx ?? db)
         .insertInto('operation.route')
         .values(data)
-        .onConflict(oc => oc.columns(['fromLocation', 'toLocation']).doUpdateSet(data))
+        .onConflict(oc => oc.columns(['fromLocation', 'toLocation']).doNothing())
         .returningAll()
         .returning('publicId as id')
-        .executeTakeFirstOrThrow()
-}
+        .executeTakeFirst()
 
-export async function updateOneById(
-    params: { id: OperationRouteId; body: OperationRouteTableUpdate },
-    trx?: Transaction<Database>
-) {
-    const data = _.omitBy(params.body, v => _.isNil(v)) as OperationRouteTableUpdate
-    return (trx ?? db)
-        .updateTable('operation.route')
-        .set(data)
-        .where('id', '=', params.id)
-        .returningAll()
-        .returning('publicId as id')
-        .executeTakeFirstOrThrow()
+    if (!route) {
+        throw new HttpErr.UnprocessableEntity('Tuyến đường đã tồn tại.', 'ROUTE_ALREADY_EXISTS')
+    }
+
+    return route
 }

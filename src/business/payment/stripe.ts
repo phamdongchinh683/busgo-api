@@ -316,16 +316,6 @@ export async function withdrawPlatformBalance(params: { amount: number; userInfo
     return withdrawStripeBalance(params)
 }
 
-export async function getPayouts(q: StripePayoutListRequest, accountStripeId: string) {
-    const payouts = await service.stripe.connect.listPayouts(q, accountStripeId)
-    const next = payouts.has_more ? (payouts.data[payouts.data.length - 1]?.id ?? null) : null
-
-    return {
-        payouts: payouts.data,
-        next: next,
-    }
-}
-
 export async function getPlatformPayouts(q: StripePayoutListRequest) {
     const payouts = await service.stripe.client.listPlatformPayouts(q)
     const next = payouts.has_more ? (payouts.data[payouts.data.length - 1]?.id ?? null) : null

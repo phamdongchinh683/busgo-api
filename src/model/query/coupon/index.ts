@@ -4,6 +4,7 @@ import {
     OrganizationBusCompanyId,
     OrganizationBusCompanyPublicId,
 } from '../../../database/organization/bus_company/type.js'
+import { StatusFlag } from '../../common.js'
 
 export const CouponCheckCodeQuery = z.object({
     code: z.string().optional(),
@@ -38,7 +39,7 @@ export const CouponSupportFilter = z.object({
     limit: z.coerce.number().optional().default(10),
     date: z.coerce.date().optional(),
     type: BookingDiscountType.optional(),
-    status: z.string().optional().default('true'),
+    status: StatusFlag.optional().default(1),
 })
 
 export type CouponSupportFilter = z.infer<typeof CouponSupportFilter>

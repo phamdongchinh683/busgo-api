@@ -1,4 +1,4 @@
-import { DriverTripQuery, TripFilter } from '../../../model/query/trip/index.js'
+import { DriverTripQuery } from '../../../model/query/trip/index.js'
 import { dal } from '../../index.js'
 import { TripBody } from '../../../model/body/trip/index.js'
 import { Transaction } from 'kysely'
@@ -11,10 +11,6 @@ import { AuthUserId } from '../../auth/user/type.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { HttpErr } from '../../../app/index.js'
 import { utils } from '../../../utils/index.js'
-
-export async function getManyByFilter(params: TripFilter) {
-    return dal.operation.trip.query.findAllByFilter(params)
-}
 
 export async function createTrip(params: OperationTripTableInsert, trx: Transaction<Database>) {
     return trx

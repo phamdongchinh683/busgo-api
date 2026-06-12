@@ -7,8 +7,13 @@ import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { OperationTripTableUpdate } from './table.js'
 import _ from 'lodash'
 import { sql } from 'kysely'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
-export async function findAllByFilter(filter: TripFilter, scheduleId?: OperationTripScheduleId) {
+export async function findAllByFilter(
+    filter: TripFilter,
+    scheduleId?: OperationTripScheduleId,
+    companyId?: OrganizationBusCompanyId
+) {
     const { limit, next, from, to, date, orderBy, status } = filter
     return db
         .selectFrom('operation.trip as t')
@@ -34,6 +39,10 @@ export async function findAllByFilter(filter: TripFilter, scheduleId?: Operation
 
             if (scheduleId) {
                 cond.push(eb('t.scheduleId', '=', scheduleId))
+            }
+
+            if (companyId) {
+                cond.push(eb('v.companyId', '=', companyId))
             }
 
             if (status) {
@@ -114,7 +123,11 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
 }
 
 export async function updateOneById(
-    params: { scheduleId: OperationTripScheduleId; tripId: OperationTripId },
+    params: {
+        scheduleId: OperationTripScheduleId
+        tripId: OperationTripId
+        companyId: OrganizationBusCompanyId
+    },
     body: OperationTripTableUpdate
 ) {
     const data = _.omitBy(body, v => _.isNil(v))
@@ -126,6 +139,15 @@ export async function updateOneById(
             const cond = []
             cond.push(eb('t.scheduleId', '=', params.scheduleId))
             cond.push(eb('t.id', '=', params.tripId))
+            cond.push(
+                eb.exists(
+                    eb
+                        .selectFrom('operation.trip_schedule as ts')
+                        .select('ts.id')
+                        .whereRef('ts.id', '=', 't.scheduleId')
+                        .where('ts.companyId', '=', params.companyId)
+                )
+            )
             return eb.and(cond)
         })
         .executeTakeFirstOrThrow()

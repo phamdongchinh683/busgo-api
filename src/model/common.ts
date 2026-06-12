@@ -73,6 +73,16 @@ export const MessageResponse = z.object({
 })
 export type MessageResponse = z.infer<typeof MessageResponse>
 
+export const StatusFlag = z.preprocess(
+    value => {
+        if (value === '0') return 0
+        if (value === '1') return 1
+        return value
+    },
+    z.union([z.literal(0), z.literal(1)])
+)
+export type StatusFlag = z.infer<typeof StatusFlag>
+
 export const PeriodFilter = z.object({
     type: z.enum(['monthly', 'yearly']),
     year: z.coerce.number().optional(),

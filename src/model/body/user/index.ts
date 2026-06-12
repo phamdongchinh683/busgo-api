@@ -1,9 +1,10 @@
-import { Email, MessageResponse, Phone, PublicUserInfo } from '../../common.js'
+import { Email, MessageResponse, Phone } from '../../common.js'
 import {
     AuthUserId,
     AuthUserPublicId,
     AuthUserRole,
     AuthUserStatus,
+    AuthUserStatusQuery,
 } from '../../../database/auth/user/type.js'
 import z from 'zod'
 import { AuthPassword } from '../auth/index.js'
@@ -32,24 +33,11 @@ export const UserUpdateBody = z.object({
 
 export type UserUpdateBody = z.infer<typeof UserUpdateBody>
 
-export const UserResponse = z.object({
-    user: PublicUserInfo,
-})
-
-export type UserResponse = z.infer<typeof UserResponse>
-
 export const UserNewPasswordBody = z.object({
     password: AuthPassword,
 })
 
 export type UserNewPasswordBody = z.infer<typeof UserNewPasswordBody>
-
-export const UserNewPasswordResponse = z.object({
-    ...MessageResponse.shape,
-    password: AuthPassword,
-})
-
-export type UserNewPasswordResponse = z.infer<typeof UserNewPasswordResponse>
 
 export const UserUpdatePasswordBody = z.object({
     oldPassword: AuthPassword,
@@ -76,7 +64,7 @@ export const UserListResponse = z.object({
 export type UserListResponse = z.infer<typeof UserListResponse>
 
 export const UserListQuery = z.object({
-    status: AuthUserStatus.optional(),
+    status: AuthUserStatusQuery.optional(),
     role: AuthUserRole.optional(),
     companyId: OrganizationBusCompanyId.optional(),
     email: Email.optional(),

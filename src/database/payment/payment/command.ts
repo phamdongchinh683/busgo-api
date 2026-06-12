@@ -8,6 +8,8 @@ import { PaymentStatus } from './type.js'
 import { utils } from '../../../utils/index.js'
 import { BookingId, BookingStatus } from '../../booking/booking/type.js'
 import { BookingTicketStatus } from '../../booking/ticket/type.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
+import { HttpErr } from '../../../app/index.js'
 
 export async function createPaymentTransaction(
     params: PaymentTableInsert,
@@ -107,8 +109,23 @@ export async function updatePaymentStatusByBookingId(
         .executeTakeFirstOrThrow()
 }
 
-export async function updatePaymentByTransactionCode(transactionCode: string) {
+export async function updatePaymentByTransactionCode(
+    transactionCode: string,
+    companyId: OrganizationBusCompanyId
+) {
     return db.transaction().execute(async tx => {
+        const payment = await dal.payment.payment.query.getPaymentByTransactionCodeForUpdate(
+            transactionCode,
+            tx
+        )
+        const company = payment
+            ? await dal.payment.payment.query.getCompanyIdByBookingId(payment.bookingId, tx)
+            : undefined
+
+        if (!payment || company?.companyId !== companyId) {
+            throw new HttpErr.Forbidden('Bạn không có quyền cập nhật thanh toán này.')
+        }
+
         await dal.payment.payment.cmd.updatePaymentStatusFailed(transactionCode, tx)
         return { message: 'Thành công' }
     })

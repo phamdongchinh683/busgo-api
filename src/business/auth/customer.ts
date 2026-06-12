@@ -1,4 +1,4 @@
-import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
+import { AUTH_USER_STATUS, AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { AuthBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
@@ -14,7 +14,7 @@ export async function register(body: AuthBody, role: AuthUserRole) {
         role,
         isEmailVerified: true,
         isPhoneVerified: true,
-        status: AuthUserStatus.enum.active,
+        status: AUTH_USER_STATUS.active,
     }
 
     return dal.auth.user.cmd.signUp(data)

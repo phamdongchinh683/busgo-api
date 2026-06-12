@@ -1,12 +1,13 @@
 import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../user/type.js'
 import { AuthNotificationId } from './type.js'
+import { StatusFlag } from '../../../model/common.js'
 
 export async function findAllByUserId(query: {
     limit: number
     next?: AuthNotificationId
     userId: AuthUserId
-    status?: boolean
+    status?: StatusFlag
 }) {
     const { limit, next, userId, status } = query
     return db
@@ -20,7 +21,7 @@ export async function findAllByUserId(query: {
                 cond.push(eb('n.id', '>', next))
             }
             if (status !== undefined) {
-                cond.push(eb('n.isRead', '=', status))
+                cond.push(eb('n.isRead', '=', status === 1))
             }
             cond.push(eb('n.userId', '=', userId))
             return eb.and(cond)

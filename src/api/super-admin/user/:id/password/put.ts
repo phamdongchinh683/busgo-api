@@ -3,10 +3,8 @@ import { bus } from '../../../../../business/index.js'
 import { jwt } from '../../../../../app/index.js'
 import { AuthUserRole } from '../../../../../database/auth/user/type.js'
 import { UserIdParam } from '../../../../../model/params/user/index.js'
-import {
-    UserNewPasswordBody,
-    UserNewPasswordResponse,
-} from '../../../../../model/body/user/index.js'
+import { UserNewPasswordBody } from '../../../../../model/body/user/index.js'
+import { MessageResponse } from '../../../../../model/common.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -22,7 +20,7 @@ api.route({
     schema: {
         params: UserIdParam,
         body: UserNewPasswordBody,
-        response: { 200: UserNewPasswordResponse },
+        response: { 200: MessageResponse },
         tags: tags(__filename),
         security: bearer,
     },

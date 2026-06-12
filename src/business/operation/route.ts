@@ -1,8 +1,5 @@
-import _ from 'lodash'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
-import { OperationRouteTableUpdate } from '../../database/operation/route/table.js'
-import { OperationRouteId } from '../../database/operation/route/type.js'
 import { OperationTripId } from '../../database/operation/trip/type.js'
 import { OperationRouteBody } from '../../model/body/route/index.js'
 import { RouteFilter } from '../../model/query/route/index.js'
@@ -44,21 +41,4 @@ export async function getRoutes(q: RouteFilter) {
             }
         },
     })
-}
-
-export async function updateRoute(params: {
-    id: OperationRouteId
-    body: OperationRouteTableUpdate
-}) {
-    const { id, body } = params
-
-    const data = _.omitBy(body, v => _.isNil(v)) as OperationRouteTableUpdate
-
-    const route = await dal.operation.route.cmd.updateOneById({ id, body: data })
-
-    await Promise.all([utils.cache.delCacheByPattern('route:list:*'), clearTripScheduleListCache()])
-
-    return {
-        route,
-    }
 }

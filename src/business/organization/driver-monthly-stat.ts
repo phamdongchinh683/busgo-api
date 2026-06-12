@@ -1,6 +1,7 @@
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { utils } from '../../utils/index.js'
+import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 
 export async function getDriverStat(params: {
     driverId: AuthUserId
@@ -20,8 +21,8 @@ export async function getDriverStat(params: {
     }
 }
 
-export async function getDriverDetail(id: AuthUserId) {
+export async function getDriverDetail(id: AuthUserId, companyId: OrganizationBusCompanyId) {
     return {
-        stats: await dal.organization.driverMonthlyStat.query.getStatsByDriverId(id),
+        stats: await dal.organization.driverMonthlyStat.query.getStatsByDriverId(id, companyId),
     }
 }

@@ -93,8 +93,8 @@ export async function detailTicketSupport(
     }
 }
 
-export async function deleteTicket(id: BookingTicketId) {
-    const data = await dal.booking.booking.query.getBookingByTicketId(id)
+export async function deleteTicket(id: BookingTicketId, companyId: OrganizationBusCompanyId) {
+    const data = await dal.booking.booking.query.getBookingByTicketId(id, companyId)
     if (!data) {
         throw new HttpErr.Forbidden('Không tìm thấy vé.')
     }

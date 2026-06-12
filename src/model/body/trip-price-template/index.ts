@@ -12,6 +12,7 @@ import {
     OperationTripPriceTemplateId,
     OperationTripPriceTemplatePublicId,
 } from '../../../database/operation/trip_price_template/type.js'
+import { StatusFlag } from '../../common.js'
 
 export const TripPriceTemplateBody = z.object({
     companyId: OrganizationBusCompanyId.optional(),
@@ -19,7 +20,7 @@ export const TripPriceTemplateBody = z.object({
     fromStationId: OperationStationId.optional(),
     toStationId: OperationStationId.optional(),
     price: z.number().optional(),
-    status: z.boolean().optional(),
+    status: StatusFlag.optional(),
 })
 
 export type TripPriceTemplateBody = z.infer<typeof TripPriceTemplateBody>

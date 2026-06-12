@@ -410,7 +410,7 @@ async function getPromotions(state: AiChatState): Promise<AiChatResponse> {
         }
     }
 
-    const result = await promotionNew.list({ limit: 5, status: 'true' })
+    const result = await promotionNew.list({ limit: 5, status: 1 })
     if (result.items.length === 0) {
         return {
             message: 'Hiện chưa có chương trình khuyến mãi đang hoạt động.',

@@ -25,7 +25,7 @@ export async function findByIdAndDate(
             cond.push(eb('id', '=', id))
             cond.push(eb('startDate', '<=', date))
             cond.push(eb('endDate', '>=', date))
-            cond.push(eb('status', '=', true))
+            cond.push(eb('status', '=', 1))
             return eb.and(cond)
         })
         .select(['id', 'routeId', 'companyId', 'departureTime'])

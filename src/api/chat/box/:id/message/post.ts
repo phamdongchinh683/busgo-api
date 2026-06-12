@@ -13,7 +13,7 @@ api.route({
         const boxId = await bus.publicId.resolve('chatBox', request.params.id)
         return bus.chat.message.sendMessage(
             {
-                userInfo: userInfo,
+                userInfo,
             },
             {
                 message: request.body.message,

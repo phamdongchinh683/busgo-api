@@ -92,62 +92,14 @@ export async function getPaymentByTransactionCodeForUpdate(
         .executeTakeFirst()
 }
 
-export async function getCompanyIdByBookingId(bookingId: BookingId) {
-    return db
+export async function getCompanyIdByBookingId(bookingId: BookingId, trx?: Transaction<Database>) {
+    return (trx ?? db)
         .selectFrom('booking.ticket as t')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .innerJoin('organization.vehicle as v', 'v.id', 'trip.vehicleId')
         .select('v.companyId')
         .where('t.bookingId', '=', bookingId)
         .executeTakeFirst()
-}
-
-export async function getPayments(
-    params: PaymentFilter,
-    companyId: OrganizationBusCompanyId,
-    trx?: Transaction<Database>
-) {
-    const { limit, next } = params
-
-    return (trx ?? db)
-        .selectFrom('payment.payment as pp')
-        .innerJoin('booking.booking as b', 'b.id', 'pp.bookingId')
-        .innerJoin('auth.user as u', 'u.id', 'b.userId')
-        .select([
-            'pp.id as cursorId',
-            'pp.publicId as id',
-            'b.publicId as bookingId',
-            'pp.amount',
-            'pp.method',
-            'pp.status',
-            'pp.transactionCode',
-            'pp.paidAt',
-            'b.expiredAt',
-            'u.phone',
-        ])
-        .where(eb => {
-            const cond = []
-            if (next) cond.push(eb('pp.id', '>', next))
-            if (params.transactionCode)
-                cond.push(eb('pp.transactionCode', '=', params.transactionCode))
-            if (params.status) cond.push(eb('pp.status', '=', params.status))
-            if (params.method) cond.push(eb('pp.method', '=', params.method))
-            cond.push(
-                eb.exists(
-                    eb
-                        .selectFrom('booking.ticket as t')
-                        .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
-                        .innerJoin('organization.vehicle as v', 'v.id', 'trip.vehicleId')
-                        .select('t.id')
-                        .whereRef('t.bookingId', '=', 'pp.bookingId')
-                        .where('v.companyId', '=', companyId)
-                )
-            )
-            return eb.and(cond)
-        })
-        .orderBy('pp.id', 'desc')
-        .limit(limit + 1)
-        .execute()
 }
 
 export async function getTotalRevenue(trx?: Transaction<Database>) {

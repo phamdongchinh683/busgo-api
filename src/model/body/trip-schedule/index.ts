@@ -8,6 +8,7 @@ import {
     OrganizationBusCompanyId,
     OrganizationBusCompanyPublicId,
 } from '../../../database/organization/bus_company/type.js'
+import { StatusFlag } from '../../common.js'
 
 export const TripScheduleItemResponse = z.object({
     id: OperationTripSchedulePublicId,
@@ -16,7 +17,7 @@ export const TripScheduleItemResponse = z.object({
     departureTime: z.string(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
-    status: z.boolean(),
+    status: StatusFlag,
 })
 
 export type TripScheduleItemResponse = z.infer<typeof TripScheduleItemResponse>
@@ -34,7 +35,7 @@ export const TripScheduleResponse = z.object({
             distanceKm: z.number(),
             startDate: z.coerce.date(),
             endDate: z.coerce.date(),
-            status: z.boolean(),
+            status: StatusFlag,
             companyId: OrganizationBusCompanyPublicId,
             durationMinutes: z.number(),
             totalStars: z.number().min(0).max(5),
@@ -57,14 +58,14 @@ export const TripScheduleBody = z.object({
     departureTime: z.string(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
-    status: z.boolean(),
+    status: StatusFlag,
 })
 
 export const TripScheduleUpdateBody = z.object({
     departureTime: z.string().optional(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
-    status: z.boolean().optional(),
+    status: StatusFlag.optional(),
 })
 
 export type TripScheduleUpdateBody = z.infer<typeof TripScheduleUpdateBody>

@@ -2,7 +2,7 @@
 
 Backend service for BusGo — an intercity bus ticketing and operations platform.
 
-Provides REST APIs for customers, drivers, bus company operators, support staff, payments (Stripe + VNPay), real-time chat, file uploads, and scheduled jobs.
+Provides REST APIs for customers, drivers, bus company operators, payments (Stripe + VNPay), real-time chat, file uploads, and scheduled jobs.
 
 **Tech stack:** Fastify 5 + TypeScript + Zod + Kysely + PostgreSQL
 
@@ -147,9 +147,7 @@ Main route groups:
 - `/auth` — Login, social, OTP, password reset, devices
 - `/customer` — Booking, tickets, profile, coupons, trips
 - `/driver` — Driver trips and operations
-- `/operator-admin` — Company management (vehicles, staff, revenue)
-- `/operator-dispatcher` — Scheduling, routes, stations
-- `/operator-support` — Support tools (tickets, coupons)
+- `/operator` — Company management, operations, tickets, coupons and revenue
 - `/super-admin` — Platform-wide admin
 - `/payment`, `/stripe`, `/chat`, `/file`, `/public`, `/job`
 
@@ -165,10 +163,7 @@ src/
 │   ├── auth/             # Login, OTP, password, profile lookup, device tokens
 │   ├── customer/         # Customer booking, tickets, trip search, payment methods
 │   ├── driver/           # Driver trips, passengers, check-in, trip status
-│   ├── operator-admin/   # Company admin workflows: staff, vehicles, revenue
-│   ├── operator-dispatcher/
-│   │                       # Route, station, schedule, trip and stop management
-│   ├── operator-support/ # Support workflows for tickets and coupons
+│   ├── operator/         # Company management, operations, tickets and revenue
 │   ├── super-admin/      # Platform administration, dashboards, users, companies
 │   ├── payment/          # Payment method and VNPay return routes
 │   ├── stripe/           # Stripe Connect callback/status and webhook routes

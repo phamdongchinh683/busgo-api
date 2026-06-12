@@ -3,22 +3,7 @@ import {
     AuthNotificationId,
     AuthNotificationPublicId,
 } from '../../../database/auth/notification/type.js'
-import { AuthUserId, AuthUserPublicId } from '../../../database/auth/user/type.js'
-
-export const NotificationBody = z.object({
-    userId: AuthUserId,
-    title: z.string().min(1).max(255),
-    body: z.string().min(1).max(2000),
-    data: z.string().nullable().optional(),
-})
-
-export type NotificationBody = z.infer<typeof NotificationBody>
-
-export const NotificationRequestBody = NotificationBody.extend({
-    userId: AuthUserPublicId,
-})
-
-export type NotificationRequestBody = z.infer<typeof NotificationRequestBody>
+import { AuthUserPublicId } from '../../../database/auth/user/type.js'
 
 export const NotificationResponse = z.object({
     id: AuthNotificationPublicId,

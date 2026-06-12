@@ -12,7 +12,7 @@ export interface OperationTripScheduleTable extends Timestamps {
     departureTime: string
     startDate: Date
     endDate: Date
-    status: boolean
+    status: 0 | 1
 }
 
 export type OperationTripScheduleTableInsert = Insertable<OperationTripScheduleTable>

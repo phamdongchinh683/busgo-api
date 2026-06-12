@@ -1,4 +1,4 @@
-import { AuthUserRole, AuthUserStatus } from '../../database/auth/user/type.js'
+import { AUTH_USER_STATUS, AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { AuthBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
@@ -20,7 +20,7 @@ export async function register(
         role,
         isEmailVerified: true,
         isPhoneVerified: true,
-        status: AuthUserStatus.enum.inactive,
+        status: AUTH_USER_STATUS.inactive,
     }
 
     const result = await dal.auth.user.cmd.insertDriver(data, companyId)

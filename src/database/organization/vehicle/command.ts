@@ -4,11 +4,17 @@ import { Database } from '../../../datasource/type.js'
 import { db } from '../../../datasource/db.js'
 import { OrganizationBusCompanyId } from '../bus_company/type.js'
 import { OrganizationVehicleTableInsert, OrganizationVehicleTableUpdate } from './table.js'
+import { HttpErr } from '../../../app/index.js'
 
-export async function findById(id: OrganizationVehicleId, trx?: Transaction<Database>) {
+export async function findById(
+    id: OrganizationVehicleId,
+    companyId?: OrganizationBusCompanyId,
+    trx?: Transaction<Database>
+) {
     return (trx ?? db)
         .selectFrom('organization.vehicle as v')
         .where('v.id', '=', id)
+        .$if(Boolean(companyId), qb => qb.where('v.companyId', '=', companyId!))
         .selectAll()
         .executeTakeFirstOrThrow()
 }
@@ -35,13 +41,19 @@ export async function createOrganizationVehicle(
     params: OrganizationVehicleTableInsert,
     trx?: Transaction<Database>
 ) {
-    return (trx ?? db)
+    const vehicle = await (trx ?? db)
         .insertInto('organization.vehicle')
         .values(params)
-        .onConflict(oc => oc.column('plateNumber').doUpdateSet(params))
+        .onConflict(oc => oc.column('plateNumber').doNothing())
         .returningAll()
         .returning('publicId as id')
-        .executeTakeFirstOrThrow()
+        .executeTakeFirst()
+
+    if (!vehicle) {
+        throw new HttpErr.UnprocessableEntity('Biển số xe đã tồn tại.', 'VEHICLE_ALREADY_EXISTS')
+    }
+
+    return vehicle
 }
 
 export async function updateOrganizationVehicle(

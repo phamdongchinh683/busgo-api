@@ -1,5 +1,4 @@
 import { stripe } from '../client/index.js'
-import { StripePayoutListRequest } from '../type.js'
 
 export async function createConnectAccount(params: { email?: string }) {
     const { email } = params
@@ -56,19 +55,6 @@ export async function payout(params: { amount: number; accountStripeId: string }
         },
         {
             stripeAccount: params.accountStripeId,
-        }
-    )
-}
-
-export async function listPayouts(q: StripePayoutListRequest, accountStripeId: string) {
-    return stripe.payouts.list(
-        {
-            starting_after: q.next,
-            status: q.status,
-            limit: q.limit,
-        },
-        {
-            stripeAccount: accountStripeId,
         }
     )
 }

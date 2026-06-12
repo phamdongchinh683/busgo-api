@@ -1,10 +1,10 @@
 import { Email, PeriodFilter, Phone } from '../../common.js'
-import { AuthUserId, AuthUserRole, AuthUserStatus } from '../../../database/auth/user/type.js'
+import { AuthUserId, AuthUserRole, AuthUserStatusQuery } from '../../../database/auth/user/type.js'
 import z from 'zod'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 
 export const PeriodUserQuery = PeriodFilter.extend({
-    status: AuthUserStatus.optional(),
+    status: AuthUserStatusQuery.optional(),
     role: AuthUserRole.optional(),
 })
 

@@ -1,14 +1,6 @@
 import z from 'zod'
-import {
-    AuthOperatorRole,
-    AuthUserPublicId,
-    AuthUserStatus,
-} from '../../../database/auth/user/type.js'
+import { AuthUserStatus } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import {
-    OrganizationCompanyMemberId,
-    OrganizationCompanyMemberPublicId,
-} from '../../../database/organization/company_member/type.js'
 import { Email, Otp, Phone, PublicUserInfo } from '../../common.js'
 
 export const ProfileUpdateBody = z.object({
@@ -68,29 +60,6 @@ export const ProfileResponseUser = z.object({
 })
 
 export type ProfileResponseUser = z.infer<typeof ProfileResponseUser>
-
-export const StaffRoleResponse = z.object({
-    user: PublicUserInfo,
-})
-
-export type StaffRoleResponse = z.infer<typeof StaffRoleResponse>
-
-export const StaffListResponse = z.object({
-    staff: z.array(
-        ProfileUpdateBody.omit({ companyId: true }).extend({
-            id: OrganizationCompanyMemberPublicId,
-            fullName: z.string(),
-            email: Email.nullable(),
-            phone: Phone.nullable(),
-            userId: AuthUserPublicId,
-            role: AuthOperatorRole,
-            status: AuthUserStatus,
-        })
-    ),
-    next: OrganizationCompanyMemberId.nullable(),
-})
-
-export type StaffListResponse = z.infer<typeof StaffListResponse>
 
 export const ProfileAccountResponse = z.object({
     user: z.object({

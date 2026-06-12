@@ -3,16 +3,12 @@ import { UserInfo } from '../../model/common.js'
 import _ from 'lodash'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationCompanyMemberTableUpdate } from '../../database/organization/company_member/table.js'
-import { AuthProfileQuery } from '../../model/query/staff/index.js'
-import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { utils } from '../../utils/index.js'
-import { AuthOperatorRole } from '../../database/auth/user/type.js'
 import {
     ProfileUpdateBody,
     ProfileUpdateContactBody,
     ProfileUpdateCustomerBody,
 } from '../../model/body/profile/index.js'
-import { UserUpdateBody } from '../../model/body/user/index.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { jwt } from '../../app/index.js'
@@ -42,36 +38,6 @@ export async function updateProfile(id: AuthUserId, params: ProfileUpdateBody) {
 
     return {
         user: await dal.organization.companyMember.cmd.updateOne(id, params.companyId, data),
-    }
-}
-
-export async function getStaffRole(query: AuthProfileQuery, companyId: OrganizationBusCompanyId) {
-    const result = await dal.organization.companyMember.query.findAll(query, companyId)
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
-
-    return {
-        staff: data,
-        next: next,
-    }
-}
-
-export async function updateStaffRole(
-    id: AuthUserId,
-    role: AuthOperatorRole,
-    companyId: OrganizationBusCompanyId
-) {
-    return {
-        user: await dal.auth.user.cmd.updateRoleForPublicResponse(id, role, companyId),
-    }
-}
-
-export async function updateStaff(
-    id: AuthUserId,
-    params: UserUpdateBody,
-    companyId: OrganizationBusCompanyId
-) {
-    return {
-        user: await dal.auth.user.cmd.updateOneForStaffCompanyPublicResponse(id, params, companyId),
     }
 }
 

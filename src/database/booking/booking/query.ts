@@ -6,6 +6,7 @@ import { BookingId } from './type.js'
 import { BookingTicketId } from '../ticket/type.js'
 import { utils } from '../../../utils/index.js'
 import { PeriodBookingQuery } from '../../../model/query/booking/index.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export async function countAll(trx?: Transaction<Database>) {
     const r = await (trx ?? db)
@@ -64,11 +65,16 @@ export async function getBookingByUserIdAndBookingId(
         .executeTakeFirst()
 }
 
-export async function getBookingByTicketId(ticketId: BookingTicketId, trx?: Transaction<Database>) {
+export async function getBookingByTicketId(
+    ticketId: BookingTicketId,
+    companyId: OrganizationBusCompanyId,
+    trx?: Transaction<Database>
+) {
     return (trx ?? db)
         .selectFrom('booking.booking as b')
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
+        .innerJoin('operation.trip_schedule as ts', 'ts.id', 'trip.scheduleId')
         .leftJoin('payment.payment as pp', 'pp.bookingId', 'b.id')
         .selectAll()
         .select([
@@ -79,6 +85,7 @@ export async function getBookingByTicketId(ticketId: BookingTicketId, trx?: Tran
             'pp.status as paymentStatus',
         ])
         .where('t.id', '=', ticketId)
+        .where('ts.companyId', '=', companyId)
         .executeTakeFirst()
 }
 

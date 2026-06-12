@@ -15,6 +15,7 @@ const TRIP_PRICE_TEMPLATE_CACHE_PREFIX = 'trip-price-template:list'
 export async function createTripPriceTemplate(params: {
     body: OperationTripPriceTemplateTableInsert
 }) {
+    await assertCompanyStations(params.body)
     const tripPriceTemplate = await dal.operation.tripPriceTemplate.cmd.createOne(params.body)
 
     await utils.cache.delCacheByPattern(
@@ -59,8 +60,9 @@ export async function getTripPriceTemplates(params: {
 
 export async function updateTripPriceTemplates(params: {
     id: OperationTripPriceTemplateId
-    body: OperationTripPriceTemplateTableUpdate
+    body: OperationTripPriceTemplateTableUpdate & { companyId: OrganizationBusCompanyId }
 }) {
+    await assertCompanyStations(params.body)
     const tripPriceTemplate = await dal.operation.tripPriceTemplate.query.updateOneById(
         params.id,
         params.body
@@ -95,5 +97,21 @@ export async function deleteTripPriceTemplate(params: {
 
     return {
         tripPriceTemplate: publicTripPriceTemplate,
+    }
+}
+
+async function assertCompanyStations(params: {
+    companyId: OrganizationBusCompanyId
+    fromStationId?: OperationTripPriceTemplateTableUpdate['fromStationId']
+    toStationId?: OperationTripPriceTemplateTableUpdate['toStationId']
+}) {
+    const stations = await Promise.all(
+        [params.fromStationId, params.toStationId]
+            .filter(stationId => stationId !== undefined)
+            .map(stationId => dal.operation.station.query.findById(stationId, params.companyId))
+    )
+
+    if (stations.some(station => !station)) {
+        throw new HttpErr.Forbidden('Trạm dừng không thuộc công ty của bạn.')
     }
 }

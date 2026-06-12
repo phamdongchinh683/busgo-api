@@ -10,6 +10,19 @@ export async function insertOne(params: ChatMessageTableInsert) {
     const data = _.omitBy(params, v => _.isNil(v)) as ChatMessageTableInsert
 
     const result = await db.transaction().execute(async trx => {
+        await trx
+            .selectFrom('chat.box as b')
+            .select('b.id')
+            .where('b.id', '=', params.boxId)
+            .where(eb =>
+                eb.or([
+                    eb('b.senderId', '=', params.senderId),
+                    eb('b.receiverId', '=', params.senderId),
+                ])
+            )
+            .forUpdate('b')
+            .executeTakeFirstOrThrow()
+
         const row = await trx
             .insertInto('chat.message')
             .values(data)
@@ -52,11 +65,10 @@ export async function updateOne(params: {
     return db.transaction().execute(async trx => {
         const message = await trx
             .updateTable('chat.message')
-            .set({
-                body: params.body,
-                senderId: params.senderId,
-            })
+            .set({ body: params.body })
             .where('id', '=', params.id)
+            .where('boxId', '=', params.boxId)
+            .where('senderId', '=', params.senderId)
             .returningAll()
             .executeTakeFirstOrThrow()
 

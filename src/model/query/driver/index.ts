@@ -1,10 +1,10 @@
 import z from 'zod'
-import { AuthUserId, AuthUserStatus } from '../../../database/auth/user/type.js'
+import { AuthUserId, AuthUserStatusQuery } from '../../../database/auth/user/type.js'
 import { Phone } from '../../common.js'
 
 export const DriverQuery = z.object({
     phone: Phone.optional(),
-    status: AuthUserStatus.optional(),
+    status: AuthUserStatusQuery.optional(),
     limit: z.coerce.number().optional().default(10),
     next: AuthUserId.optional(),
 })

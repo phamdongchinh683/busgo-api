@@ -13,7 +13,7 @@ export interface OperationTripPriceTemplateTable extends Timestamps {
     fromStationId: OperationStationId
     toStationId: OperationStationId
     price: number
-    status: boolean
+    status: 0 | 1
 }
 
 export type OperationTripPriceTemplateTableInsert = Insertable<OperationTripPriceTemplateTable>

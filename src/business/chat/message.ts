@@ -57,12 +57,13 @@ export async function sendMessage(
 export async function getMessages(
     params: {
         boxId: ChatBoxId
+        userId: UserInfo['id']
     },
     query: ChatMessageQuery
 ) {
-    const { boxId } = params
+    const { boxId, userId } = params
 
-    const result = await dal.chat.message.query.findAllMessagesByBoxId({ boxId }, query)
+    const result = await dal.chat.message.query.findAllMessagesByBoxId({ boxId, userId }, query)
 
     const { data, next } = utils.common.paginateByCursor(result, query.limit)
 

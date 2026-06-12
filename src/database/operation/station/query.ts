@@ -1,6 +1,16 @@
 import { StationFilter } from '../../../model/query/station/index.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { db } from '../../../datasource/db.js'
+import { OperationStationId } from './type.js'
+
+export async function findById(id: OperationStationId, companyId: OrganizationBusCompanyId) {
+    return db
+        .selectFrom('operation.station as s')
+        .select('s.id')
+        .where('s.id', '=', id)
+        .where('s.companyId', '=', companyId)
+        .executeTakeFirst()
+}
 
 export async function findAllByCompanyId(params: {
     q: StationFilter

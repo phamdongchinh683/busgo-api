@@ -237,23 +237,15 @@ export async function vnpayReturn(query: Record<string, string>, reply: FastifyR
     return reply.redirect(redirectUrl.toString())
 }
 
-export async function getPayments(q: PaymentFilter, companyId: OrganizationBusCompanyId) {
-    const payments = await dal.payment.payment.query.getPayments(q, companyId)
-
-    const { data, next } = utils.common.paginateByCursor(payments, q.limit)
-
-    return {
-        payments: data,
-        next: next,
-    }
-}
-
 export async function getRevenueByCompanyId(companyId: OrganizationBusCompanyId) {
     return dal.payment.payment.query.getTotalRevenueByCompanyId(companyId)
 }
 
-export async function updateByTransactionCode(transactionCode: string) {
-    return dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode)
+export async function updateByTransactionCode(
+    transactionCode: string,
+    companyId: OrganizationBusCompanyId
+) {
+    return dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode, companyId)
 }
 
 export async function getPeriodRevenue(params: PeriodPaymentQuery) {
