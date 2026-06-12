@@ -66,7 +66,7 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
         }
     }
 
-    await service.infobip.sender.send({
+    await service.sms.sender.send({
         to: to,
         message: `Mã OTP của bạn là ${otp.toString()}. Mã này sẽ hết hạn sau 2 phút.`,
     })
@@ -76,11 +76,15 @@ async function sendByPhone(params: { to: Phone; otp: Otp }) {
     }
 }
 
+export function isDevelopmentOtp(otp: Otp): boolean {
+    return process.env.APP_ENV !== 'production' && otp === '555555'
+}
+
 export async function verifyOtp(params: ProfileUpdateContactBody) {
     const verifiedOtp = await dal.auth.userOtp.cmd.verifyOne({
         field: params.field,
         value: params.value,
-        otp: params.otp === '555555' ? undefined : params.otp,
+        otp: isDevelopmentOtp(params.otp) ? undefined : params.otp,
     })
 
     if (!verifiedOtp) {

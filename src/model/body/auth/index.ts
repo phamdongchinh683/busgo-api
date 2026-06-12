@@ -82,12 +82,21 @@ export const AuthVerifyAccountRequestBody = AuthVerifyAccountBody.extend({
 
 export type AuthVerifyAccountRequestBody = z.infer<typeof AuthVerifyAccountRequestBody>
 
-export const AuthForgotPasswordBody = z.object({
+const AuthForgotPasswordBase = z.object({
     otp: Otp,
-    email: Email.optional(),
-    phone: Phone.optional(),
     password: AuthPassword,
 })
+
+export const AuthForgotPasswordBody = z.union([
+    AuthForgotPasswordBase.extend({
+        email: Email,
+        phone: z.never().optional(),
+    }),
+    AuthForgotPasswordBase.extend({
+        email: z.never().optional(),
+        phone: Phone,
+    }),
+])
 
 export type AuthForgotPasswordBody = z.infer<typeof AuthForgotPasswordBody>
 

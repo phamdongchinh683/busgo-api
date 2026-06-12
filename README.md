@@ -109,10 +109,24 @@ Done! The API is now running at **http://localhost:3000**
 - **VNPay**: `VNPAY_TMN_CODE`, `VNPAY_SECRET`, ...
 - **Cloudinary** (file uploads): `CLOUDINARY_*`
 - **Firebase** (push notifications): `FIREBASE_*`
-- **Email/SMS**: `RESEND_API_KEY`, `INFOBIP_API_KEY`
+- **Email**: `RESEND_API_KEY`, `MAIL_FROM`
+- **SMS OTP through eSMS**: `ESMS_API_KEY`, `ESMS_SECRET_KEY`
 - **Social Login**: `GOOGLE_CLIENT_ID`, `FACEBOOK_APP_ID`, ...
 
 All variables are loaded via `dotenv` from `.env` at the project root.
+
+### SMS OTP Configuration
+
+Phone OTP delivery uses the generic `src/service/sms` adapter. Its current provider implementation
+calls the eSMS fixed-number API with `SmsType=8`, so no SMS Brandname is required.
+
+| Variable          | Required in production | Description                    |
+|-------------------|------------------------|--------------------------------|
+| `ESMS_API_KEY`    | Yes                    | eSMS account API key           |
+| `ESMS_SECRET_KEY` | Yes                    | eSMS account secret key        |
+
+The eSMS fixed-number endpoint requires credentials in the request query string. Do not log the full
+provider URL, API key, secret key, OTP value, or complete SMS payload.
 
 ---
 
@@ -197,7 +211,7 @@ src/
 │   ├── firebase/         # Push notifications
 │   ├── cloudinary/       # Upload presign helpers
 │   ├── email/            # Email sender and templates
-│   ├── infobip/          # SMS sender
+│   ├── sms/              # Generic SMS adapter; currently implemented with eSMS
 │   ├── google/           # Google auth verification
 │   ├── facebook/         # Facebook auth verification
 │   └── excel/            # Export helpers
@@ -246,6 +260,87 @@ Authorization: Bearer <your-jwt-token>
 - Tokens are valid for 30 days
 - Logout immediately invalidates previous tokens for that user
 
+## OTP And Contact Verification
+
+OTP is shared by registration, password reset, identity verification, and customer contact updates.
+The HTTP routes remain thin; generation and verification live in `src/business/auth/otp.ts`, database
+access lives in `src/database/auth/user_otp`, and provider calls live in `src/service`.
+
+### Main Endpoints
+
+| Endpoint                                         | Purpose                                      |
+|--------------------------------------------------|----------------------------------------------|
+| `POST /auth/contact/check`                       | Check whether an email or phone already exists |
+| `POST /auth/send-otp`                            | Create and send an email or phone OTP        |
+| `POST /auth/contact/verify`                      | Verify an OTP and mark the contact verified  |
+| `PUT /auth/reset-password`                       | Reset password with one email or phone OTP   |
+| `POST /customer/profile/contact/identity/verify` | Verify the customer's current contact        |
+| `PUT /customer/profile/contact`                  | Verify and replace a customer contact        |
+
+`POST /auth/send-otp` is limited to 10 requests per IP every 2 minutes.
+
+### Send OTP Request
+
+```json
+{
+  "field": "phone",
+  "value": "0901234567"
+}
+```
+
+Use `"field": "email"` with a valid email address to send an email OTP instead.
+
+### Verify OTP Request
+
+```json
+{
+  "field": "phone",
+  "value": "0901234567",
+  "otp": "123456"
+}
+```
+
+### Reset Password Request
+
+Send exactly one of `email` or `phone`.
+
+```json
+{
+  "phone": "0901234567",
+  "otp": "123456",
+  "password": "Abcd12345#"
+}
+```
+
+### OTP Flow
+
+```text
+POST /auth/send-otp
+  -> Zod validates field + contact value
+  -> business/auth/otp generates a cryptographically random 6-digit OTP
+  -> database/auth/user_otp upserts the contact OTP
+     with verified=false and expiresAt=now+2 minutes
+  -> APP_ENV=production:
+       email -> service/email through Resend
+       phone -> service/sms through eSMS fixed-number SMS (SmsType=8)
+  -> non-production:
+       external providers are skipped
+
+Verify or consume OTP
+  -> match field + contact value + OTP + unexpired record
+  -> mark verified=true and clear the stored OTP
+  -> continue registration, password reset, identity verification,
+     or contact update
+```
+
+In non-production environments, `555555` is the development OTP. It is disabled when
+`APP_ENV=production` and still requires an existing, unexpired OTP record, so call
+`POST /auth/send-otp` first.
+
+Registration requires both email and phone records to be verified. A new OTP request replaces the
+previous OTP for the same contact. Never expose OTP values or provider credentials in logs or API
+responses.
+
 ---
 
 ## Database Migrations
@@ -265,7 +360,8 @@ Always run migrations after pulling changes that include new migration files.
 - Run `yarn format` before committing.
 - Swagger UI is only served when `APP_ENV != production`.
 - Most business logic lives in `src/business/`, data access in `src/database/`.
-- Use `console.log` + `yarn dev` for fast local debugging.
+- Use the Fastify request logger for local debugging, but never log credentials, tokens, OTP values,
+  authorization headers, or payment secrets.
 
 ---
 

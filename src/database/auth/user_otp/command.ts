@@ -16,22 +16,6 @@ export async function upsertOne(params: AuthUserOtpTableInsert & { field: 'email
         .executeTakeFirstOrThrow()
 }
 
-export async function getOne(params: { otp?: Otp; email?: string; phone?: string }) {
-    const { email, phone, otp } = params
-
-    return db
-        .selectFrom('auth.user_otp')
-        .where(eb => {
-            const cond = []
-            if (email) cond.push(eb('email', '=', email))
-            if (phone) cond.push(eb('phone', '=', phone))
-            if (otp) cond.push(eb('otp', '=', otp))
-            return eb.and(cond)
-        })
-        .select(['otp', 'verified', 'expiresAt'])
-        .executeTakeFirst()
-}
-
 export async function verifyOne(params: { field: UserOtpField; value: string; otp?: Otp }) {
     const query = db
         .updateTable('auth.user_otp')

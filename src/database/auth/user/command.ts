@@ -134,7 +134,7 @@ export async function signUpCompanyAdmin(
             title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
             body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
             data: {
-                userNewAccountId: user.id.toString(),
+                userNewAccountId: user.publicId.toString(),
                 id: notification.id.toString(),
             },
         })
