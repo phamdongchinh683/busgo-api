@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        const userId = await bus.publicId.resolve('user', request.params.userId)
+        const userId = await bus.publicId.resolve('user', request.params.id)
         return bus.auth.superAdmin.deleteOne(userId)
     },
 

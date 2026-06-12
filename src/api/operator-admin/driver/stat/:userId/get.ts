@@ -15,7 +15,7 @@ api.route({
             request.headers,
             OPERATOR_FEATURE_ROLES.administration
         )
-        const userId = await bus.publicId.resolve('user', request.params.userId)
+        const userId = await bus.publicId.resolve('user', request.params.id)
         return bus.organization.driverMonthlyStat.getDriverDetail(userId)
     },
 
