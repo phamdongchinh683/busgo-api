@@ -11,8 +11,8 @@ export const AuthPassword = z.string().regex(new RegExp(regPassword), message).d
 export type AuthPassword = z.infer<typeof AuthPassword>
 
 export const AuthBody = z.object({
-    firstName: z.string().min(7),
-    lastName: z.string().min(7),
+    firstName: z.string(),
+    lastName: z.string(),
     contactInfo: ContactInfo,
     password: AuthPassword,
 })

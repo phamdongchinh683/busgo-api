@@ -17,8 +17,8 @@ export const ProfileUpdateBody = z.object({
 export type ProfileUpdateBody = z.infer<typeof ProfileUpdateBody>
 
 export const ProfileUpdateCustomerBody = z.object({
-    firstName: z.string().min(7),
-    lastName: z.string().min(7),
+    firstName: z.string(),
+    lastName: z.string(),
 })
 
 export type ProfileUpdateCustomerBody = z.infer<typeof ProfileUpdateCustomerBody>
