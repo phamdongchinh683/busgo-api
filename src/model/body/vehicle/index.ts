@@ -1,6 +1,5 @@
 import {
     OrganizationVehicleId,
-    OrganizationVehiclePublicId,
     OrganizationVehicleStatus,
     OrganizationVehicleType,
 } from '../../../database/organization/vehicle/type.js'
@@ -18,19 +17,13 @@ export const VehicleBody = z.object({
 export type VehicleBody = z.infer<typeof VehicleBody>
 
 export const VehicleResponse = z.object({
-    vehicle: VehicleBody.omit({ companyId: true }).extend({
-        id: OrganizationVehiclePublicId,
-    }),
+    vehicle: VehicleBody.omit({ companyId: true }).extend({}),
 })
 
 export type VehicleResponse = z.infer<typeof VehicleResponse>
 
 export const VehicleListResponse = z.object({
-    vehicles: z.array(
-        VehicleBody.omit({ companyId: true }).extend({
-            id: OrganizationVehiclePublicId,
-        })
-    ),
+    vehicles: z.array(VehicleBody.omit({ companyId: true }).extend({})),
     next: OrganizationVehicleId.nullable(),
 })
 

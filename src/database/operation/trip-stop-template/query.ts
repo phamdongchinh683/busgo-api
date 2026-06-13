@@ -27,15 +27,15 @@ export async function getStoppingPointByScheduleId(params: {
             return eb.and(cond)
         })
         .select([
-            'ts.publicId as id',
+            'ts.id',
             'ts.stopOrder',
-            's.publicId as stationId',
+            's.id as stationId',
             's.address',
             's.city',
             'ts.stopOrder',
             'ts.allowPickup',
             'ts.allowDropoff',
-            'schedule.publicId as scheduleId',
+            'schedule.id as scheduleId',
         ])
         .orderBy('ts.stopOrder')
         .execute()
@@ -48,10 +48,10 @@ export async function getPublicById(id: OperationTripStopTemplateId) {
         .innerJoin('operation.route as r', 'r.id', 'ts.routeId')
         .innerJoin('operation.trip_schedule as schedule', 'schedule.id', 'ts.scheduleId')
         .select([
-            'ts.publicId as id',
-            'schedule.publicId as scheduleId',
-            'r.publicId as routeId',
-            's.publicId as stationId',
+            'ts.id',
+            'schedule.id as scheduleId',
+            'r.id as routeId',
+            's.id as stationId',
             'ts.allowPickup',
             'ts.allowDropoff',
             'ts.stopOrder',
@@ -76,6 +76,6 @@ export async function updateOneById(
             return eb.and(cond)
         })
         .returningAll()
-        .returning('publicId as id')
+        .returning('id')
         .executeTakeFirstOrThrow()
 }

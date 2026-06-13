@@ -1,6 +1,6 @@
 import z from 'zod'
 import { OperationTripPriceTemplateId } from '../../../database/operation/trip_price_template/type.js'
-import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
+import { OperationRouteId } from '../../../database/operation/route/type.js'
 
 export const TripPriceTemplateFilter = z.object({
     routeId: OperationRouteId.optional(),
@@ -10,8 +10,6 @@ export const TripPriceTemplateFilter = z.object({
 
 export type TripPriceTemplateFilter = z.infer<typeof TripPriceTemplateFilter>
 
-export const TripPriceTemplateRequestFilter = TripPriceTemplateFilter.extend({
-    routeId: OperationRoutePublicId.optional(),
-})
+export const TripPriceTemplateRequestFilter = TripPriceTemplateFilter.extend({})
 
 export type TripPriceTemplateRequestFilter = z.infer<typeof TripPriceTemplateRequestFilter>

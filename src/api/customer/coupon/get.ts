@@ -13,8 +13,6 @@ api.route({
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
         const companyId = request.query.companyId
-            ? await bus.publicId.resolve('busCompany', request.query.companyId)
-            : undefined
 
         return bus.booking.coupon.getCoupons({
             ...request.query,

@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const id = await bus.publicId.resolve('vehicle', request.params.id)
+        const { id } = request.params
         return bus.organization.vehicle.updateVehicle(id, {
             ...request.body,
             companyId: userInfo.companyId,

@@ -14,7 +14,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const routeId = await bus.publicId.resolve('route', request.body.routeId)
+        const { routeId } = request.body
         return bus.operation.tripSchedule.createTripSchedule({
             body: {
                 ...request.body,

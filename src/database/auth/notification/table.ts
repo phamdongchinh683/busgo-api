@@ -1,11 +1,10 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import { AuthUserId } from '../user/type.js'
-import { AuthNotificationId, AuthNotificationPublicId } from './type.js'
+import { AuthNotificationId } from './type.js'
 
 export interface AuthNotificationTable extends Timestamps {
     id: GeneratedAlways<AuthNotificationId>
-    publicId: GeneratedAlways<AuthNotificationPublicId>
     userId: AuthUserId
     title: string
     body: string

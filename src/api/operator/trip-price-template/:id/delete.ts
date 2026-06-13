@@ -11,9 +11,8 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const id = await bus.publicId.resolve('tripPriceTemplate', request.params.id)
         return bus.operation.tripPriceTemplate.deleteTripPriceTemplate({
-            id,
+            id: request.params.id,
             companyId: userInfo.companyId,
         })
     },

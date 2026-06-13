@@ -13,18 +13,10 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const [routeId, fromStationId, toStationId] = await Promise.all([
-            bus.publicId.resolve('route', request.body.routeId),
-            bus.publicId.resolve('station', request.body.fromStationId),
-            bus.publicId.resolve('station', request.body.toStationId),
-        ])
         return bus.operation.tripPriceTemplate.createTripPriceTemplate({
             body: {
                 ...request.body,
                 companyId: userInfo.companyId,
-                routeId,
-                fromStationId,
-                toStationId,
             },
         })
     },

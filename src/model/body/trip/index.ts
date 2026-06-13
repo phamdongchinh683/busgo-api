@@ -1,42 +1,19 @@
 import z from 'zod'
-import {
-    OperationTripId,
-    OperationTripPublicId,
-    OperationTripStatus,
-} from '../../../database/operation/trip/type.js'
+import { OperationTripId, OperationTripStatus } from '../../../database/operation/trip/type.js'
 import {
     OrganizationVehicleId,
-    OrganizationVehiclePublicId,
     OrganizationVehicleType,
 } from '../../../database/organization/vehicle/type.js'
-import {
-    OrganizationSeatId,
-    OrganizationSeatPublicId,
-    OrganizationSeatType,
-} from '../../../database/organization/seat/type.js'
-import {
-    OperationStationId,
-    OperationStationPublicId,
-} from '../../../database/operation/station/type.js'
-import {
-    OperationTripScheduleId,
-    OperationTripSchedulePublicId,
-} from '../../../database/operation/trip-schedule/type.js'
-import {
-    BookingTicketId,
-    BookingTicketPublicId,
-    BookingTicketStatus,
-} from '../../../database/booking/ticket/type.js'
+import { OrganizationSeatType } from '../../../database/organization/seat/type.js'
+import { OperationStationId } from '../../../database/operation/station/type.js'
+import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
+import { OperationRouteId } from '../../../database/operation/route/type.js'
+import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
 import { BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
-import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
-import { AuthUserId, AuthUserPublicId } from '../../../database/auth/user/type.js'
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../../../database/organization/bus_company/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { AuthUserId } from '../../../database/auth/user/type.js'
 
 export const TripItem = z.object({
-    id: OperationTripPublicId,
     routeId: OperationRouteId.optional(),
     vehicleId: OrganizationVehicleId.optional(),
     driverIds: z.array(AuthUserId).nullable().optional(),
@@ -47,19 +24,13 @@ export const TripItem = z.object({
 
 export type TripItem = z.infer<typeof TripItem>
 
-export const TripRequestItem = TripItem.extend({
-    routeId: OperationRoutePublicId.optional(),
-    vehicleId: OrganizationVehiclePublicId.nullable().optional(),
-    driverIds: z.array(AuthUserPublicId).nullable().optional(),
-    scheduleId: OperationTripSchedulePublicId.optional(),
-})
+export const TripRequestItem = TripItem.extend({})
 
 export type TripRequestItem = z.infer<typeof TripRequestItem>
 
 export const TripResponse = z.object({
     trips: z.array(
         z.object({
-            id: OperationTripPublicId,
             fromLocation: z.string(),
             toLocation: z.string(),
             distanceKm: z.number(),
@@ -67,7 +38,6 @@ export const TripResponse = z.object({
             companyName: z.string(),
             logoUrl: z.string(),
             plateNumber: z.string(),
-            driverIds: z.array(AuthUserPublicId).nullable(),
             type: OrganizationVehicleType,
             totalSeats: z.number(),
             status: OperationTripStatus,
@@ -83,7 +53,6 @@ export const TripStopResponse = z.object({
         z.object({
             address: z.string(),
             city: z.string(),
-            stationId: OperationStationPublicId,
             stopOrder: z.number(),
             price: z.number(),
         })
@@ -95,7 +64,6 @@ export type TripStopResponse = z.infer<typeof TripStopResponse>
 export const TripStopPickUpItem = z.object({
     address: z.string(),
     city: z.string(),
-    stationId: OperationStationPublicId,
     stopOrder: z.number(),
 })
 
@@ -110,7 +78,6 @@ export type TripStopPickupResponse = z.infer<typeof TripStopPickupResponse>
 export const TripSeatResponse = z.object({
     seats: z.array(
         z.object({
-            id: OrganizationSeatPublicId,
             seatNumber: z.string(),
             type: OrganizationSeatType,
             isAvailable: z.boolean(),
@@ -141,16 +108,13 @@ export const TripBody = z.object({
 
 export type TripBody = z.infer<typeof TripBody>
 
-export const TripRequestBody = TripBody.extend({
-    scheduleId: OperationTripSchedulePublicId,
-    companyId: OrganizationBusCompanyPublicId,
-})
+export const TripRequestBody = TripBody.extend({})
 
 export type TripRequestBody = z.infer<typeof TripRequestBody>
 
 export const TripPrepareResponse = z.object({
-    id: OperationTripPublicId,
-    companyId: OrganizationBusCompanyPublicId,
+    id: OperationTripId,
+    companyId: OrganizationBusCompanyId,
 })
 
 export type TripPrepareResponse = z.infer<typeof TripPrepareResponse>
@@ -158,7 +122,6 @@ export type TripPrepareResponse = z.infer<typeof TripPrepareResponse>
 export const DriverTripBody = z.object({
     trips: z.array(
         z.object({
-            id: OperationTripPublicId,
             type: OrganizationVehicleType,
             totalSeats: z.number(),
             fromLocation: z.string(),
@@ -179,8 +142,8 @@ export type DriverTripBody = z.infer<typeof DriverTripBody>
 export const TripPassengerResponse = z.object({
     passengers: z.array(
         z.object({
-            id: BookingTicketPublicId,
-            fullName: z.string(),
+            firstName: z.string(),
+            lastName: z.string(),
             phoneNumber: z.string().nullable(),
             seatNumber: z.string().nullable(),
             status: BookingStatus,
@@ -203,17 +166,16 @@ export const TripUpdateStatusBody = z.object({
 export type TripUpdateStatusBody = z.infer<typeof TripUpdateStatusBody>
 
 export const TripUpdateStatusResponse = z.object({
-    id: OperationTripPublicId,
     status: OperationTripStatus,
 })
 
 export type TripUpdateStatusResponse = z.infer<typeof TripUpdateStatusResponse>
 
-export const TripUpdateBody = TripItem.omit({ id: true })
+export const TripUpdateBody = TripItem
 
 export type TripUpdateBody = z.infer<typeof TripUpdateBody>
 
-export const TripUpdateRequestBody = TripRequestItem.omit({ id: true })
+export const TripUpdateRequestBody = TripRequestItem
 
 export type TripUpdateRequestBody = z.infer<typeof TripUpdateRequestBody>
 

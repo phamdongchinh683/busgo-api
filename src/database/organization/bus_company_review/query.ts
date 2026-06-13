@@ -1,3 +1,4 @@
+import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { BusCompanyReviewFilter } from '../../../model/query/review/index.js'
 
@@ -8,11 +9,11 @@ export async function findAllByCompany(query: BusCompanyReviewFilter) {
         .selectFrom('organization.bus_company_review as r')
         .innerJoin('auth.user as u', 'u.id', 'r.userId')
         .select([
-            'r.id as cursorId',
-            'r.publicId as id',
+            'r.id',
+            'r.id',
             'r.rating',
             'r.comment',
-            'u.fullName as reviewerName',
+            sql<string>`u.first_name || ' ' || u.last_name`.as('reviewerName'),
         ])
         .where(eb => {
             const cond = []

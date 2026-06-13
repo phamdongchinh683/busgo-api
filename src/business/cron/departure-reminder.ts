@@ -3,7 +3,7 @@ import { BookingStatus } from '../../database/booking/booking/type.js'
 import { BookingTicketStatus } from '../../database/booking/ticket/type.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripStatus } from '../../database/operation/trip/type.js'
-import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
 import { db } from '../../datasource/db.js'
 
 export async function departureReminder() {
@@ -18,7 +18,8 @@ export async function departureReminder() {
         .select([
             'u.id as userId',
             'u.email as email',
-            'u.fullName as fullName',
+            'u.firstName',
+            'u.lastName',
             'b.id as bookingId',
             'b.code as bookingCode',
             'trip.id as tripId',
@@ -34,14 +35,8 @@ export async function departureReminder() {
             const isCashPendingBooking = eb.and([
                 eb('b.status', '=', BookingStatus.enum.pending),
                 eb('t.status', '=', BookingTicketStatus.enum.reserved),
-                eb.exists(
-                    eb
-                        .selectFrom('payment.payment as pp')
-                        .select('pp.id')
-                        .whereRef('pp.bookingId', '=', 'b.id')
-                        .where('pp.method', '=', PaymentMethod.enum.cash)
-                        .where('pp.status', '=', PaymentStatus.enum.pending)
-                ),
+                eb('b.paymentMethod', '=', PaymentMethod.enum.cash),
+                eb('b.paymentStatus', '=', PaymentStatus.enum.pending),
             ])
 
             return eb.or([isPaidBooking, isCashPendingBooking])
@@ -72,7 +67,7 @@ export async function departureReminder() {
         .groupBy([
             'u.id',
             'u.email',
-            'u.fullName',
+            sql<string>`u.first_name || ' ' || u.last_name`,
             'b.id',
             'b.code',
             'trip.id',

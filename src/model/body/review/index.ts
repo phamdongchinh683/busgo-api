@@ -1,10 +1,7 @@
 import z from 'zod'
-import {
-    OrganizationBusCompanyReviewId,
-    OrganizationBusCompanyReviewPublicId,
-} from '../../../database/organization/bus_company_review/type.js'
-import { OperationTripId, OperationTripPublicId } from '../../../database/operation/trip/type.js'
-import { BookingTicketId, BookingTicketPublicId } from '../../../database/booking/ticket/type.js'
+import { OrganizationBusCompanyReviewId } from '../../../database/organization/bus_company_review/type.js'
+import { OperationTripId } from '../../../database/operation/trip/type.js'
+import { BookingTicketId } from '../../../database/booking/ticket/type.js'
 
 export const BusCompanyReviewBody = z.object({
     tripId: OperationTripId,
@@ -15,15 +12,7 @@ export const BusCompanyReviewBody = z.object({
 
 export type BusCompanyReviewBody = z.infer<typeof BusCompanyReviewBody>
 
-export const BusCompanyReviewRequestBody = BusCompanyReviewBody.extend({
-    tripId: OperationTripPublicId,
-    ticketId: BookingTicketPublicId,
-})
-
-export type BusCompanyReviewRequestBody = z.infer<typeof BusCompanyReviewRequestBody>
-
 export const BusCompanyReviewItemResponse = z.object({
-    id: OrganizationBusCompanyReviewPublicId,
     reviewerName: z.string(),
     rating: z.number().min(1).max(5),
     comment: z.string().nullable(),

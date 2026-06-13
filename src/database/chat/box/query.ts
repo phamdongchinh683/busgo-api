@@ -1,3 +1,4 @@
+import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { ChatBoxQuery } from '../../../model/query/chat/index.js'
@@ -30,17 +31,17 @@ export async function findAllByUserId(q: ChatBoxQuery, userId: AuthUserId) {
 
     return qb
         .select([
-            'b.id as cursorId',
-            'b.publicId as id',
+            'b.id',
+            'b.id',
             'b.lastMessage',
-            'sender.publicId as senderId',
-            'receiver.publicId as receiverId',
-            'peer.fullName as displayName',
+            'sender.id as senderId',
+            'receiver.id as receiverId',
+            sql<string>`peer.first_name || ' ' || peer.last_name`.as('displayName'),
             'b.senderMessageCount',
             'b.receiverMessageCount',
             'b.unreadReceiverCount',
             'b.unreadSenderCount',
-            'lastSender.publicId as lastMessageSenderId',
+            'lastSender.id as lastMessageSenderId',
         ])
         .orderBy('b.unreadReceiverCount', 'desc')
         .limit(limit + 1)

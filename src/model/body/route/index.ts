@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
+import { OperationRouteId } from '../../../database/operation/route/type.js'
 
 export const OperationRouteStopResponse = z.object({
     address: z.string(),
@@ -22,18 +22,12 @@ export const OperationRouteBody = z.object({
 export type OperationRouteBody = z.infer<typeof OperationRouteBody>
 
 export const OperationRouteInsertResponse = z.object({
-    route: OperationRouteBody.extend({
-        id: OperationRoutePublicId,
-    }),
+    route: OperationRouteBody.extend({}),
 })
 export type OperationRouteInsertResponse = z.infer<typeof OperationRouteInsertResponse>
 
 export const OperationRoutesResponse = z.object({
-    routes: z.array(
-        OperationRouteBody.extend({
-            id: OperationRoutePublicId,
-        })
-    ),
+    routes: z.array(OperationRouteBody.extend({})),
     next: OperationRouteId.nullable(),
 })
 export type OperationRoutesResponse = z.infer<typeof OperationRoutesResponse>

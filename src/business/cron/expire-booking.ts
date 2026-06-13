@@ -1,6 +1,6 @@
 import { BookingStatus } from '../../database/booking/booking/type.js'
 import { BookingTicketStatus } from '../../database/booking/ticket/type.js'
-import { PaymentStatus } from '../../database/payment/payment/type.js'
+import { PaymentStatus } from '../../database/booking/booking/type.js'
 import { utils } from '../../utils/index.js'
 import { db } from '../../datasource/db.js'
 import { dal } from '../../database/index.js'
@@ -56,12 +56,12 @@ export async function expireBooking() {
         )
 
         await trx
-            .updateTable('payment.payment as pp')
+            .updateTable('booking.booking')
             .set({
-                status: PaymentStatus.enum.failed,
+                paymentStatus: PaymentStatus.enum.failed,
             })
-            .where('pp.bookingId', 'in', updatedBookingIds)
-            .where('pp.status', '=', PaymentStatus.enum.pending)
+            .where('id', 'in', updatedBookingIds)
+            .where('paymentStatus', '=', PaymentStatus.enum.pending)
             .execute()
 
         const cancelledTickets = await trx

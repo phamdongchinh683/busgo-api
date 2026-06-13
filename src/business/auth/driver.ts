@@ -14,7 +14,8 @@ export async function register(
     await requireVerifiedContacts(body.contactInfo)
 
     const data = {
-        fullName: body.fullName,
+        firstName: body.firstName,
+        lastName: body.lastName,
         ...utils.common.parseContactInfo(body.contactInfo),
         password: utils.password.hashPassword(body.password),
         role,

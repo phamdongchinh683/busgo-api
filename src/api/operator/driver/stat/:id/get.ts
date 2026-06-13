@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const userId = await bus.publicId.resolve('user', request.params.id)
+        const { id: userId } = request.params
         return bus.organization.driverMonthlyStat.getDriverDetail(userId, userInfo.companyId)
     },
 

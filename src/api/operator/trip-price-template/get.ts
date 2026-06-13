@@ -13,8 +13,6 @@ api.route({
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
         const routeId = request.query.routeId
-            ? await bus.publicId.resolve('route', request.query.routeId)
-            : undefined
         return bus.operation.tripPriceTemplate.getTripPriceTemplates({
             q: { ...request.query, routeId },
             user: userInfo,

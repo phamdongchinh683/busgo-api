@@ -549,13 +549,17 @@ async function listSeats(state: AiChatState): Promise<AiChatResponse> {
             }
         }
 
-        const internalCompanyId = await dal.publicId.query.resolve('busCompany', companyId)
+        const internalCompanyId = companyId
         const preparedTrip = await operationTrip.prepareTrip({
             scheduleId,
             companyId: internalCompanyId,
             departureDate: state.departureDate,
         })
-        tripId = preparedTrip.internalId
+        tripId = preparedTrip.id
+    }
+
+    if (!tripId) {
+        throw new Error('Failed to prepare trip')
     }
 
     const result = await seat.getSeatsByTripId(tripId, stopOrderPickup, stopOrderDropoff)
@@ -614,7 +618,7 @@ async function createBookingFromState(params: {
         }
     }
 
-    const companyId = await dal.publicId.query.resolve('busCompany', params.state.companyId)
+    const companyId = params.state.companyId
     const result = await booking.initBooking(
         {
             ...(params.state.couponId

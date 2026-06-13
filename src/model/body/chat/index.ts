@@ -1,30 +1,23 @@
 import z from 'zod'
-import { AuthUserId, AuthUserPublicId } from '../../../database/auth/user/type.js'
-import { ChatMessageId, ChatMessagePublicId } from '../../../database/chat/message/type.js'
+import { AuthUserId } from '../../../database/auth/user/type.js'
+import { ChatMessageId } from '../../../database/chat/message/type.js'
 import { Email, Phone } from '../../common.js'
-import { ChatBoxId, ChatBoxPublicId } from '../../../database/chat/box/type.js'
-import {
-    OperationTripScheduleId,
-    OperationTripSchedulePublicId,
-} from '../../../database/operation/trip-schedule/type.js'
-import { OperationTripId, OperationTripPublicId } from '../../../database/operation/trip/type.js'
-import {
-    OperationStationId,
-    OperationStationPublicId,
-} from '../../../database/operation/station/type.js'
-import { OrganizationBusCompanyPublicId } from '../../../database/organization/bus_company/type.js'
+import { ChatBoxId } from '../../../database/chat/box/type.js'
+import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
+import { OperationTripId } from '../../../database/operation/trip/type.js'
+import { OperationStationId } from '../../../database/operation/station/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import {
     OrganizationSeatId,
-    OrganizationSeatPublicId,
     OrganizationSeatType,
 } from '../../../database/organization/seat/type.js'
-import { BookingCouponId, BookingCouponPublicId } from '../../../database/booking/coupon/type.js'
-import { BookingTicketId, BookingTicketPublicId } from '../../../database/booking/ticket/type.js'
-import { BookingId, BookingPublicId } from '../../../database/booking/booking/type.js'
+import { BookingCouponId } from '../../../database/booking/coupon/type.js'
+import { BookingTicketId } from '../../../database/booking/ticket/type.js'
+import { BookingId } from '../../../database/booking/booking/type.js'
 
 export const ChatBoxBody = z.object({
     message: z.string(),
-    receiverId: AuthUserPublicId,
+    receiverId: AuthUserId,
 })
 
 export type ChatBoxBody = z.infer<typeof ChatBoxBody>
@@ -54,7 +47,7 @@ export type AiChatAwaitingField = z.infer<typeof AiChatAwaitingField>
 
 export const AiChatScheduleOption = z.object({
     scheduleId: OperationTripScheduleId,
-    companyId: OrganizationBusCompanyPublicId,
+    companyId: OrganizationBusCompanyId,
     name: z.string(),
     fromLocation: z.string(),
     toLocation: z.string(),
@@ -100,7 +93,7 @@ export const AiChatState = z.object({
     selectedSeat: AiChatSeatOption.optional(),
     bookingId: BookingId.optional(),
     expiredAt: z.coerce.date().optional(),
-    companyId: OrganizationBusCompanyPublicId.optional(),
+    companyId: OrganizationBusCompanyId.optional(),
     couponId: BookingCouponId.optional(),
     fromStationId: OperationStationId.optional(),
     orderTotal: z.coerce.number().nonnegative().optional(),
@@ -114,37 +107,6 @@ export const AiChatState = z.object({
 
 export type AiChatState = z.infer<typeof AiChatState>
 
-export const AiChatPublicScheduleOption = AiChatScheduleOption.extend({
-    scheduleId: OperationTripSchedulePublicId,
-})
-
-export const AiChatPublicStopOption = AiChatStopOption.extend({
-    stationId: OperationStationPublicId,
-})
-
-export const AiChatPublicSeatOption = AiChatSeatOption.extend({
-    seatId: OrganizationSeatPublicId,
-})
-
-export const AiChatPublicState = AiChatState.extend({
-    scheduleOptions: z.array(AiChatPublicScheduleOption).optional(),
-    selectedSchedule: AiChatPublicScheduleOption.optional(),
-    pickupOptions: z.array(AiChatPublicStopOption).optional(),
-    selectedPickup: AiChatPublicStopOption.optional(),
-    dropoffOptions: z.array(AiChatPublicStopOption).optional(),
-    selectedDropoff: AiChatPublicStopOption.optional(),
-    seatOptions: z.array(AiChatPublicSeatOption).optional(),
-    selectedSeat: AiChatPublicSeatOption.optional(),
-    bookingId: BookingPublicId.optional(),
-    couponId: BookingCouponPublicId.optional(),
-    fromStationId: OperationStationPublicId.optional(),
-    scheduleId: OperationTripSchedulePublicId.optional(),
-    ticketId: BookingTicketPublicId.optional(),
-    tripId: OperationTripPublicId.optional(),
-})
-
-export type AiChatPublicState = z.infer<typeof AiChatPublicState>
-
 export const AiChatBody = z.object({
     message: z.string().trim().min(1),
     state: AiChatState.optional(),
@@ -152,9 +114,7 @@ export const AiChatBody = z.object({
 
 export type AiChatBody = z.infer<typeof AiChatBody>
 
-export const AiChatRequestBody = AiChatBody.extend({
-    state: AiChatPublicState.optional(),
-})
+export const AiChatRequestBody = AiChatBody
 
 export type AiChatRequestBody = z.infer<typeof AiChatRequestBody>
 
@@ -165,19 +125,12 @@ export const AiChatResponse = z.object({
 
 export type AiChatResponse = z.infer<typeof AiChatResponse>
 
-export const AiChatPublicResponse = AiChatResponse.extend({
-    state: AiChatPublicState.optional(),
-})
-
-export type AiChatPublicResponse = z.infer<typeof AiChatPublicResponse>
-
 export const ChatMessageResponse = z.object({
     messages: z.array(
         z.object({
-            id: ChatMessagePublicId,
+            id: ChatMessageId,
             message: z.string(),
-            senderId: AuthUserPublicId,
-            fullName: z.string(),
+            senderId: AuthUserId,
             phone: Phone.nullable(),
             email: Email.nullable(),
             createdAt: z.date(),
@@ -191,15 +144,15 @@ export type ChatMessageResponse = z.infer<typeof ChatMessageResponse>
 export const ChatBoxResponse = z.object({
     boxes: z.array(
         z.object({
-            id: ChatBoxPublicId,
+            id: ChatBoxId,
             lastMessage: z.string().nullable(),
-            senderId: AuthUserPublicId.nullable(),
-            receiverId: AuthUserPublicId.nullable(),
+            senderId: AuthUserId.nullable(),
+            receiverId: AuthUserId.nullable(),
             senderMessageCount: z.number().int().nonnegative(),
             receiverMessageCount: z.number().int().nonnegative(),
             unreadReceiverCount: z.number().int().nonnegative(),
             unreadSenderCount: z.number().int().nonnegative(),
-            lastMessageSenderId: AuthUserPublicId.nullable(),
+            lastMessageSenderId: AuthUserId.nullable(),
             displayName: z.string().nullable(),
         })
     ),
@@ -210,7 +163,7 @@ export type ChatBoxResponse = z.infer<typeof ChatBoxResponse>
 
 export const MarkReadResponse = z.object({
     message: z.string(),
-    boxId: ChatBoxPublicId,
+    boxId: ChatBoxId,
     unreadReceiverCount: z.number().int().nonnegative(),
     unreadSenderCount: z.number().int().nonnegative(),
 })

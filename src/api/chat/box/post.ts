@@ -10,7 +10,6 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
-        await bus.publicId.resolve('user', request.body.receiverId)
         return bus.chat.box.createBox({
             userInfo: userInfo,
             body: request.body,

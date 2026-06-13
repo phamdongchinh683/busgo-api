@@ -1,10 +1,7 @@
 import z from 'zod'
 import { OrderBy } from '../../common.js'
 import { OperationTripId } from '../../../database/operation/trip/type.js'
-import {
-    OperationStationId,
-    OperationStationPublicId,
-} from '../../../database/operation/station/type.js'
+import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripStatus } from '../../../database/operation/trip/type.js'
 
 export const TripFilter = z.object({
@@ -26,9 +23,7 @@ export const TripPickupQuery = z.object({
 
 export type TripPickupQuery = z.infer<typeof TripPickupQuery>
 
-export const TripPickupRequestQuery = TripPickupQuery.extend({
-    fromStationId: OperationStationPublicId,
-})
+export const TripPickupRequestQuery = TripPickupQuery.extend({})
 
 export type TripPickupRequestQuery = z.infer<typeof TripPickupRequestQuery>
 

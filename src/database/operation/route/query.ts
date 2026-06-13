@@ -12,7 +12,7 @@ export async function findAll(filter: RouteFilter) {
             return eb.and(cond)
         })
         .selectAll()
-        .select(['r.id as cursorId', 'r.publicId as id'])
+        .select(['r.id'])
         .limit(filter.limit + 1)
         .orderBy('r.id')
         .execute()

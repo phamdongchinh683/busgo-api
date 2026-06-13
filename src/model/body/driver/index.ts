@@ -1,15 +1,10 @@
-import {
-    AuthUserId,
-    AuthUserPublicId,
-    AuthUserRole,
-    AuthUserStatus,
-} from '../../../database/auth/user/type.js'
+import { AuthUserId, AuthUserRole, AuthUserStatus } from '../../../database/auth/user/type.js'
 import { Email, Phone } from '../../common.js'
 import { z } from 'zod'
 
 export const DriverResponse = z.object({
-    id: AuthUserPublicId,
-    fullName: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
     email: Email.nullable(),
     phone: Phone.nullable(),
     role: AuthUserRole,
@@ -29,16 +24,6 @@ export const DriverListResponse = z.object({
 })
 
 export type DriverListResponse = z.infer<typeof DriverListResponse>
-
-export const DriverStatResponse = z.object({
-    current: z.object({
-        year: z.number(),
-        month: z.number(),
-        completedTripCount: z.number(),
-        cancelledTripCount: z.number(),
-    }),
-})
-export type DriverStatResponse = z.infer<typeof DriverStatResponse>
 
 export const DriverStatsResponse = z.object({
     stats: z.array(

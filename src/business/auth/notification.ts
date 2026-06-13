@@ -1,5 +1,5 @@
 import { AuthNotificationId } from '../../database/auth/notification/type.js'
-import { AuthUserId, AuthUserPublicId } from '../../database/auth/user/type.js'
+import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { NotificationQuery } from '../../model/query/notification/index.js'
 import { utils } from '../../utils/index.js'
@@ -19,14 +19,6 @@ export async function getMyNotifications(query: NotificationQuery, userId: AuthU
     }
 }
 
-export async function markNotificationAsRead(
-    id: AuthNotificationId,
-    userId: AuthUserId,
-    userPublicId: AuthUserPublicId
-) {
-    const notification = await dal.auth.notification.cmd.markAsRead(id, userId)
-    return {
-        ...notification,
-        userId: userPublicId,
-    }
+export async function markNotificationAsRead(id: AuthNotificationId, userId: AuthUserId) {
+    return dal.auth.notification.cmd.markAsRead(id, userId)
 }

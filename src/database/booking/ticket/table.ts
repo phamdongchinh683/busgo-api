@@ -1,6 +1,6 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { BookingTicketId, BookingTicketPublicId, BookingTicketStatus } from './type.js'
+import { BookingTicketId, BookingTicketStatus } from './type.js'
 import { OrganizationSeatId } from '../../organization/seat/type.js'
 import { OperationStationId } from '../../operation/station/type.js'
 import { BookingId } from '../booking/type.js'
@@ -8,7 +8,6 @@ import { OperationTripId } from '../../operation/trip/type.js'
 
 export interface BookingTicketTable extends Timestamps {
     id: GeneratedAlways<BookingTicketId>
-    publicId: GeneratedAlways<BookingTicketPublicId>
     bookingId: BookingId
     tripId: OperationTripId
     seatId: OrganizationSeatId

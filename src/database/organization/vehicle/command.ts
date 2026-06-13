@@ -46,7 +46,7 @@ export async function createOrganizationVehicle(
         .values(params)
         .onConflict(oc => oc.column('plateNumber').doNothing())
         .returningAll()
-        .returning('publicId as id')
+        .returning('id')
         .executeTakeFirst()
 
     if (!vehicle) {
@@ -73,6 +73,6 @@ export async function updateOrganizationVehicle(
             return eb.and(cond)
         })
         .returningAll()
-        .returning('v.publicId as id')
+        .returning('v.id')
         .executeTakeFirstOrThrow()
 }

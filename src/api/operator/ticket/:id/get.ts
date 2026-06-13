@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const id = await bus.publicId.resolve('ticket', request.params.id)
+        const { id } = request.params
         return bus.booking.ticket.detailTicketSupport(id, userInfo.companyId)
     },
 

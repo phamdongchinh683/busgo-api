@@ -2,8 +2,10 @@ import _ from 'lodash'
 import { db } from '../../../datasource/db.js'
 import { BookingRequest } from '../../../model/body/booking/index.js'
 import { utils } from '../../../utils/index.js'
-import { BookingId, BookingStatus, BookingType } from './type.js'
+import { BookingId, BookingStatus, BookingType, PaymentMethod, PaymentStatus } from './type.js'
 import { BookingTicketStatus } from '../ticket/type.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
+import { BookingCouponId } from '../coupon/type.js'
 import { Database } from '../../../datasource/type.js'
 import { Transaction } from 'kysely'
 import { BookingTableInsert } from './table.js'
@@ -61,7 +63,7 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
         }
 
         return {
-            id: booking.publicId,
+            id: booking.id,
             internalId: booking.id,
             expiredAt: booking.expiredAt,
             message: 'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
@@ -189,7 +191,7 @@ export async function createRoundTripBooking(params: BookingRequest, userId: Aut
             }
 
             return {
-                id: booking.publicId,
+                id: booking.id,
                 internalId: booking.id,
                 expiredAt: booking.expiredAt,
                 message:
@@ -241,4 +243,148 @@ export async function updateExpiredBooking(id: BookingId, trx?: Transaction<Data
         .set({ expiredAt: null })
         .where('id', '=', id)
         .executeTakeFirstOrThrow()
+}
+
+// --- Payment related (consolidated; payment data now lives in booking.booking) ---
+
+export async function upsertPaymentForBooking(
+    bookingId: BookingId,
+    params: {
+        companyId?: OrganizationBusCompanyId | null
+        couponId?: BookingCouponId | null
+        amount?: number
+        method?: PaymentMethod | null
+        status?: PaymentStatus
+        transactionCode: string
+        paidAt?: Date | null
+        payDate?: string | null
+        transactionNo?: string | null
+    },
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
+        .updateTable('booking.booking')
+        .set({
+            companyId: params.companyId ?? undefined,
+            couponId: params.couponId ?? undefined,
+            paymentAmount: params.amount ?? undefined,
+            paymentMethod: params.method ?? undefined,
+            paymentStatus: params.status ?? undefined,
+            transactionCode: params.transactionCode,
+            paidAt: params.paidAt ?? undefined,
+            payDate: params.payDate ?? undefined,
+            transactionNo: params.transactionNo ?? undefined,
+        })
+        .where('id', '=', bookingId)
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
+
+export async function upsertPayment(
+    params: {
+        bookingId: BookingId
+        transactionCode: string
+        method?: PaymentMethod | null
+        status?: PaymentStatus
+        amount?: number
+    },
+    trx?: Transaction<Database>
+) {
+    return (trx ?? db)
+        .updateTable('booking.booking')
+        .set({
+            transactionCode: params.transactionCode,
+            paymentMethod: params.method ?? undefined,
+            paymentStatus: params.status ?? undefined,
+            paymentAmount: params.amount ?? undefined,
+        })
+        .where('id', '=', params.bookingId)
+        .returningAll()
+        .executeTakeFirstOrThrow()
+}
+
+export async function updatePaymentStatusSuccess(
+    transactionCode: string,
+    transactionNo: string,
+    payDate: string,
+    trx: Transaction<Database>
+) {
+    const booking = await (trx ?? db)
+        .selectFrom('booking.booking')
+        .select(['id', 'couponId'])
+        .where('transactionCode', '=', transactionCode)
+        .executeTakeFirst()
+
+    if (!booking) return
+
+    await (trx ?? db)
+        .updateTable('booking.booking')
+        .set({
+            paymentStatus: PaymentStatus.enum.success,
+            paidAt: utils.time.getNow().toDate(),
+            payDate,
+            transactionNo,
+            status: 'paid' as any,
+        })
+        .where('id', '=', booking.id)
+        .execute()
+
+    if (booking.couponId) {
+        await dal.booking.coupon.cmd.upCountUsedQuantity(booking.couponId, '+', trx)
+    }
+}
+
+export async function updatePaymentStatusFailed(
+    transactionCode: string,
+    tx: Transaction<Database>
+) {
+    await (tx ?? db)
+        .updateTable('booking.booking')
+        .set({
+            paymentStatus: PaymentStatus.enum.failed,
+            status: 'cancelled' as any,
+        })
+        .where('transactionCode', '=', transactionCode)
+        .execute()
+}
+
+export async function updatePaymentByTransactionCode(
+    transactionCode: string,
+    companyId: OrganizationBusCompanyId
+) {
+    return db.transaction().execute(async tx => {
+        const booking = await dal.booking.booking.query.getPaymentByTransactionCodeForUpdate(
+            transactionCode,
+            tx
+        )
+        if (!booking || booking.companyId !== companyId) {
+            throw new HttpErr.Forbidden('Bạn không có quyền cập nhật thanh toán này.')
+        }
+
+        await dal.booking.booking.cmd.updatePaymentStatusFailed(transactionCode, tx)
+        return { message: 'Thành công' }
+    })
+}
+
+export async function updatePaymentStatusByBookingId(
+    params: { id: BookingId; status: PaymentStatus },
+    trx?: Transaction<Database>
+) {
+    await (trx ?? db)
+        .updateTable('booking.booking')
+        .set({ paymentStatus: params.status })
+        .where('id', '=', params.id)
+        .execute()
+}
+
+export async function updateStatusPaymentTransaction(
+    status: PaymentStatus,
+    bookingId: BookingId,
+    trx?: Transaction<Database>
+) {
+    await (trx ?? db)
+        .updateTable('booking.booking')
+        .set({ paymentStatus: status })
+        .where('id', '=', bookingId)
+        .execute()
 }

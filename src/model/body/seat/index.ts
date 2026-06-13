@@ -1,9 +1,6 @@
 import { OperationTripId } from '../../../database/operation/trip/type.js'
 import z from 'zod'
-import {
-    OrganizationVehicleId,
-    OrganizationVehiclePublicId,
-} from '../../../database/organization/vehicle/type.js'
+import { OrganizationVehicleId } from '../../../database/organization/vehicle/type.js'
 
 export const SeatBody = z.object({
     id: OperationTripId,
@@ -23,8 +20,6 @@ export const SeatCreateBody = z.object({
 
 export type SeatCreateBody = z.infer<typeof SeatCreateBody>
 
-export const SeatCreateRequestBody = SeatCreateBody.extend({
-    vehicleId: OrganizationVehiclePublicId,
-})
+export const SeatCreateRequestBody = SeatCreateBody.extend({})
 
 export type SeatCreateRequestBody = z.infer<typeof SeatCreateRequestBody>

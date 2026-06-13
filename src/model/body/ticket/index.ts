@@ -1,22 +1,10 @@
 import z from 'zod'
-import {
-    BookingTicketId,
-    BookingTicketPublicId,
-    BookingTicketStatus,
-} from '../../../database/booking/ticket/type.js'
-import {
-    BookingPublicId,
-    BookingStatus,
-    BookingType,
-} from '../../../database/booking/booking/type.js'
+import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
+import { BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OrganizationVehicleType } from '../../../database/organization/vehicle/type.js'
-import {
-    OperationTripPublicId,
-    OperationTripStatus,
-} from '../../../database/operation/trip/type.js'
+import { OperationTripStatus } from '../../../database/operation/trip/type.js'
 
 export const TicketBody = z.object({
-    id: BookingTicketPublicId,
     status: BookingStatus,
     bookingType: BookingType,
     originalAmount: z.number(),
@@ -31,7 +19,6 @@ export const TicketCancelResponse = z.object({
     message: z.string(),
     tickets: z.array(
         z.object({
-            id: BookingTicketPublicId,
             status: BookingTicketStatus,
         })
     ),
@@ -41,9 +28,7 @@ export type TicketCancelResponse = z.infer<typeof TicketCancelResponse>
 export const TicketsResponse = z.object({
     tickets: z.array(
         TicketBody.extend({
-            bookingId: BookingPublicId,
             departureDate: z.date().nullable(),
-            tripId: OperationTripPublicId.nullable(),
             tripStatus: OperationTripStatus.nullable(),
             expiredAt: z.date().nullable(),
         })
@@ -55,7 +40,6 @@ export type TicketsResponse = z.infer<typeof TicketsResponse>
 
 export const TicketResponse = z.object({
     ticket: z.object({
-        id: BookingTicketPublicId,
         status: BookingStatus.nullable(),
         code: z.string().nullable(),
         bookingType: BookingType.nullable(),
@@ -83,7 +67,6 @@ export type TicketStatusBody = z.infer<typeof TicketStatusBody>
 export const TicketCheckInResponse = z.object({
     message: z.string(),
     ticket: z.object({
-        id: BookingTicketPublicId,
         status: BookingTicketStatus,
     }),
 })
@@ -91,7 +74,6 @@ export type TicketCheckInResponse = z.infer<typeof TicketCheckInResponse>
 
 export const TicketSupportResponse = z.object({
     ticket: z.object({
-        id: BookingTicketPublicId,
         status: BookingStatus,
         code: z.string(),
         bookingType: BookingType,

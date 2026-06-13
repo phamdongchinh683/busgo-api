@@ -5,7 +5,7 @@ export async function findAllByUserId(userId: AuthUserId) {
     return db
         .selectFrom('auth.user_device')
         .selectAll()
-        .select('publicId as id')
+        .select('id')
         .where('userId', '=', userId)
         .execute()
 }

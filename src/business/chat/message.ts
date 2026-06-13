@@ -32,7 +32,6 @@ export async function sendMessage(
             data: {
                 messageId: String(result.row.id),
                 boxId: String(result.box.id),
-                senderName: userInfo.fullName,
                 body: result.row.body,
                 senderId: result.row.senderId,
                 receiverId,

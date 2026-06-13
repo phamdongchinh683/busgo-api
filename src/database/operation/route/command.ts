@@ -38,7 +38,7 @@ export async function createRoute(params: OperationRouteTableInsert, trx?: Trans
         .values(data)
         .onConflict(oc => oc.columns(['fromLocation', 'toLocation']).doNothing())
         .returningAll()
-        .returning('publicId as id')
+        .returning('id')
         .executeTakeFirst()
 
     if (!route) {

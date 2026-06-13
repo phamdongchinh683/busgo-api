@@ -12,7 +12,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
-        const tripId = await bus.publicId.resolve('trip', request.params.id)
+        const { id: tripId } = request.params
         const { stopOrderPickup, stopOrderDropoff } = request.query
         const result = await bus.organization.seat.getSeatsByTripId(
             tripId,
@@ -20,8 +20,8 @@ api.route({
             stopOrderDropoff
         )
         return {
-            seats: result.seats.map(({ id: _seatId, publicId, seatNumber, type, isAvailable }) => ({
-                id: publicId,
+            seats: result.seats.map(({ id, seatNumber, type, isAvailable }) => ({
+                id,
                 seatNumber,
                 type,
                 isAvailable,

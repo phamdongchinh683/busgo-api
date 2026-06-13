@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
-        const companyId = await bus.publicId.resolve('busCompany', request.query.companyId)
+        const { companyId } = request.query
         return bus.organization.review.getReviewByCompany({
             ...request.query,
             companyId,

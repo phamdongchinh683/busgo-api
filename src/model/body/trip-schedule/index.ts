@@ -1,19 +1,10 @@
 import z from 'zod'
-import {
-    OperationTripScheduleId,
-    OperationTripSchedulePublicId,
-} from '../../../database/operation/trip-schedule/type.js'
-import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../../../database/organization/bus_company/type.js'
+import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { StatusFlag } from '../../common.js'
+import { OperationRouteId } from '../../../database/operation/route/type.js'
 
 export const TripScheduleItemResponse = z.object({
-    id: OperationTripSchedulePublicId,
-    routeId: OperationRoutePublicId,
-    companyId: OrganizationBusCompanyPublicId,
     departureTime: z.string(),
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
@@ -25,7 +16,6 @@ export type TripScheduleItemResponse = z.infer<typeof TripScheduleItemResponse>
 export const TripScheduleResponse = z.object({
     trip: z.array(
         z.object({
-            id: OperationTripSchedulePublicId,
             departureTime: z.string(),
             name: z.string(),
             logoUrl: z.string(),
@@ -36,7 +26,6 @@ export const TripScheduleResponse = z.object({
             startDate: z.coerce.date(),
             endDate: z.coerce.date(),
             status: StatusFlag,
-            companyId: OrganizationBusCompanyPublicId,
             durationMinutes: z.number(),
             totalStars: z.number().min(0).max(5),
         })
@@ -47,7 +36,7 @@ export const TripScheduleResponse = z.object({
 export type TripScheduleResponse = z.infer<typeof TripScheduleResponse>
 
 export const TripScheduleUpdateResponse = z.object({
-    tripSchedule: TripScheduleItemResponse.omit({ companyId: true, routeId: true }),
+    tripSchedule: TripScheduleItemResponse,
 })
 
 export type TripScheduleUpdateResponse = z.infer<typeof TripScheduleUpdateResponse>
@@ -72,9 +61,6 @@ export type TripScheduleUpdateBody = z.infer<typeof TripScheduleUpdateBody>
 
 export type TripScheduleBody = z.infer<typeof TripScheduleBody>
 
-export const TripScheduleRequestBody = TripScheduleBody.extend({
-    routeId: OperationRoutePublicId,
-    companyId: OrganizationBusCompanyPublicId,
-})
+export const TripScheduleRequestBody = TripScheduleBody.extend({})
 
 export type TripScheduleRequestBody = z.infer<typeof TripScheduleRequestBody>

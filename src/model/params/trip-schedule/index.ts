@@ -1,16 +1,12 @@
-import { OperationTripSchedulePublicId } from '../../../database/operation/trip-schedule/type.js'
-import { OperationTripPublicId } from '../../../database/operation/trip/type.js'
 import z from 'zod'
+import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 
 export const TripScheduleIdParam = z.object({
-    id: OperationTripSchedulePublicId,
+    id: OperationTripScheduleId,
 })
 
 export type TripScheduleIdParam = z.infer<typeof TripScheduleIdParam>
 
-export const TripScheduleTripIdParam = z.object({
-    id: OperationTripSchedulePublicId,
-    tripId: OperationTripPublicId,
-})
+export const TripScheduleTripIdParam = z.object({})
 
 export type TripScheduleTripIdParam = z.infer<typeof TripScheduleTripIdParam>

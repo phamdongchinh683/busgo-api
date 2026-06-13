@@ -1,9 +1,8 @@
-import { HttpErr } from '../../app/index.js'
+import { HttpErr, jwt } from '../../app/index.js'
 import { AUTH_USER_STATUS, AuthUserRole } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { AuthSignInBody } from '../../model/body/auth/index.js'
 import { utils } from '../../utils/index.js'
-import { buildAuthResponse } from './session.js'
 
 export async function byEmailOrPhone(params: AuthSignInBody) {
     return signIn(params, false)
@@ -14,7 +13,7 @@ export async function byEmailOrPhoneSuperAdmin(params: AuthSignInBody) {
 }
 
 async function signIn(params: AuthSignInBody, isSuperAdminSignIn: boolean) {
-    const user = await dal.auth.user.query.getAuthUser({
+    const user = await dal.auth.user.query.getOne({
         email: params.email,
         phone: params.phone,
     })
@@ -41,5 +40,9 @@ async function signIn(params: AuthSignInBody, isSuperAdminSignIn: boolean) {
         throw new HttpErr.Unauthorized('Mật khẩu không chính xác.')
     }
 
-    return buildAuthResponse(user)
+    return {
+        message: 'Thành công',
+        token: jwt.auth.generateToken(user),
+        user: user,
+    }
 }

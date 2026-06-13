@@ -1,8 +1,5 @@
 import z from 'zod'
-import {
-    BookingPromotionNewsId,
-    BookingPromotionNewsPublicId,
-} from '../../../database/booking/promotion_new/type.js'
+import { BookingPromotionNewsId } from '../../../database/booking/promotion_new/type.js'
 
 export const PromotionNewsBody = z.object({
     title: z.string().trim().min(1).max(255),
@@ -16,20 +13,14 @@ export const PromotionNewsBody = z.object({
 export type PromotionNewsBody = z.infer<typeof PromotionNewsBody>
 
 export const PromotionNewsListResponse = z.object({
-    items: z.array(
-        PromotionNewsBody.extend({
-            id: BookingPromotionNewsPublicId,
-        })
-    ),
+    items: z.array(PromotionNewsBody.extend({})),
     next: BookingPromotionNewsId.nullable(),
 })
 
 export type PromotionNewsListResponse = z.infer<typeof PromotionNewsListResponse>
 
 export const PromotionNewsCreateResponse = z.object({
-    item: PromotionNewsBody.extend({
-        id: BookingPromotionNewsPublicId,
-    }),
+    item: PromotionNewsBody.extend({}),
 })
 
 export type PromotionNewsCreateResponse = z.infer<typeof PromotionNewsCreateResponse>

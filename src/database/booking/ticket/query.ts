@@ -26,8 +26,8 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             return eb.and(cond)
         })
         .select([
-            't.id as cursorId',
-            't.publicId as id',
+            't.id',
+            't.id',
             'trip.id as tripId',
             'b.code',
             'b.bookingType',
@@ -67,12 +67,11 @@ export async function findAllPublic(q: TicketFilter, userId: AuthUserId) {
             return eb.and(cond)
         })
         .select([
-            't.id as cursorId',
-            't.publicId as id',
-            'trip.publicId as tripId',
+            't.id',
+            'trip.id as tripId',
             'b.code',
             'b.bookingType',
-            'b.publicId as bookingId',
+            'b.id as bookingId',
             'trip.departureDate',
             'b.originalAmount',
             'b.discountAmount',
@@ -105,7 +104,7 @@ export async function findById(id: BookingTicketId, userId: AuthUserId) {
             return eb.and(cond)
         })
         .select([
-            't.publicId as id',
+            't.id',
             'b.code',
             'b.bookingType',
             'b.originalAmount',
@@ -161,10 +160,10 @@ export async function findPassengersByDriverAndTripId(
             return eb.and(cond)
         })
         .select([
-            't.id as cursorId',
-            't.publicId as id',
+            't.id',
             'u.phone as phoneNumber',
-            'u.fullName as fullName',
+            'u.firstName',
+            'u.lastName',
             'seat.seatNumber',
             'b.status',
             't.status as ticketStatus',
@@ -230,16 +229,15 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             return eb.and(cond)
         })
         .select([
-            't.id as cursorId',
-            't.publicId as id',
+            't.id',
             'b.code',
             'b.bookingType',
             'b.originalAmount',
             'b.discountAmount',
             'b.totalAmount',
-            'trip.publicId as tripId',
+            'trip.id as tripId',
             'trip.status as tripStatus',
-            'b.publicId as bookingId',
+            'b.id as bookingId',
             'b.status',
             'trip.departureDate',
             'b.expiredAt',
@@ -262,7 +260,7 @@ export async function findByIdSupport(id: BookingTicketId, companyId: Organizati
             return eb.and(cond)
         })
         .select([
-            't.publicId as id',
+            't.id',
             'b.code',
             'b.bookingType',
             'b.originalAmount',

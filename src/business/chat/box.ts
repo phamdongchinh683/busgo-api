@@ -10,24 +10,21 @@ import { ws } from '../../app/index.js'
 export async function createBox(params: { userInfo: UserInfo; body: ChatBoxBody }) {
     const { userInfo, body } = params
 
-    const receiverId = await dal.publicId.query.resolve('user', body.receiverId)
-
     const result = await dal.chat.box.cmd.createOne({
         body: {
             ...body,
-            receiverId,
+            receiverId: body.receiverId,
         },
         createdBy: userInfo.id,
     })
 
     await ws.publish.emitEvent({
-        targetId: String(receiverId),
+        targetId: String(body.receiverId),
         event: 'chat:new',
         data: {
             boxId: String(result.boxId),
             senderId: userInfo.id,
-            senderName: userInfo.fullName,
-            receiverId,
+            receiverId: body.receiverId,
             body: result.body,
             createdAt: result.createdAt,
         },
@@ -54,7 +51,7 @@ export async function markRead(boxId: ChatBoxId, userId: AuthUserId) {
 
     return {
         message: 'Thành công',
-        boxId: row.publicId,
+        boxId: row.id,
         unreadReceiverCount: row.unreadReceiverCount,
         unreadSenderCount: row.unreadSenderCount,
     }

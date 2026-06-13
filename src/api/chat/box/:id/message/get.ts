@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
-        const boxId = await bus.publicId.resolve('chatBox', request.params.id)
+        const { id: boxId } = request.params
         return bus.chat.message.getMessages(
             {
                 boxId,

@@ -12,16 +12,9 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
+        const { id } = request.params
         const { fromStationId, stopOrder } = request.query
-        const [id, internalFromStationId] = await Promise.all([
-            bus.publicId.resolve('tripSchedule', request.params.id),
-            bus.publicId.resolve('station', fromStationId),
-        ])
-        return bus.operation.tripSchedule.getDropoffStopsPublic(
-            id,
-            internalFromStationId,
-            stopOrder
-        )
+        return bus.operation.tripSchedule.getDropoffStopsPublic(id, fromStationId, stopOrder)
     },
 
     schema: {

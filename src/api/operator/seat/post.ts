@@ -12,7 +12,7 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const vehicleId = await bus.publicId.resolve('vehicle', request.body.vehicleId)
+        const { vehicleId } = request.body
         return bus.organization.seat.createSeat({ ...request.body, vehicleId }, userInfo.companyId)
     },
 

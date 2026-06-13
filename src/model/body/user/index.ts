@@ -1,20 +1,17 @@
 import { Email, MessageResponse, Phone } from '../../common.js'
 import {
     AuthUserId,
-    AuthUserPublicId,
     AuthUserRole,
     AuthUserStatus,
     AuthUserStatusQuery,
 } from '../../../database/auth/user/type.js'
 import z from 'zod'
 import { AuthPassword } from '../auth/index.js'
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../../../database/organization/bus_company/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 
 export const UserBody = z.object({
-    fullName: z.string().min(7),
+    firstName: z.string(),
+    lastName: z.string(),
     email: Email,
     phone: Phone.nullable(),
     status: AuthUserStatus,
@@ -25,7 +22,8 @@ export const UserBody = z.object({
 export type UserBody = z.infer<typeof UserBody>
 
 export const UserUpdateBody = z.object({
-    fullName: z.string().min(7).optional(),
+    firstName: z.string(),
+    lastName: z.string(),
     email: Email.optional(),
     phone: Phone.optional(),
     status: AuthUserStatus.optional(),
@@ -52,7 +50,6 @@ export type UserLoginProvider = z.infer<typeof UserLoginProvider>
 export const UserListResponse = z.object({
     users: z.array(
         UserBody.extend({
-            id: AuthUserPublicId,
             email: Email.nullable(),
             facebookId: z.string().nullable(),
             googleId: z.string().nullable(),
@@ -76,16 +73,13 @@ export const UserListQuery = z.object({
 
 export type UserListQuery = z.infer<typeof UserListQuery>
 
-export const UserListRequestQuery = UserListQuery.extend({
-    companyId: OrganizationBusCompanyPublicId.optional(),
-})
+export const UserListRequestQuery = UserListQuery.extend({})
 
 export type UserListRequestQuery = z.infer<typeof UserListRequestQuery>
 
 export const UserResponseMessage = z.object({
     ...MessageResponse.shape,
     user: UserBody.extend({
-        id: AuthUserPublicId,
         email: Email.nullable(),
     }).omit({ password: true }),
 })

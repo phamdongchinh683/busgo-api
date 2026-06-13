@@ -10,7 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
-        const id = await bus.publicId.resolve('chatBox', request.params.id)
+        const { id } = request.params
         return bus.chat.box.markRead(id, userInfo.id)
     },
     schema: {

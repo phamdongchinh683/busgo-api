@@ -135,7 +135,7 @@ export async function createOne(body: CouponBody & { companyId: OrganizationBusC
         .insertInto('booking.coupon')
         .values(data)
         .returningAll()
-        .returning('publicId as id')
+        .returning('id')
         .executeTakeFirstOrThrow()
 }
 
@@ -155,7 +155,7 @@ export async function updateOne(
         })
 
         .returningAll()
-        .returning('publicId as id')
+        .returning('id')
         .executeTakeFirstOrThrow()
 }
 

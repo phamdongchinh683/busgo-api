@@ -2,7 +2,6 @@ import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import {
     OrganizationVehicleId,
-    OrganizationVehiclePublicId,
     OrganizationVehicleType,
     OrganizationVehicleStatus,
 } from './type.js'
@@ -10,7 +9,6 @@ import { OrganizationBusCompanyId } from '../bus_company/type.js'
 
 export interface OrganizationVehicleTable extends Timestamps {
     id: GeneratedAlways<OrganizationVehicleId>
-    publicId: GeneratedAlways<OrganizationVehiclePublicId>
     plateNumber: string
     type: OrganizationVehicleType
     companyId: OrganizationBusCompanyId

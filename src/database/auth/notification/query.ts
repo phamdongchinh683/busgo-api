@@ -14,7 +14,7 @@ export async function findAllByUserId(query: {
         .selectFrom('auth.notification as n')
         .innerJoin('auth.user as u', 'u.id', 'n.userId')
         .selectAll('n')
-        .select(['n.id as cursorId', 'n.publicId as id', 'u.publicId as userId'])
+        .select(['n.id', 'u.id as userId'])
         .where(eb => {
             const cond = []
             if (next) {

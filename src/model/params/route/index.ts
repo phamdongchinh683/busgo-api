@@ -1,7 +1,7 @@
-import { OperationRoutePublicId } from '../../../database/operation/route/type.js'
+import { OperationRouteId } from '../../../database/operation/route/type.js'
 import z from 'zod'
 
 export const OperationRouteIdParam = z.object({
-    id: OperationRoutePublicId,
+    id: OperationRouteId,
 })
 export type OperationRouteIdParam = z.infer<typeof OperationRouteIdParam>

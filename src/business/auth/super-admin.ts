@@ -1,19 +1,16 @@
 import { dal } from '../../database/index.js'
-import { CompanyAdminQuery } from '../../model/query/company-admin/index.js'
-import { CompanyAdminCreateBody } from '../../model/body/company-admin/index.js'
-import { utils } from '../../utils/index.js'
 import { AuthUserId, AuthUserStatus } from '../../database/auth/user/type.js'
-import { UserBody, UserUpdateBody } from '../../model/body/user/index.js'
 import { AuthPassword } from '../../model/body/auth/index.js'
-import { UserListQuery } from '../../model/body/user/index.js'
 import { PeriodUserQuery } from '../../model/query/user/index.js'
+import type { UserListQuery } from '../../model/body/user/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
+import { utils } from '../../utils/index.js'
 
 export async function getDashboard() {
     const [totalUsers, totalBookings, totalRevenue, totalCompanies] = await Promise.all([
         dal.auth.user.query.countAll(),
         dal.booking.booking.query.countAll(),
-        dal.payment.payment.query.getTotalRevenue(),
+        dal.booking.booking.query.getTotalRevenue(),
         dal.organization.busCompany.query.countAll(),
     ])
     return {
@@ -26,24 +23,6 @@ export async function getDashboard() {
     }
 }
 
-export async function listCompanyAdmins(query: CompanyAdminQuery) {
-    const result = await dal.organization.companyMember.query.findAllCompanyAdmins(query)
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
-    return {
-        admins: data,
-        next,
-    }
-}
-
-export async function updateOne(id: AuthUserId, body: UserUpdateBody) {
-    const user = await dal.auth.user.cmd.updateOneForPublicResponse(id, body)
-    await utils.cache.delCacheByPattern('driver:list:*')
-
-    return {
-        user,
-    }
-}
-
 export async function updateNewPassword(id: AuthUserId, password: AuthPassword) {
     await dal.auth.user.cmd.updatePassword({
         userId: id,
@@ -51,36 +30,6 @@ export async function updateNewPassword(id: AuthUserId, password: AuthPassword) 
     })
     return {
         message: 'Thành công',
-    }
-}
-
-export async function listUsers(query: UserListQuery) {
-    const result = await dal.auth.user.query.findAll(query)
-    const { data, next } = utils.common.paginateByCursor(result, query.limit)
-    return {
-        users: data,
-        next,
-    }
-}
-
-export async function createUser(body: UserBody) {
-    return dal.auth.user.cmd.signUp({
-        password: utils.password.hashPassword(body.password),
-        fullName: body.fullName,
-        email: body.email,
-        phone: body.phone,
-        role: body.role,
-        status: body.status,
-    })
-}
-
-export async function deleteOne(id: AuthUserId) {
-    const user = await dal.auth.user.cmd.deleteOneForPublicResponse(id)
-    await utils.cache.delCacheByPattern('driver:list:*')
-
-    return {
-        message: 'Thành công',
-        user: user,
     }
 }
 
@@ -95,11 +44,27 @@ export async function verifyAccount(params: {
     companyId?: OrganizationBusCompanyId | null
 }) {
     await dal.auth.user.cmd.verify(params)
-    await utils.cache.delCacheByPattern(
-        params.companyId ? `driver:list:${params.companyId}:*` : 'driver:list:*'
-    )
 
     return {
         message: 'Thành công',
     }
+}
+
+export async function listUsers(query: UserListQuery) {
+    const rows = await dal.auth.user.query.findAll(query)
+    const { data, next } = utils.common.paginateByCursor(rows, query.limit)
+    return {
+        users: data,
+        next,
+    }
+}
+
+export async function updateOne(id: AuthUserId, data: Record<string, unknown>) {
+    await dal.auth.user.cmd.updateOne(id, data)
+    return { message: 'Thành công' }
+}
+
+export async function deleteOne(id: AuthUserId) {
+    await dal.auth.user.cmd.deleteOne(id)
+    return { message: 'Thành công' }
 }

@@ -1,9 +1,6 @@
 import z from 'zod'
 import { BookingCouponId, BookingDiscountType } from '../../../database/booking/coupon/type.js'
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../../../database/organization/bus_company/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { StatusFlag } from '../../common.js'
 
 export const CouponCheckCodeQuery = z.object({
@@ -14,9 +11,7 @@ export const CouponCheckCodeQuery = z.object({
 })
 export type CouponCheckCodeQuery = z.infer<typeof CouponCheckCodeQuery>
 
-export const CouponCheckCodeRequestQuery = CouponCheckCodeQuery.extend({
-    companyId: OrganizationBusCompanyPublicId.optional(),
-})
+export const CouponCheckCodeRequestQuery = CouponCheckCodeQuery.extend({})
 export type CouponCheckCodeRequestQuery = z.infer<typeof CouponCheckCodeRequestQuery>
 
 export const CouponFilter = z.object({
@@ -27,9 +22,7 @@ export const CouponFilter = z.object({
 
 export type CouponFilter = z.infer<typeof CouponFilter>
 
-export const CouponRequestFilter = CouponFilter.extend({
-    companyId: OrganizationBusCompanyPublicId.optional(),
-})
+export const CouponRequestFilter = CouponFilter.extend({})
 
 export type CouponRequestFilter = z.infer<typeof CouponRequestFilter>
 

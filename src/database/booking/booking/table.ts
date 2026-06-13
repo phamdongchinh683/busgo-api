@@ -1,12 +1,12 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { BookingId, BookingPublicId, BookingStatus, BookingType } from './type.js'
+import { BookingId, BookingStatus, BookingType, PaymentMethod, PaymentStatus } from './type.js'
 import { BookingCouponId } from '../coupon/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
+import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 
 export interface BookingTable extends Timestamps {
     id: GeneratedAlways<BookingId>
-    publicId: GeneratedAlways<BookingPublicId>
     userId: AuthUserId
     couponId: BookingCouponId | null
     code: string
@@ -16,6 +16,14 @@ export interface BookingTable extends Timestamps {
     totalAmount: number
     status: BookingStatus
     expiredAt: Date | null
+    companyId: OrganizationBusCompanyId | null
+    paymentAmount: number | null
+    paymentMethod: PaymentMethod | null
+    paymentStatus: PaymentStatus | null
+    transactionCode: string | null
+    paidAt: Date | null
+    payDate: string | null
+    transactionNo: string | null
 }
 
 export type BookingTableInsert = Insertable<BookingTable>

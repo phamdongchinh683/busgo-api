@@ -2,8 +2,8 @@ import ExcelJS from 'exceljs'
 import type {
     CompanyRevenueMonthlyRow,
     CompanyRevenueYearlyRow,
-} from '../../database/payment/payment/query.js'
-import type { PaymentMethod } from '../../database/payment/payment/type.js'
+} from '../../database/booking/booking/query.js'
+import type { PaymentMethod } from '../../database/booking/booking/type.js'
 
 type RevenueSheetMeta = { year: number; method: PaymentMethod }
 

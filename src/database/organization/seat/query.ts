@@ -38,7 +38,7 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
     return db
         .selectFrom('organization.seat as s')
         .where('s.vehicleId', '=', vehicleId)
-        .select(['s.id', 's.publicId', 's.seatNumber', 's.type'])
+        .select(['s.id', 's.seatNumber', 's.type'])
         .orderBy('s.type', 'asc')
         .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
         .orderBy('s.seatNumber', 'asc')
@@ -46,13 +46,13 @@ export function getSeatsByVehicle(vehicleId: OrganizationVehicleId) {
 }
 
 export async function getSeatsWithAvailability(params: TripSeatParam) {
-    const tripPublicId = params.id
+    const tripId = (params as any).id
     const { stopOrderPickup, stopOrderDropoff } = params
 
     return db
         .selectFrom('organization.seat as s')
         .select(eb => [
-            's.publicId as id',
+            's.id',
             's.seatNumber',
             's.type',
             eb
@@ -73,7 +73,7 @@ export async function getSeatsWithAvailability(params: TripSeatParam) {
                             )
                             .select('ss.id')
                             .whereRef('ss.seatId', '=', 's.id')
-                            .where('t.publicId', '=', tripPublicId)
+                            .where('t.id', '=', tripId)
                             .where('fromStop.stopOrder', '<', stopOrderDropoff)
                             .where('toStop.stopOrder', '>', stopOrderPickup)
                     )
@@ -82,7 +82,7 @@ export async function getSeatsWithAvailability(params: TripSeatParam) {
                 .as('isAvailable'),
         ])
         .where('s.vehicleId', '=', eb =>
-            eb.selectFrom('operation.trip').select('vehicleId').where('publicId', '=', tripPublicId)
+            eb.selectFrom('operation.trip').select('vehicleId').where('id', '=', tripId)
         )
         .orderBy('s.type', 'asc')
         .orderBy(sql<number>`regexp_replace(s.seat_number, '\\D', '', 'g')::int`, 'asc')
@@ -99,7 +99,6 @@ export async function getSeatsWithAvailabilityByTripId(
         .selectFrom('organization.seat as s')
         .select(eb => [
             's.id',
-            's.publicId',
             's.seatNumber',
             's.type',
             eb

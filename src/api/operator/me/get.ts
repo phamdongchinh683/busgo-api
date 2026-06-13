@@ -11,7 +11,24 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        return bus.organization.busCompany.getOne(userInfo.companyId)
+        const c = await bus.organization.busCompany.getOne(userInfo.companyId)
+        if (!c)
+            throw new (await import('../../../app/index.js')).HttpErr.NotFound('Company not found')
+        const company = {
+            name: c.name,
+            hotline: c.hotline,
+            logoUrl: c.logoUrl,
+            address: c.address,
+            latitude: c.latitude,
+            longitude: c.longitude,
+            reviewCount: c.reviewCount,
+            star1: c.star1,
+            star2: c.star2,
+            star3: c.star3,
+            star4: c.star4,
+            star5: c.star5,
+        }
+        return { company }
     },
 
     schema: {

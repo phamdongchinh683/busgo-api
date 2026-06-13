@@ -11,11 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const companyId = await bus.publicId.resolve('busCompany', request.body.companyId)
-        return bus.auth.adminRegister.registerCompanyAdmin({
-            ...request.body,
-            companyId,
-        })
+        return bus.auth.signup.registerOperator(request.body)
     },
 
     schema: {

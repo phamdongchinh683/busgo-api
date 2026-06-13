@@ -1,17 +1,8 @@
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../../../database/organization/bus_company/type.js'
-import { OperationRouteId, OperationRoutePublicId } from '../../../database/operation/route/type.js'
-import {
-    OperationStationId,
-    OperationStationPublicId,
-} from '../../../database/operation/station/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
+import { OperationStationId } from '../../../database/operation/station/type.js'
+import { OperationRouteId } from '../../../database/operation/route/type.js'
 import z from 'zod'
-import {
-    OperationTripPriceTemplateId,
-    OperationTripPriceTemplatePublicId,
-} from '../../../database/operation/trip_price_template/type.js'
+import { OperationTripPriceTemplateId } from '../../../database/operation/trip_price_template/type.js'
 import { StatusFlag } from '../../common.js'
 
 export const TripPriceTemplateBody = z.object({
@@ -25,25 +16,18 @@ export const TripPriceTemplateBody = z.object({
 
 export type TripPriceTemplateBody = z.infer<typeof TripPriceTemplateBody>
 
-export const TripPriceTemplateRequestBody = TripPriceTemplateBody.extend({
-    companyId: OrganizationBusCompanyPublicId.optional(),
-    routeId: OperationRoutePublicId.optional(),
-    fromStationId: OperationStationPublicId.optional(),
-    toStationId: OperationStationPublicId.optional(),
-})
+export const TripPriceTemplateRequestBody = TripPriceTemplateBody.extend({})
 
 export type TripPriceTemplateRequestBody = z.infer<typeof TripPriceTemplateRequestBody>
 
-export const TripPriceTemplateItem = TripPriceTemplateRequestBody.omit({ companyId: true }).extend({
-    id: OperationTripPriceTemplatePublicId,
-})
+export const TripPriceTemplateItem = TripPriceTemplateRequestBody.omit({ companyId: true }).extend(
+    {}
+)
 
 export type TripPriceTemplateItem = z.infer<typeof TripPriceTemplateItem>
 
 export const TripPriceTemplateResponse = z.object({
-    tripPriceTemplate: TripPriceTemplateItem.extend({
-        id: OperationTripPriceTemplatePublicId,
-    }),
+    tripPriceTemplate: TripPriceTemplateItem.extend({}),
 })
 
 export type TripPriceTemplateResponse = z.infer<typeof TripPriceTemplateResponse>

@@ -13,12 +13,10 @@ api.route({
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.customer])
         const ip = request.headers['x-forwarded-for']?.toString().split(',')[0] ?? request.ip
-        // input UUID (booking) → resolve to internal id (pattern for joins/business use)
-        await bus.publicId.resolve('booking', request.query.id)
-        return bus.payment.payment.createPayment(request.query, userInfo.id, ip)
+        return bus.payment.payment.createPayment(request.body, userInfo.id, ip)
     },
     schema: {
-        querystring: PaymentMethodRequest,
+        body: PaymentMethodRequest,
         response: { 200: PaymentMethodResponse },
         tags: tags(__filename),
         security: bearer,

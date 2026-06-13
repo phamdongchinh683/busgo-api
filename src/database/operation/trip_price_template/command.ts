@@ -64,7 +64,7 @@ export async function createOne(
             oc.columns(['companyId', 'routeId', 'fromStationId', 'toStationId']).doUpdateSet(data)
         )
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -78,6 +78,6 @@ export async function deleteOneById(
         .where('id', '=', id)
         .where('companyId', '=', companyId)
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }

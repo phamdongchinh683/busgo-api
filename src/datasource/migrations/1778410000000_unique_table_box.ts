@@ -15,10 +15,8 @@ export async function up(db: Kysely<any>): Promise<void> {
         DELETE FROM chat.box AS b
         USING ranked AS r
         WHERE b.id = r.id
-          AND r.rn > 1
-    `.execute(db)
+          AND r.rn > 1;
 
-    await sql`
         CREATE UNIQUE INDEX IF NOT EXISTS chat_box_unique_pair
         ON chat.box (LEAST(sender_id, receiver_id), GREATEST(sender_id, receiver_id))
     `.execute(db)

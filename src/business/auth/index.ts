@@ -1,7 +1,6 @@
 export * as customer from './customer.js'
 export * as login from './login.js'
 export * as driver from './driver.js'
-export * as adminRegister from './admin-register.js'
 export * as profile from './profile.js'
 export * as superAdmin from './super-admin.js'
 export * as password from './password.js'

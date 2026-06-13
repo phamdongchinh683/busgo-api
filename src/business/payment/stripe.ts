@@ -235,7 +235,7 @@ export async function linkStripeAccount(userInfo: UserInfo) {
         url: result.url,
         token: jwt.auth.generateToken({
             ...userInfo,
-            id: userInfo.publicId ?? userInfo.id,
+            id: userInfo.id,
             tokenVersion: userInfo.tokenVersion,
             accountStripeId,
         }),

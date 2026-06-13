@@ -1,13 +1,10 @@
 import z from 'zod'
-import {
-    AuthNotificationId,
-    AuthNotificationPublicId,
-} from '../../../database/auth/notification/type.js'
-import { AuthUserPublicId } from '../../../database/auth/user/type.js'
+import { AuthNotificationId } from '../../../database/auth/notification/type.js'
+import { AuthUserId } from '../../../database/auth/user/type.js'
 
 export const NotificationResponse = z.object({
-    id: AuthNotificationPublicId,
-    userId: AuthUserPublicId,
+    id: AuthNotificationId,
+    userId: AuthUserId,
     title: z.string(),
     body: z.string(),
     isRead: z.boolean(),

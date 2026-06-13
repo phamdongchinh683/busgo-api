@@ -25,9 +25,10 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
             return eb.and(cond)
         })
         .select([
-            'u.id as cursorId',
-            'u.publicId as id',
-            'u.fullName',
+            'u.id',
+            'u.id',
+            'u.firstName',
+            'u.lastName',
             'u.email',
             'u.phone',
             'u.role',
@@ -47,7 +48,7 @@ export async function insertOne(params: AuthUserTableInsert) {
         .insertInto('auth.user')
         .values(params)
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -121,65 +122,7 @@ export function getOne(params: {
     return db
         .selectFrom('auth.user as u')
         .leftJoin('organization.company_member as cm', 'u.id', 'cm.userId')
-        .select([
-            'u.id as cursorId',
-            'u.publicId as id',
-            'u.fullName',
-            'u.password',
-            'u.email',
-            'u.phone',
-            'u.facebookId',
-            'u.googleId',
-            'u.role',
-            'u.status',
-            'u.tokenVersion',
-            'u.accountStripeId',
-            'u.isEmailVerified',
-            'u.isPhoneVerified',
-            'u.lastChangeEmail',
-            'u.lastChangePhone',
-            'cm.companyId',
-        ])
-        .where(eb => {
-            const cond = []
-            if (email) cond.push(eb('u.email', '=', email))
-            if (phone) cond.push(eb('u.phone', '=', phone))
-            if (id) cond.push(eb('u.id', '=', id))
-            if (facebookId) cond.push(eb('u.facebookId', '=', facebookId))
-            if (googleId) cond.push(eb('u.googleId', '=', googleId))
-            return eb.and(cond)
-        })
-        .executeTakeFirst()
-}
-
-export async function getAuthUser(params: {
-    email?: string
-    phone?: string
-    id?: AuthUserId
-    facebookId?: string
-    googleId?: string
-}) {
-    const { email, phone, id, facebookId, googleId } = params
-
-    return db
-        .selectFrom('auth.user as u')
-        .select([
-            'u.id',
-            'u.publicId',
-            'u.fullName',
-            'u.password',
-            'u.email',
-            'u.phone',
-            'u.facebookId',
-            'u.googleId',
-            'u.role',
-            'u.status',
-            'u.tokenVersion',
-            'u.accountStripeId',
-            'u.isEmailVerified',
-            'u.lastChangeEmail',
-            'u.lastChangePhone',
-        ])
+        .selectAll()
         .where(eb => {
             const cond = []
             if (email) cond.push(eb('u.email', '=', email))
@@ -196,7 +139,6 @@ export async function findAll(query: UserListQuery) {
     const { limit, next, status, role, companyId, email, phone, type } = query
     const rows = await db
         .selectFrom('auth.user as u')
-        .leftJoin('organization.company_member as cm', 'cm.userId', 'u.id')
         .where(eb => {
             const cond = []
             cond.push(eb('u.role', '!=', AuthUserRole.enum.super_admin))
@@ -205,7 +147,7 @@ export async function findAll(query: UserListQuery) {
             }
             if (status !== undefined) cond.push(eb('u.status', '=', status))
             if (companyId) {
-                cond.push(eb('cm.companyId', '=', companyId))
+                cond.push(eb('u.companyId', '=', companyId))
             }
             if (email) cond.push(eb('u.email', '=', email))
             if (phone) cond.push(eb('u.phone', '=', phone))
@@ -214,17 +156,7 @@ export async function findAll(query: UserListQuery) {
             if (next) cond.push(eb('u.id', '>', next))
             return eb.and(cond)
         })
-        .select([
-            'u.id as cursorId',
-            'u.publicId as id',
-            'u.fullName',
-            'u.email',
-            'u.phone',
-            'u.facebookId',
-            'u.googleId',
-            'u.role',
-            'u.status',
-        ])
+        .selectAll()
         .limit(limit + 1)
         .orderBy('u.id', 'asc')
         .execute()

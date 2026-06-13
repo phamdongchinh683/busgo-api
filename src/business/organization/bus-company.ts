@@ -1,10 +1,8 @@
+import { db } from '../../datasource/db.js'
 import { dal } from '../../database/index.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { BusCompanyBody } from '../../model/body/bus-company/index.js'
 import { utils } from '../../utils/index.js'
 import { BusCompanyListQuery } from '../../model/query/bus-company/index.js'
-import { OrganizationBusCompanyTableUpdate } from '../../database/organization/bus_company/table.js'
-import { clearTripScheduleListCache } from '../operation/trip-schedule.js'
 
 export async function list(query: BusCompanyListQuery) {
     return utils.cache.cacheQuery({
@@ -15,55 +13,50 @@ export async function list(query: BusCompanyListQuery) {
             const result = await dal.organization.busCompany.query.findAll(query)
             const { data, next } = utils.common.paginateByCursor(result, query.limit)
             return {
-                companies: data,
+                companies: data.map((r: unknown) => ({
+                    id: (r as Record<string, unknown>).id as string | number,
+                    name: (r as Record<string, unknown>).name as string,
+                    hotline: (r as Record<string, unknown>).hotline as string,
+                    logoUrl: (r as Record<string, unknown>).logoUrl as string,
+                    address: (r as Record<string, unknown>).address as string,
+                    latitude: (r as Record<string, unknown>).latitude as number,
+                    longitude: (r as Record<string, unknown>).longitude as number,
+                    reviewCount: (r as Record<string, unknown>).reviewCount as number,
+                    star1: (r as Record<string, unknown>).star1 as number,
+                    star2: (r as Record<string, unknown>).star2 as number,
+                    star3: (r as Record<string, unknown>).star3 as number,
+                    star4: (r as Record<string, unknown>).star4 as number,
+                    star5: (r as Record<string, unknown>).star5 as number,
+                })),
                 next: next,
             }
         },
     })
 }
 
-export async function createOne(body: BusCompanyBody) {
-    const company = await dal.organization.busCompany.cmd.upsertOne({
-        ...body,
-        reviewCount: 0,
-        reviewAvgStars: 0,
-    })
-
-    await Promise.all([
-        utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(company.internalId),
-    ])
-
-    return {
-        company,
-    }
-}
-
-export async function deleteOne(id: OrganizationBusCompanyId) {
-    const company = await dal.organization.busCompany.cmd.deleteOne(id)
-
-    await Promise.all([
-        utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(id),
-    ])
-
-    return { company }
+export async function getOne(id: OrganizationBusCompanyId) {
+    return db
+        .selectFrom('organization.bus_company')
+        .selectAll()
+        .where('id', '=', id)
+        .executeTakeFirst()
 }
 
 export async function updateOne(
     id: OrganizationBusCompanyId,
-    body: OrganizationBusCompanyTableUpdate
+    data: Partial<{
+        name: string
+        hotline: string
+        logoUrl: string
+        address: string
+        latitude: number
+        longitude: number
+    }>
 ) {
-    const company = await dal.organization.busCompany.cmd.updateOne(id, body)
-
-    await Promise.all([
-        utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(id),
-    ])
-
-    return { company }
-}
-
-export async function getOne(id: OrganizationBusCompanyId) {
-    return { company: await dal.organization.busCompany.cmd.getOne(id) }
+    return db
+        .updateTable('organization.bus_company')
+        .set(data)
+        .where('id', '=', id)
+        .returningAll()
+        .executeTakeFirstOrThrow()
 }

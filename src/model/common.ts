@@ -1,14 +1,6 @@
 import z from 'zod'
-import {
-    AuthUserId,
-    AuthUserPublicId,
-    AuthUserRole,
-    AuthUserStatus,
-} from '../database/auth/user/type.js'
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../database/organization/bus_company/type.js'
+import { AuthUserId, AuthUserRole, AuthUserStatus } from '../database/auth/user/type.js'
+import { OrganizationBusCompanyId } from '../database/organization/bus_company/type.js'
 
 function emailDomain(email: string): string {
     const i = email.lastIndexOf('@')
@@ -41,29 +33,21 @@ export const UserInfo = z.object({
     email: Email.nullable(),
     phone: Phone.nullable(),
     role: AuthUserRole,
-    fullName: z.string(),
+    firstName: z.string(),
+    lastName: z.string(),
     facebookId: z.string().nullable().optional(),
     googleId: z.string().nullable().optional(),
-    firstName: z.string().nullable().optional(),
     tokenVersion: z.number().int().nonnegative(),
-    companyId: OrganizationBusCompanyId.nullable().optional(),
+    companyId: OrganizationBusCompanyId.nullable(),
     status: AuthUserStatus,
     accountStripeId: z.string().nullable(),
     lastChangeEmail: z.date().nullable(),
     lastChangePhone: z.date().nullable(),
-    publicId: AuthUserPublicId.optional(),
 })
 
 export type UserInfo = Omit<z.infer<typeof UserInfo>, 'id'> & {
     id: AuthUserId
 }
-
-export const PublicUserInfo = UserInfo.extend({
-    id: AuthUserPublicId,
-    companyId: OrganizationBusCompanyPublicId.nullable().optional(),
-}).omit({ publicId: true })
-
-export type PublicUserInfo = z.infer<typeof PublicUserInfo>
 
 export const OrderBy = z.enum(['asc', 'desc'])
 export type OrderBy = z.infer<typeof OrderBy>

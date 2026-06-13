@@ -1,3 +1,4 @@
+import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { ChatMessageQuery } from '../../../model/query/chat/index.js'
 import { AuthUserId } from '../../auth/user/type.js'
@@ -32,11 +33,12 @@ export async function findAllMessagesByBoxId(
             return eb.and(cond)
         })
         .select([
-            'm.id as cursorId',
-            'm.publicId as id',
-            'u.publicId as senderId',
+            'm.id',
+            'm.id',
+            'u.id as senderId',
             'm.body as message',
-            'u.fullName as fullName',
+            'u.firstName',
+            'u.lastName',
             'u.phone as phone',
             'u.email as email',
             'm.createdAt',

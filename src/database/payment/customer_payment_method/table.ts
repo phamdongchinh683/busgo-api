@@ -1,11 +1,10 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { PaymentCustomerPaymentMethodId, PaymentCustomerPaymentMethodPublicId } from './type.js'
+import { PaymentCustomerPaymentMethodId } from './type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 
 export interface PaymentCustomerPaymentMethodTable extends Timestamps {
     id: GeneratedAlways<PaymentCustomerPaymentMethodId>
-    publicId: GeneratedAlways<PaymentCustomerPaymentMethodPublicId>
     userId: AuthUserId
     stripeCustomerId: string
     stripePaymentMethodId: string

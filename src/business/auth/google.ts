@@ -2,8 +2,12 @@ import { HttpErr } from '../../app/index.js'
 import { service } from '../../service/index.js'
 import { AuthGoogleBody, AuthResponse } from '../../model/body/auth/index.js'
 import { signInByGoogle } from './social.js'
+import { AuthUserRole } from '../../database/auth/user/type.js'
 
-export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<AuthResponse> {
+export async function verifyToken(
+    params: { payload: AuthGoogleBody },
+    role: AuthUserRole
+): Promise<AuthResponse> {
     const {
         payload: { idToken },
     } = params
@@ -16,11 +20,14 @@ export async function verifyToken(params: { payload: AuthGoogleBody }): Promise<
             'EMAIL_NOT_FOUND'
         )
 
-    return signInByGoogle({
-        email: info.email,
-        firstName: info.given_name,
-        googleId: info.sub,
-        isEmailVerified: info.email_verified === 'true',
-        lastName: info.family_name,
-    })
+    return signInByGoogle(
+        {
+            email: info.email,
+            firstName: info.given_name,
+            googleId: info.sub,
+            isEmailVerified: info.email_verified === 'true',
+            lastName: info.family_name,
+        },
+        role
+    )
 }

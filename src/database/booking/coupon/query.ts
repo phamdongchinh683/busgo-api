@@ -14,7 +14,7 @@ export async function findAll(q: CouponFilter) {
     let query = db
         .selectFrom('booking.coupon as c')
         .selectAll()
-        .select(['c.id as cursorId', 'c.publicId as id'])
+        .select(['c.id'])
         .where(eb => {
             const filters: Expression<SqlBool>[] = []
             filters.push(eb('c.startDate', '<=', now).or(eb('c.startDate', 'is', null)))
@@ -47,7 +47,7 @@ export async function findOneByCode(params: CouponCheckCodeQuery) {
     return db
         .selectFrom('booking.coupon as c')
         .selectAll()
-        .select(['c.id as cursorId', 'c.publicId as id'])
+        .select(['c.id'])
         .where(eb => {
             const cond = []
             if (params.id) {
@@ -71,7 +71,7 @@ export async function findAllSupportCoupons(filter: CouponSupportFilter) {
     let query = db
         .selectFrom('booking.coupon as c')
         .selectAll()
-        .select(['c.id as cursorId', 'c.publicId as id'])
+        .select(['c.id'])
         .where(eb => {
             const filters: Expression<SqlBool>[] = []
 

@@ -4,6 +4,7 @@ import { service } from '../../service/index.js'
 import { createDecoder } from 'fast-jwt'
 import { FacebookIdTokenPayload } from '../../service/facebook/type.js'
 import { signInByFacebook } from './social.js'
+import { AuthUserRole } from '../../database/auth/user/type.js'
 
 interface FacebookUserData {
     email?: null | string
@@ -15,7 +16,10 @@ interface FacebookUserData {
 
 const decoder = createDecoder()
 
-export async function verifyToken(params: { payload: AuthFacebookBody }): Promise<AuthResponse> {
+export async function verifyToken(
+    params: { payload: AuthFacebookBody },
+    role: AuthUserRole
+): Promise<AuthResponse> {
     const { payload } = params
     const userData = await getFacebookUserData({ payload })
 
@@ -25,13 +29,16 @@ export async function verifyToken(params: { payload: AuthFacebookBody }): Promis
             'INVALID_FACEBOOK_ACCOUNT'
         )
 
-    return signInByFacebook({
-        email: userData.email,
-        facebookId: userData.facebookId,
-        firstName: userData.firstName,
-        isEmailVerified: userData.isEmailVerified,
-        lastName: userData.lastName,
-    })
+    return signInByFacebook(
+        {
+            email: userData.email,
+            facebookId: userData.facebookId,
+            firstName: userData.firstName,
+            isEmailVerified: userData.isEmailVerified,
+            lastName: userData.lastName,
+        },
+        role
+    )
 }
 
 async function getFacebookUserData(params: {

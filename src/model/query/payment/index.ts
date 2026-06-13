@@ -1,18 +1,6 @@
 import z from 'zod'
-import { BookingPublicId } from '../../../database/booking/booking/type.js'
-import {
-    PaymentId,
-    PaymentMethod,
-    PaymentPublicId,
-    PaymentStatus,
-} from '../../../database/payment/payment/type.js'
-import { PeriodFilter, Phone } from '../../common.js'
-
-export const PaymentIdParam = z.object({
-    id: PaymentPublicId,
-})
-
-export type PaymentIdParam = z.infer<typeof PaymentIdParam>
+import { BookingId, PaymentMethod, PaymentStatus } from '../../../database/booking/booking/type.js'
+import { PeriodFilter } from '../../common.js'
 
 export const PaymentTransactionCodeParam = z.object({
     code: z.string(),
@@ -21,7 +9,7 @@ export const PaymentTransactionCodeParam = z.object({
 export type PaymentTransactionCodeParam = z.infer<typeof PaymentTransactionCodeParam>
 
 export const PaymentMethodRequest = z.object({
-    id: BookingPublicId,
+    id: BookingId,
     method: PaymentMethod,
 })
 
@@ -38,47 +26,13 @@ export const VnPayIpnRequest = z.object({
     vnp_TransactionType: z.string().optional(),
     vnp_TransactionDate: z.string().optional(),
     vnp_TransactionNo: z.string(),
-    vnp_TransactionStatus: z.string(),
+    vnp_TransactionStatus: z.string().optional(),
     vnp_SecureHash: z.string(),
     vnp_PayDate: z.string(),
     vnp_ResponseCode: z.string(),
 })
 
 export type VnPayIpnRequest = z.infer<typeof VnPayIpnRequest>
-
-export const PaymentFilter = z.object({
-    transactionCode: z.string().optional(),
-    status: PaymentStatus.optional(),
-    method: PaymentMethod.optional(),
-    limit: z.coerce.number().min(1).max(100).optional().default(10),
-    next: PaymentId.optional(),
-})
-
-export type PaymentFilter = z.infer<typeof PaymentFilter>
-
-export const PaymentResponse = z.object({
-    id: PaymentPublicId,
-    bookingId: BookingPublicId,
-    amount: z.number(),
-    method: PaymentMethod.nullable(),
-    status: PaymentStatus,
-    transactionCode: z.string(),
-    paidAt: z.date().nullable(),
-    expiredAt: z.date().nullable(),
-})
-
-export type PaymentResponse = z.infer<typeof PaymentResponse>
-
-export const PaymentListResponse = z.object({
-    payments: z.array(
-        PaymentResponse.extend({
-            phone: Phone.nullable(),
-        })
-    ),
-    next: PaymentId.nullable(),
-})
-
-export type PaymentListResponse = z.infer<typeof PaymentListResponse>
 
 export const PeriodPaymentQuery = PeriodFilter.extend({
     method: PaymentMethod.optional(),

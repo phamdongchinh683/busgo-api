@@ -8,8 +8,10 @@ export async function register(body: AuthBody, role: AuthUserRole) {
     await requireVerifiedContacts(body.contactInfo)
 
     const data = {
-        fullName: body.fullName,
-        ...utils.common.parseContactInfo(body.contactInfo),
+        firstName: body.firstName,
+        lastName: body.lastName,
+        phone: body.contactInfo.phone,
+        email: body.contactInfo.email,
         password: utils.password.hashPassword(body.password),
         role,
         isEmailVerified: true,

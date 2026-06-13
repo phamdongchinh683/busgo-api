@@ -7,7 +7,7 @@ import { utils } from '../../utils/index.js'
 import { OperationTripId, OperationTripStatus } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { BookingStatus } from '../../database/booking/booking/type.js'
-import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
 import { applyTicketNaturalLanguageFilter } from './ticket-search.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {

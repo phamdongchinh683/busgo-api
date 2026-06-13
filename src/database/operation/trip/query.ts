@@ -1,7 +1,7 @@
 import { db } from '../../../datasource/db.js'
 import { DriverTripQuery, TripFilter } from '../../../model/query/trip/index.js'
 import { OperationTripId, OperationTripStatus } from './type.js'
-import { AuthUserId, AuthUserPublicId } from '../../auth/user/type.js'
+import { AuthUserId } from '../../auth/user/type.js'
 import { utils } from '../../../utils/index.js'
 import { OperationTripScheduleId } from '../trip-schedule/type.js'
 import { OperationTripTableUpdate } from './table.js'
@@ -52,8 +52,8 @@ export async function findAllByFilter(
             return eb.and(cond)
         })
         .select([
-            't.id as cursorId',
-            't.publicId as id',
+            't.id',
+            't.id',
             'bc.name as companyName',
             'bc.logoUrl',
             'v.plateNumber',
@@ -62,13 +62,13 @@ export async function findAllByFilter(
             'r.fromLocation',
             'r.toLocation',
             'r.distanceKm',
-            sql<AuthUserPublicId[]>`coalesce(
+            sql<AuthUserId[]>`coalesce(
                 (
-                    select array_agg(u.public_id order by u.id)
+                    select array_agg(u.id order by u.id)
                     from auth.user u
                     where u.id = any(t.driver_ids)
                 ),
-                array[]::uuid[]
+                array[]::int[]
             )`.as('driverIds'),
             'r.durationMinutes',
             't.status',
@@ -104,8 +104,8 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
             return eb.and(cond)
         })
         .select([
-            't.id as cursorId',
-            't.publicId as id',
+            't.id',
+            't.id',
             'v.plateNumber',
             'v.type',
             't.status',
@@ -158,17 +158,17 @@ export async function updateOneById(
         .leftJoin('organization.vehicle as v', 'v.id', 't.vehicleId')
         .innerJoin('operation.trip_schedule as ts', 'ts.id', 't.scheduleId')
         .select([
-            't.publicId as id',
-            'r.publicId as routeId',
-            'v.publicId as vehicleId',
-            'ts.publicId as scheduleId',
-            sql<AuthUserPublicId[]>`coalesce(
+            't.id',
+            'r.id as routeId',
+            'v.id as vehicleId',
+            'ts.id as scheduleId',
+            sql<AuthUserId[]>`coalesce(
                 (
-                    select array_agg(u.public_id order by u.id)
+                    select array_agg(u.id order by u.id)
                     from auth.user u
                     where u.id = any(t.driver_ids)
                 ),
-                array[]::uuid[]
+                array[]::int[]
             )`.as('driverIds'),
             't.departureDate',
             't.status',

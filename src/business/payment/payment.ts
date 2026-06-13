@@ -1,7 +1,7 @@
 import { dal } from '../../database/index.js'
 import { utils } from '../../utils/index.js'
 import { PaymentMethodRequest } from '../../model/query/payment/index.js'
-import { PaymentMethod, PaymentStatus } from '../../database/payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { BookingId, BookingType } from '../../database/booking/booking/type.js'
@@ -10,11 +10,7 @@ import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { Transaction } from 'kysely'
 import { Database } from '../../datasource/type.js'
-import {
-    PaymentFilter,
-    PeriodPaymentQuery,
-    RevenueExportQuery,
-} from '../../model/query/payment/index.js'
+import { PeriodPaymentQuery, RevenueExportQuery } from '../../model/query/payment/index.js'
 import { FastifyReply } from 'fastify'
 import { UserInfo } from '../../model/common.js'
 import type { StripeStatusResponse } from '../../service/stripe/type.js'
@@ -62,7 +58,7 @@ async function preparePayment(
     method: PaymentMethod | null,
     tx?: Transaction<Database>
 ) {
-    const payment = await dal.payment.payment.query.getPayment(bookingId, undefined, tx)
+    const payment = await dal.booking.booking.query.getPayment(bookingId, undefined, tx)
 
     if (payment) {
         if (payment.status === PaymentStatus.enum.success) {
@@ -86,13 +82,13 @@ async function preparePayment(
             return payment
         }
 
-        return dal.payment.payment.cmd.upsertPayment(
+        return dal.booking.booking.cmd.upsertPayment(
             {
                 bookingId,
                 transactionCode: utils.random.generateRandomNumber(12).toString(),
                 method,
                 status: PaymentStatus.enum.pending,
-                amount: payment.amount,
+                amount: payment.amount ?? undefined,
             },
             tx
         )
@@ -100,7 +96,7 @@ async function preparePayment(
 
     const amount = (await dal.booking.booking.query.getAmountByBookingId(bookingId, tx)).totalAmount
 
-    return dal.payment.payment.cmd.upsertPayment(
+    return dal.booking.booking.cmd.upsertPayment(
         {
             bookingId,
             transactionCode: utils.random.generateRandomNumber(12).toString(),
@@ -114,7 +110,7 @@ async function preparePayment(
 
 export async function createPayment(params: PaymentMethodRequest, userId: AuthUserId, ip: string) {
     const { method } = params
-    const bookingId = await dal.publicId.query.resolve('booking', params.id)
+    const bookingId = params.id
 
     const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
         userId: userId,
@@ -170,9 +166,11 @@ export async function createVnpayPayment(
 ) {
     const payment = await preparePayment(bookingId, PaymentMethod.enum.vnpay)
 
+    const amt = (payment as any).amount ?? (payment as any).paymentAmount ?? 0
+    const txCode = (payment as any).transactionCode ?? ''
     return {
         message: 'Thành công',
-        paymentUrl: service.vnpay.init.initiatePayment(payment.amount, payment.transactionCode, ip),
+        paymentUrl: service.vnpay.init.initiatePayment(amt, txCode, ip),
     }
 }
 
@@ -190,7 +188,7 @@ async function confirmVnpayPayment(query: Record<string, string>) {
     }
 
     return db.transaction().execute(async tx => {
-        const payment = await dal.payment.payment.query.getPayment(undefined, vnp_TxnRef, tx)
+        const payment = await dal.booking.booking.query.getPayment(undefined, vnp_TxnRef, tx)
 
         if (!payment) {
             return { RspCode: '01', Message: 'Không tìm thấy thanh toán' }
@@ -205,11 +203,11 @@ async function confirmVnpayPayment(query: Record<string, string>) {
         }
 
         if (vnp_ResponseCode !== '00') {
-            await dal.payment.payment.cmd.updatePaymentStatusFailed(vnp_TxnRef, tx)
+            await dal.booking.booking.cmd.updatePaymentStatusFailed(vnp_TxnRef, tx)
             return { RspCode: '24', Message: 'Thanh toán thất bại' }
         }
 
-        await dal.payment.payment.cmd.updatePaymentStatusSuccess(
+        await dal.booking.booking.cmd.updatePaymentStatusSuccess(
             vnp_TxnRef,
             vnp_TransactionNo,
             vnp_PayDate,
@@ -238,18 +236,18 @@ export async function vnpayReturn(query: Record<string, string>, reply: FastifyR
 }
 
 export async function getRevenueByCompanyId(companyId: OrganizationBusCompanyId) {
-    return dal.payment.payment.query.getTotalRevenueByCompanyId(companyId)
+    return dal.booking.booking.query.getTotalRevenueByCompanyId(companyId)
 }
 
 export async function updateByTransactionCode(
     transactionCode: string,
     companyId: OrganizationBusCompanyId
 ) {
-    return dal.payment.payment.cmd.updatePaymentByTransactionCode(transactionCode, companyId)
+    return dal.booking.booking.cmd.updatePaymentByTransactionCode(transactionCode, companyId)
 }
 
 export async function getPeriodRevenue(params: PeriodPaymentQuery) {
-    const data = await dal.payment.payment.query.getPeriodRevenue(params)
+    const data = await dal.booking.booking.query.getPeriodRevenue(params)
     return { data: data }
 }
 
@@ -257,10 +255,10 @@ export async function exportCompanyRevenueExcel(params: RevenueExportQuery) {
     const year = params.year ?? utils.time.getNow().year()
     const meta = { year, method: params.method }
     if (params.type === 'monthly') {
-        const rows = await dal.payment.payment.query.getRevenueByCompanyMonthlyForPeriod(params)
+        const rows = await dal.booking.booking.query.getRevenueByCompanyMonthlyForPeriod(params)
         return service.excel.buildCompanyRevenueMonthlySheet(rows, meta)
     }
-    const rows = await dal.payment.payment.query.getRevenueByCompanyYearlyForPeriod(params)
+    const rows = await dal.booking.booking.query.getRevenueByCompanyYearlyForPeriod(params)
     return service.excel.buildCompanyRevenueYearlySheet(rows, meta)
 }
 
@@ -307,7 +305,7 @@ async function createStripePayment(
         )
     }
 
-    const companyRow = await dal.payment.payment.query.getCompanyIdByBookingId(bookingId)
+    const companyRow = await dal.booking.booking.query.getCompanyIdByBookingId(bookingId)
     if (!companyRow?.companyId) {
         throw new HttpErr.UnprocessableEntity(
             'Không tìm thấy công ty cho đặt vé này.',
@@ -324,21 +322,23 @@ async function createStripePayment(
         )
     }
 
-    const successUrl = buildStripePaymentReturnUrl('success', payment.transactionCode)
-    const cancelUrl = buildStripePaymentReturnUrl('cancelled', payment.transactionCode)
+    const txCode = (payment as any).transactionCode ?? ''
+    const amt = (payment as any).amount ?? (payment as any).paymentAmount ?? 0
+    const successUrl = buildStripePaymentReturnUrl('success', txCode)
+    const cancelUrl = buildStripePaymentReturnUrl('cancelled', txCode)
 
     const [paymentIntent, checkoutSession] = await Promise.all([
         service.stripe.client.createPaymentIntentWithCommission({
-            amount: payment.amount,
+            amount: amt,
             stripeCustomerId: user.accountStripeId,
             companyAdminStripeId: companyAdmin.accountStripeId,
-            transactionCode: payment.transactionCode,
+            transactionCode: txCode,
         }),
         service.stripe.client.createCheckoutSessionWithCommission({
-            amount: payment.amount,
+            amount: amt,
             stripeCustomerId: user.accountStripeId,
             companyAdminStripeId: companyAdmin.accountStripeId,
-            transactionCode: payment.transactionCode,
+            transactionCode: txCode,
             successUrl,
             cancelUrl,
         }),

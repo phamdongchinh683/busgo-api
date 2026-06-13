@@ -6,7 +6,7 @@ import { BookingTicketId, BookingTicketStatus } from './type.js'
 import { BookingId, BookingStatus } from '../booking/type.js'
 import { db } from '../../../datasource/db.js'
 import { dal } from '../../index.js'
-import { PaymentMethod, PaymentStatus } from '../../payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../booking/type.js'
 import { OperationTripId } from '../../operation/trip/type.js'
 import { service } from '../../../service/index.js'
 
@@ -38,7 +38,7 @@ export async function updateTicketStatusByBookingId(
         .set({ status: params.status })
         .where('t.bookingId', '=', params.id)
         .returningAll()
-        .returning(['t.id as internalId', 't.publicId as id'])
+        .returning(['t.id as internalId', 't.id'])
         .execute()
 }
 
@@ -58,7 +58,7 @@ export async function updateTicketStatus(
             return eb.and(cond)
         })
         .returningAll()
-        .returning(['t.id as internalId', 't.publicId as id'])
+        .returning(['t.id as internalId', 't.id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -110,7 +110,7 @@ export async function updateStatusTicket(params: {
                 BookingStatus.enum.paid,
                 trx
             )
-            await dal.payment.payment.cmd.updatePaymentStatusByBookingId(
+            await dal.booking.booking.cmd.updatePaymentStatusByBookingId(
                 { id: ticket.bookingId, status: PaymentStatus.enum.success },
                 trx
             )
@@ -120,7 +120,7 @@ export async function updateStatusTicket(params: {
                 BookingStatus.enum.cancelled,
                 trx
             )
-            await dal.payment.payment.cmd.updatePaymentStatusByBookingId(
+            await dal.booking.booking.cmd.updatePaymentStatusByBookingId(
                 { id: ticket.bookingId, status: PaymentStatus.enum.failed },
                 trx
             )
@@ -130,10 +130,10 @@ export async function updateStatusTicket(params: {
 }
 
 async function handlePaymentCancellation(trx: Transaction<Database>, bookingId: BookingId) {
-    const payment = await dal.payment.payment.query.getPayment(bookingId, undefined, trx)
+    const payment = await dal.booking.booking.query.getPayment(bookingId, undefined, trx)
 
     if (payment?.status === PaymentStatus.enum.pending) {
-        await dal.payment.payment.query.updateStatusPaymentTransaction(
+        await dal.booking.booking.cmd.updateStatusPaymentTransaction(
             PaymentStatus.enum.failed,
             bookingId,
             trx
@@ -146,7 +146,7 @@ async function handlePaymentCancellation(trx: Transaction<Database>, bookingId: 
     }
 
     if (payment.method === PaymentMethod.enum.vnpay) {
-        await dal.payment.payment.query.updateStatusPaymentTransaction(
+        await dal.booking.booking.cmd.updateStatusPaymentTransaction(
             PaymentStatus.enum.refunded,
             bookingId,
             trx
@@ -158,7 +158,7 @@ async function handlePaymentCancellation(trx: Transaction<Database>, bookingId: 
             paymentIntentId: payment.transactionNo ?? '',
         })
 
-        await dal.payment.payment.query.updateStatusPaymentTransaction(
+        await dal.booking.booking.cmd.updateStatusPaymentTransaction(
             PaymentStatus.enum.refunded,
             bookingId,
             trx

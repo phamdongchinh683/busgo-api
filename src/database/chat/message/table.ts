@@ -2,11 +2,10 @@ import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
 import type { AuthUserId } from '../../auth/user/type.js'
 import type { ChatBoxId } from '../box/type.js'
-import { ChatMessageId, ChatMessagePublicId } from './type.js'
+import { ChatMessageId } from './type.js'
 
 export interface ChatMessageTable extends Timestamps {
     id: GeneratedAlways<ChatMessageId>
-    publicId: GeneratedAlways<ChatMessagePublicId>
     boxId: ChatBoxId
     senderId: AuthUserId
     body: string

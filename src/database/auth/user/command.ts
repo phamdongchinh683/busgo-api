@@ -1,13 +1,12 @@
 import { AuthUserTableInsert, AuthUserTableUpdate } from './table.js'
 import { dal } from '../../index.js'
-import { HttpErr } from '../../../app/index.js'
+import { HttpErr, jwt } from '../../../app/index.js'
 import { DatabaseError } from 'pg'
-import { generateToken } from '../../../app/jwt/auth/handler.js'
 import { db } from '../../../datasource/db.js'
 import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import { AuthCompanyAdminSignUpBody } from '../../../model/body/auth/index.js'
-import { AUTH_USER_STATUS, AuthOperatorRole, AuthUserId, AuthUserStatus } from './type.js'
+import { AuthOperatorRole, AuthUserId, AuthUserStatus } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { service } from '../../../service/index.js'
@@ -17,9 +16,9 @@ export async function signUp(params: AuthUserTableInsert) {
         const stripeCustomer = await service.stripe.client.createCustomer({
             email: params.email,
             phone: params.phone ?? '',
-            name: params.fullName,
+            name: params.firstName + params.lastName,
             metadata: {
-                fullName: params.fullName,
+                fullName: params.firstName + params.lastName,
                 ...(params.email ? { email: params.email } : {}),
                 ...(params.phone ? { phone: params.phone } : {}),
             },
@@ -29,11 +28,26 @@ export async function signUp(params: AuthUserTableInsert) {
             ...params,
             accountStripeId: stripeCustomer.id,
         })
-        const { internalId, ...publicUser } = user
+
+        const fullName = `${user.firstName ?? ''} ${user.lastName ?? ''}`.trim()
+        const publicUser = {
+            id: user.id,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            fullName,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            companyId: user.companyId,
+            status: user.status,
+            accountStripeId: user.accountStripeId,
+            lastChangeEmail: user.lastChangeEmail,
+            lastChangePhone: user.lastChangePhone,
+        }
 
         return {
             message: 'Thành công',
-            token: generateToken({ ...publicUser, id: internalId }),
+            token: jwt.auth.generateToken(user),
             user: publicUser,
         }
     } catch (error) {
@@ -60,24 +74,48 @@ export async function insertOne(params: AuthUserTableInsert, trx?: Transaction<D
         .returningAll()
         .executeTakeFirstOrThrow()
 }
-export async function signUpCompanyAdmin(
+
+export async function createOneOperator(
     params: AuthCompanyAdminSignUpBody,
     role: AuthOperatorRole
 ) {
-    const { phone, email } = utils.common.parseContactInfo(params.contactInfo)
-
     const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
+            const company = await dal.organization.busCompany.cmd.createOne(
+                {
+                    hotline: params.contactInfo.phone,
+                    address: params.address,
+                    logoUrl: params.logoUrl,
+                    longitude: params.longitude,
+                    latitude: params.latitude,
+                    name: params.name,
+                    star1: 0,
+                    star2: 0,
+                    star3: 0,
+                    star4: 0,
+                    star5: 0,
+                    reviewCount: 0,
+                },
+                trx
+            )
+
+            const stripeCustomer = await service.stripe.connect.createConnectAccount({
+                email: params.contactInfo.email ?? '',
+            })
+
             const newUser = await dal.auth.user.cmd.insertOne(
                 {
-                    fullName: params.fullName,
+                    firstName: params.firstName,
+                    lastName: params.lastName,
                     password: params.password,
-                    phone,
-                    email,
+                    phone: params.contactInfo.phone,
+                    email: params.contactInfo.email,
                     isEmailVerified: true,
                     isPhoneVerified: true,
-                    status: AUTH_USER_STATUS.inactive,
+                    status: 0,
                     role,
+                    accountStripeId: stripeCustomer.id,
+                    companyId: company.id,
                 },
                 trx
             )
@@ -90,7 +128,7 @@ export async function signUpCompanyAdmin(
                     department: 'Phòng điều hành',
                     identityNumber: '',
                     hireDate: utils.time.getNow().toDate(),
-                    companyId: params.companyId,
+                    companyId: company.id,
                 },
                 trx
             )
@@ -100,14 +138,14 @@ export async function signUpCompanyAdmin(
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `Email ${email} đã được đăng ký.`,
+                        `Email ${params.contactInfo.email} đã được đăng ký.`,
                         'EMAIL_ALREADY_EXISTS'
                     )
                 }
 
                 if (error.constraint === 'user_phone_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `Số điện thoại ${phone} đã được đăng ký.`,
+                        `Số điện thoại ${params.contactInfo.phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
                     )
                 }
@@ -122,26 +160,27 @@ export async function signUpCompanyAdmin(
     if (userDevice.length > 0) {
         const notification = await dal.auth.notification.cmd.insertOne({
             userId: userDevice[0].userId,
-            title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
-            body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
+            title: 'Xác nhận tài khoản công ty',
+            body: 'Hiện tại đang có một tài khoản đang chờ được xác nhận',
             data: JSON.stringify({
                 userNewAccountId: user.id.toString(),
             }),
             isRead: false,
         })
+
         await service.firebase.fcm.sendFcm({
             fcmTokens: userDevice.map(device => device.fcmToken),
-            title: `Hiện tại có yêu cầu tạo tài khoản mới của ${params.fullName}`,
-            body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
+            title: 'Xác nhận tài khoản công ty',
+            body: 'Hiện tại đang có một tài khoản đang chờ được xác nhận',
             data: {
-                userNewAccountId: user.publicId.toString(),
+                userNewAccountId: user.id.toString(),
                 id: notification.id.toString(),
             },
         })
     }
 
     return {
-        message: 'Yêu cầu tạo tài khoản mới đã được gửi đến quản trị viên cấp cao',
+        message: 'Yêu cầu tạo tài khoản mới đã được gửi đến Busgo',
     }
 }
 
@@ -151,10 +190,6 @@ export async function updateOne(
     trx?: Transaction<Database>
 ) {
     return updateUser(userId, params, trx)
-}
-
-export async function updateOneForPublicResponse(userId: AuthUserId, params: AuthUserTableUpdate) {
-    return updateUserForPublicResponse(userId, params)
 }
 
 function updateUserQuery(
@@ -180,20 +215,7 @@ async function updateUser(
     const user = await updateUserQuery(userId, params, trx).executeTakeFirstOrThrow()
 
     if (params.tokenVersion !== undefined || params.status !== undefined) {
-        await clearUserTokenCache(userId, user.publicId)
-    }
-
-    return user
-}
-
-async function updateUserForPublicResponse(userId: AuthUserId, params: AuthUserTableUpdate) {
-    const user = await updateUserQuery(userId, params)
-        .returningAll()
-        .returning('publicId as id')
-        .executeTakeFirstOrThrow()
-
-    if (params.tokenVersion !== undefined || params.status !== undefined) {
-        await clearUserTokenCache(userId, user.publicId)
+        await clearUserTokenCache(userId)
     }
 
     return user
@@ -222,21 +244,15 @@ export async function updatePassword(params: {
 }
 
 export async function incrementTokenVersion(userId: AuthUserId, trx?: Transaction<Database>) {
-    const user = await (trx ?? db)
+    await (trx ?? db)
         .updateTable('auth.user')
         .set({
             tokenVersion: sql<number>`token_version + 1`,
         })
         .where('id', '=', userId)
-        .returning(['id', 'publicId'])
         .executeTakeFirstOrThrow()
 
-    await utils.cache.delCache(`auth:token-version:${user.id}`)
-    if (user.publicId) {
-        await utils.cache.delCache(`auth:token-version:${user.publicId}`)
-    }
-
-    return user
+    await utils.cache.delCache(`auth:token-version:${userId}`)
 }
 
 export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>) {
@@ -247,31 +263,12 @@ export async function deleteOne(userId: AuthUserId, trx?: Transaction<Database>)
         .executeTakeFirstOrThrow()
 
     await utils.cache.delCache(`auth:token-version:${userId}`)
-    if (user.publicId) {
-        await utils.cache.delCache(`auth:token-version:${user.publicId}`)
-    }
 
     return user
 }
 
-export async function deleteOneForPublicResponse(userId: AuthUserId) {
-    const user = await db
-        .deleteFrom('auth.user')
-        .where('id', '=', userId)
-        .returningAll()
-        .returning('publicId as id')
-        .executeTakeFirstOrThrow()
-
-    await clearUserTokenCache(userId, user.publicId)
-
-    return user
-}
-
-async function clearUserTokenCache(userId: AuthUserId, publicId: string | null) {
+async function clearUserTokenCache(userId: AuthUserId) {
     await utils.cache.delCache(`auth:token-version:${userId}`)
-    if (publicId) {
-        await utils.cache.delCache(`auth:token-version:${publicId}`)
-    }
 }
 
 export async function insertDriver(
@@ -286,7 +283,7 @@ export async function insertDriver(
             await dal.auth.notification.cmd.insertOne(
                 {
                     userId: user.id,
-                    title: `Hiện tại có yêu cầu tạo tài khoản cho tài xế từ công ty bạn ${params.fullName}`,
+                    title: `Hiện tại có yêu cầu tạo tài khoản cho tài xế từ công ty bạn`,
                     body: 'Vui lòng xác nhận tài khoản để truy cập vào ứng dụng.',
                     data: JSON.stringify({
                         userNewAccountId: user.id.toString(),
@@ -378,7 +375,6 @@ export async function authUpsertByEmail(params: { data: AuthUserTableInsert }) {
                 facebookId: sql<
                     string | null
                 >`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
-                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
         )
@@ -401,7 +397,6 @@ export async function authUpsertByGoogleEmail(params: { data: GoogleEmailAuthUse
             oc.column('email').doUpdateSet({
                 email: params.data.email,
                 googleId: sql<string | null>`COALESCE(auth.user.google_id, excluded.google_id)`,
-                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
         )
@@ -428,7 +423,6 @@ export async function authUpsertByFacebookEmail(params: {
                 facebookId: sql<
                     string | null
                 >`COALESCE(auth.user.facebook_id, excluded.facebook_id)`,
-                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
         )
@@ -449,7 +443,6 @@ export async function authUpsertByFacebookId(params: { data: FacebookIdAuthUserT
         .onConflict(oc =>
             oc.column('facebookId').doUpdateSet({
                 email: sql<string | null>`COALESCE(auth.user.email, excluded.email)`,
-                fullName: sql<string>`COALESCE(auth.user.full_name, excluded.full_name)`,
                 isEmailVerified: sql<boolean>`auth.user.is_email_verified OR excluded.is_email_verified`,
             })
         )
@@ -463,16 +456,17 @@ async function ensureAccountStripeId(user: {
     id: AuthUserId
     email: string | null
     phone: string | null
-    fullName: string
+    firstName: string
+    lastName: string
     accountStripeId: string | null
 }) {
     const stripeCustomer = await service.stripe.client.createCustomer({
         email: user.email,
         phone: user.phone ?? '',
-        name: user.fullName || user.email || 'BusGo User',
+        name: user.firstName + user.lastName,
         metadata: {
             userId: user.id.toString(),
-            fullName: user.fullName,
+            fullName: user.firstName + user.lastName,
             ...(user.email ? { email: user.email } : {}),
             ...(user.phone ? { phone: user.phone } : {}),
         },

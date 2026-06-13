@@ -24,6 +24,5 @@ export async function markAsRead(
         .where('id', '=', id)
         .where('userId', '=', userId)
         .returningAll()
-        .returning('publicId as id')
         .executeTakeFirstOrThrow()
 }

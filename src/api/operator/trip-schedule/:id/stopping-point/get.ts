@@ -12,12 +12,8 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const [scheduleId, routeId] = await Promise.all([
-            bus.publicId.resolve('tripSchedule', request.params.id),
-            request.query.routeId
-                ? bus.publicId.resolve('route', request.query.routeId)
-                : undefined,
-        ])
+        const { id: scheduleId } = request.params
+        const { routeId } = request.query
         return bus.operation.tripStopTemplate.getStoppingPoints({
             scheduleId,
             routeId,

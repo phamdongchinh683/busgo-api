@@ -1,13 +1,12 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { OperationTripPriceTemplateId, OperationTripPriceTemplatePublicId } from './type.js'
+import { OperationTripPriceTemplateId } from './type.js'
 import { OperationStationId } from '../station/type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { OperationRouteId } from '../route/type.js'
 
 export interface OperationTripPriceTemplateTable extends Timestamps {
     id: GeneratedAlways<OperationTripPriceTemplateId>
-    publicId: GeneratedAlways<OperationTripPriceTemplatePublicId>
     companyId: OrganizationBusCompanyId
     routeId: OperationRouteId
     fromStationId: OperationStationId

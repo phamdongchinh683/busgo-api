@@ -2,9 +2,9 @@ import type { Kysely } from 'kysely'
 import { sql } from 'kysely'
 
 export async function up(db: Kysely<any>): Promise<void> {
-    await sql`ALTER TYPE auth.user_role RENAME VALUE 'admin' TO 'agent'`.execute(db)
-
     await sql`
+        ALTER TYPE auth.user_role RENAME VALUE 'admin' TO 'agent';
+
         ALTER TYPE auth.staff_role RENAME TO staff_role_old;
         CREATE TYPE auth.staff_role AS ENUM ('operator', 'accountant', 'support', 'company_admin');
 
@@ -23,9 +23,9 @@ export async function up(db: Kysely<any>): Promise<void> {
 }
 
 export async function down(db: Kysely<any>): Promise<void> {
-    await sql`ALTER TYPE auth.user_role RENAME VALUE 'agent' TO 'admin'`.execute(db)
-
     await sql`
+        ALTER TYPE auth.user_role RENAME VALUE 'agent' TO 'admin';
+
         ALTER TYPE auth.staff_role RENAME TO staff_role_old;
         CREATE TYPE auth.staff_role AS ENUM ('operator', 'accountant', 'support', 'company_admin', 'driver');
 

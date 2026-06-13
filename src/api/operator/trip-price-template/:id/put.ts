@@ -15,25 +15,12 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
-        const id = await bus.publicId.resolve('tripPriceTemplate', request.params.id)
-        const [routeId, fromStationId, toStationId] = await Promise.all([
-            request.body.routeId ? bus.publicId.resolve('route', request.body.routeId) : undefined,
-            request.body.fromStationId
-                ? bus.publicId.resolve('station', request.body.fromStationId)
-                : undefined,
-            request.body.toStationId
-                ? bus.publicId.resolve('station', request.body.toStationId)
-                : undefined,
-        ])
         return bus.operation.tripPriceTemplate.updateTripPriceTemplates({
             body: {
                 ...request.body,
                 companyId: userInfo.companyId,
-                routeId,
-                fromStationId,
-                toStationId,
             },
-            id,
+            id: request.params.id,
         })
     },
 

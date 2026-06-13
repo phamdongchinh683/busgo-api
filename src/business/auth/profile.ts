@@ -52,7 +52,7 @@ export async function getProfileCustomer(userInfo: UserInfo) {
         const account = await service.stripe.client.createCustomer({
             email: user.email,
             phone: user.phone ?? '',
-            name: user.fullName,
+            name: user.firstName + user.lastName,
             metadata: {
                 userId: userInfo.id.toString(),
             },
@@ -66,14 +66,15 @@ export async function getProfileCustomer(userInfo: UserInfo) {
     return {
         user: {
             ...user,
-            accountStripeId: accountStripeId,
+            accountStripeId,
         },
     }
 }
 
 export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileUpdateCustomerBody) {
     const updatedUser = await dal.auth.user.cmd.updateOne(userInfo.id, {
-        fullName: params.fullName,
+        firstName: params.firstName,
+        lastName: params.lastName,
         tokenVersion: userInfo.tokenVersion + 1,
     })
 
@@ -82,7 +83,7 @@ export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileU
         const account = await service.stripe.client.createCustomer({
             email: updatedUser.email,
             phone: updatedUser.phone ?? '',
-            name: updatedUser.fullName,
+            name: updatedUser.firstName + updatedUser.lastName,
             metadata: {
                 userId: userInfo.id.toString(),
             },
@@ -93,27 +94,11 @@ export async function updateProfileCustomer(userInfo: UserInfo, params: ProfileU
         accountStripeId = account.id
     }
 
-    const payload = {
-        id: updatedUser.id,
-        tokenVersion: updatedUser.tokenVersion,
-        email: updatedUser.email,
-        phone: updatedUser.phone,
-        fullName: updatedUser.fullName,
-        role: updatedUser.role,
-        status: updatedUser.status,
-        accountStripeId,
-        lastChangeEmail: updatedUser.lastChangeEmail,
-        lastChangePhone: updatedUser.lastChangePhone,
-    }
-
     return {
         message: 'Thành công',
-        token: jwt.auth.generateToken(payload),
+        token: jwt.auth.generateToken(updatedUser),
         user: {
-            fullName: updatedUser.fullName,
-            email: updatedUser.email,
-            phone: updatedUser.phone,
-            status: updatedUser.status,
+            ...updatedUser,
             accountStripeId,
         },
     }
@@ -177,25 +162,9 @@ export async function updateContactInfo(userInfo: UserInfo, params: ProfileUpdat
         tokenVersion: userInfo.tokenVersion + 1,
     })
 
-    const payload = {
-        id: updatedUser.id,
-        tokenVersion: updatedUser.tokenVersion,
-        email: updatedUser.email,
-        phone: updatedUser.phone,
-        fullName: updatedUser.fullName,
-        role: updatedUser.role,
-        status: updatedUser.status,
-        accountStripeId: updatedUser.accountStripeId,
-        lastChangeEmail: updatedUser.lastChangeEmail,
-        lastChangePhone: updatedUser.lastChangePhone,
-    }
-
     return {
         message: 'Thành công',
-        token: jwt.auth.generateToken(payload),
-        user: {
-            ...payload,
-            id: updatedUser.publicId,
-        },
+        token: jwt.auth.generateToken(updatedUser),
+        user: updatedUser,
     }
 }

@@ -10,10 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
-        const [boxId, messageId] = await Promise.all([
-            bus.publicId.resolve('chatBox', request.params.id),
-            bus.publicId.resolve('chatMessage', request.params.messageId),
-        ])
+        const { id: boxId, messageId } = request.params
         return bus.chat.message.recallMessage({
             userInfo,
             boxId,

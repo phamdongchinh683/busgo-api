@@ -10,14 +10,7 @@ api.route({
     ...endpoint(__filename),
     handler: async request => {
         await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.super_admin])
-        const companyId = request.query.companyId
-            ? await bus.publicId.resolve('busCompany', request.query.companyId)
-            : undefined
-
-        return bus.auth.superAdmin.listUsers({
-            ...request.query,
-            companyId,
-        })
+        return bus.auth.superAdmin.listUsers(request.query)
     },
     schema: {
         querystring: UserListRequestQuery,

@@ -3,7 +3,7 @@ import { stripe } from '../client/index.js'
 import { dal } from '../../../database/index.js'
 import { db } from '../../../datasource/db.js'
 import { utils } from '../../../utils/index.js'
-import { PaymentMethod, PaymentStatus } from '../../../database/payment/payment/type.js'
+import { PaymentMethod, PaymentStatus } from '../../../database/booking/booking/type.js'
 
 const StripePaymentSuccessResult = {
     recorded: 'recorded',
@@ -64,7 +64,7 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
 
 async function updateStripePaymentSuccess(transactionCode: string, paymentIntentId: string) {
     const result = await db.transaction().execute(async tx => {
-        const currentPayment = await dal.payment.payment.query.getPayment(
+        const currentPayment = await dal.booking.booking.query.getPayment(
             undefined,
             transactionCode,
             tx
@@ -73,29 +73,29 @@ async function updateStripePaymentSuccess(transactionCode: string, paymentIntent
             return StripePaymentSuccessResult.ignored
         }
 
-        await dal.booking.booking.query.lockBookingForPayment(currentPayment.bookingId, tx)
+        await dal.booking.booking.query.lockBookingForPayment(currentPayment.id as any, tx)
 
-        const payment = await dal.payment.payment.query.getPaymentByTransactionCodeForUpdate(
+        const payment = await dal.booking.booking.query.getPaymentByTransactionCodeForUpdate(
             transactionCode,
             tx
         )
-        if (!payment || payment.method !== PaymentMethod.enum.stripe) {
+        if (!payment || payment.paymentMethod !== PaymentMethod.enum.stripe) {
             return StripePaymentSuccessResult.ignored
         }
 
         if (
             payment.transactionNo === paymentIntentId &&
-            (payment.status === PaymentStatus.enum.success ||
-                payment.status === PaymentStatus.enum.refunded)
+            (payment.paymentStatus === PaymentStatus.enum.success ||
+                payment.paymentStatus === PaymentStatus.enum.refunded)
         ) {
             return StripePaymentSuccessResult.alreadyRecorded
         }
 
-        if (payment.status !== PaymentStatus.enum.pending) {
+        if (payment.paymentStatus !== PaymentStatus.enum.pending) {
             return StripePaymentSuccessResult.refundRequired
         }
 
-        await dal.payment.payment.cmd.updatePaymentStatusSuccess(
+        await dal.booking.booking.cmd.updatePaymentStatusSuccess(
             transactionCode,
             paymentIntentId,
             utils.time.getNow().toISOString(),

@@ -1,8 +1,5 @@
 import z from 'zod'
-import {
-    OrganizationBusCompanyId,
-    OrganizationBusCompanyPublicId,
-} from '../../../database/organization/bus_company/type.js'
+import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { Phone } from '../../common.js'
 
 export const BusCompanyBody = z.object({
@@ -18,9 +15,13 @@ export type BusCompanyBody = z.infer<typeof BusCompanyBody>
 export const BusCompanyListResponse = z.object({
     companies: z.array(
         BusCompanyBody.extend({
-            id: OrganizationBusCompanyPublicId,
+            id: OrganizationBusCompanyId,
             reviewCount: z.number().int().min(0),
-            reviewAvgStars: z.number().min(0).max(5),
+            star1: z.number().int().min(0),
+            star2: z.number().int().min(0),
+            star3: z.number().int().min(0),
+            star4: z.number().int().min(0),
+            star5: z.number().int().min(0),
         })
     ),
     next: OrganizationBusCompanyId.nullable(),
@@ -29,9 +30,12 @@ export type BusCompanyListResponse = z.infer<typeof BusCompanyListResponse>
 
 export const BusCompanyResponse = z.object({
     company: BusCompanyBody.extend({
-        id: OrganizationBusCompanyPublicId,
         reviewCount: z.number().int().min(0),
-        reviewAvgStars: z.number().min(0).max(5),
+        star1: z.number().int().min(0),
+        star2: z.number().int().min(0),
+        star3: z.number().int().min(0),
+        star4: z.number().int().min(0),
+        star5: z.number().int().min(0),
     }),
 })
 export type BusCompanyResponse = z.infer<typeof BusCompanyResponse>

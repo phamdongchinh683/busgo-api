@@ -39,6 +39,6 @@ export async function createOne(
         .insertInto('operation.trip_stop_template')
         .values(data)
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }

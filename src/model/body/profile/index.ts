@@ -1,10 +1,11 @@
 import z from 'zod'
 import { AuthUserStatus } from '../../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { Email, Otp, Phone, PublicUserInfo } from '../../common.js'
+import { Email, Otp, Phone, UserInfo } from '../../common.js'
 
 export const ProfileUpdateBody = z.object({
-    fullName: z.string().optional(),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
     companyId: OrganizationBusCompanyId.nullable().optional(),
     staffCode: z.string().nullable().optional(),
     position: z.string().nullable().optional(),
@@ -16,7 +17,8 @@ export const ProfileUpdateBody = z.object({
 export type ProfileUpdateBody = z.infer<typeof ProfileUpdateBody>
 
 export const ProfileUpdateCustomerBody = z.object({
-    fullName: z.string().min(7),
+    firstName: z.string().min(7),
+    lastName: z.string().min(7),
 })
 
 export type ProfileUpdateCustomerBody = z.infer<typeof ProfileUpdateCustomerBody>
@@ -39,7 +41,7 @@ export type ProfileUpdateContactBody = z.infer<typeof ProfileUpdateContactBody>
 export const ProfileUpdateContactResponse = z.object({
     message: z.string(),
     token: z.string(),
-    user: PublicUserInfo,
+    user: UserInfo,
 })
 export type ProfileUpdateContactResponse = z.infer<typeof ProfileUpdateContactResponse>
 
@@ -63,7 +65,8 @@ export type ProfileResponseUser = z.infer<typeof ProfileResponseUser>
 
 export const ProfileAccountResponse = z.object({
     user: z.object({
-        fullName: z.string(),
+        firstName: z.string(),
+        lastName: z.string(),
         email: Email.nullable(),
         phone: Phone.nullable(),
         status: AuthUserStatus,

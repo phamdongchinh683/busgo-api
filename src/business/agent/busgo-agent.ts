@@ -380,9 +380,7 @@ async function executeDecision(params: {
 
 async function getPromotions(state: AiChatState): Promise<AiChatResponse> {
     if (state.orderTotal !== undefined) {
-        const companyId = state.companyId
-            ? await dal.publicId.query.resolve('busCompany', state.companyId)
-            : undefined
+        const companyId = state.companyId ? state.companyId : undefined
         const result = await coupon.getCoupons({
             orderTotal: state.orderTotal,
             ...(companyId ? { companyId } : {}),

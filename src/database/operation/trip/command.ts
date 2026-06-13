@@ -23,7 +23,7 @@ export async function createTrip(params: OperationTripTableInsert, trx: Transact
             })
         )
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -40,14 +40,7 @@ export async function findByScheduleIdAndDepartureDate(
             cond.push(eb('t.departureDate', '=', params.departureDate))
             return eb.and(cond)
         })
-        .select([
-            't.id as internalId',
-            't.publicId as id',
-            't.status',
-            't.departureDate',
-            'ts.companyId',
-            'ts.departureTime',
-        ])
+        .select(['t.id', 't.status', 't.departureDate', 'ts.companyId', 'ts.departureTime'])
         .executeTakeFirst()
 }
 
@@ -65,7 +58,6 @@ export async function createTripTransaction({ scheduleId, departureDate, company
             })
             return {
                 id: existingTrip.id,
-                internalId: existingTrip.internalId,
                 companyId: existingTrip.companyId,
             }
         }
@@ -101,7 +93,6 @@ export async function createTripTransaction({ scheduleId, departureDate, company
 
         return {
             id: trip.id,
-            internalId: trip.internalId,
             companyId: schedule.companyId,
         }
     })
@@ -149,7 +140,7 @@ export async function updateStatus(
         })
         .where('id', '=', params.id)
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
 

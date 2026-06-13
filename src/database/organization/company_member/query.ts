@@ -1,7 +1,5 @@
-import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
-import { CompanyAdminQuery } from '../../../model/query/company-admin/index.js'
-import { AuthOperatorRole, AuthUserId, AuthUserRole } from '../../auth/user/type.js'
+import { AuthUserId } from '../../auth/user/type.js'
 import { OrganizationBusCompanyId } from '../bus_company/type.js'
 
 export async function getOne(params: { userId: AuthUserId; companyId?: OrganizationBusCompanyId }) {
@@ -10,7 +8,8 @@ export async function getOne(params: { userId: AuthUserId; companyId?: Organizat
         .leftJoin('auth.user as u', 'cm.userId', 'u.id')
         .select([
             'u.id',
-            'u.fullName',
+            'u.firstName',
+            'u.lastName',
             'u.email',
             'u.phone',
             'u.role',
@@ -28,41 +27,4 @@ export async function getOne(params: { userId: AuthUserId; companyId?: Organizat
             return eb.and(cond)
         })
         .executeTakeFirst()
-}
-
-export async function getAuthContext(userId: AuthUserId) {
-    return db
-        .selectFrom('organization.company_member as cm')
-        .select(['cm.companyId'])
-        .where('cm.userId', '=', userId)
-        .orderBy('cm.companyId', 'asc')
-        .executeTakeFirst()
-}
-
-export async function findAllCompanyAdmins(query: CompanyAdminQuery) {
-    const { limit, next, companyId } = query
-    return db
-        .selectFrom('auth.user as u')
-        .innerJoin('organization.company_member as cm', 'cm.userId', 'u.id')
-        .leftJoin('organization.bus_company as bc', 'bc.id', 'cm.companyId')
-        .where(eb => {
-            const cond = [eb('u.role', '=', AuthUserRole.enum.operator)]
-            if (companyId) cond.push(eb('cm.companyId', '=', companyId))
-            if (next) cond.push(eb('u.id', '>', next))
-            return eb.and(cond)
-        })
-        .select([
-            'u.id as cursorId',
-            'u.publicId as id',
-            'u.fullName',
-            'u.email',
-            'u.phone',
-            'u.status',
-            sql<AuthOperatorRole>`u.role`.as('role'),
-            'bc.publicId as companyId',
-            'bc.name as companyName',
-        ])
-        .limit(limit + 1)
-        .orderBy('u.id', 'asc')
-        .execute()
 }

@@ -2,7 +2,6 @@ import { AuthUserOtpTable } from '../database/auth/user_otp/table.js'
 import { AuthNotificationTable } from '../database/auth/notification/table.js'
 import { AuthUserTable } from '../database/auth/user/table.js'
 import { AuthUserDeviceTable } from '../database/auth/user_device/table.js'
-import { PaymentTable } from '../database/payment/payment/table.js'
 import { PaymentCustomerPaymentMethodTable } from '../database/payment/customer_payment_method/table.js'
 import { BookingTable } from '../database/booking/booking/table.js'
 import { BookingTicketTable } from '../database/booking/ticket/table.js'
@@ -28,7 +27,6 @@ export interface Database {
     'auth.user_device': AuthUserDeviceTable
     'auth.notification': AuthNotificationTable
     'auth.user_otp': AuthUserOtpTable
-    'payment.payment': PaymentTable
     'payment.customer_payment_method': PaymentCustomerPaymentMethodTable
     'booking.booking': BookingTable
     'booking.coupon': BookingCouponTable

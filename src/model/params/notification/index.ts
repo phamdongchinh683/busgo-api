@@ -1,8 +1,8 @@
 import z from 'zod'
-import { AuthNotificationPublicId } from '../../../database/auth/notification/type.js'
+import { AuthNotificationId } from '../../../database/auth/notification/type.js'
 
 export const NotificationIdParam = z.object({
-    id: AuthNotificationPublicId,
+    id: AuthNotificationId,
 })
 
 export type NotificationIdParam = z.infer<typeof NotificationIdParam>

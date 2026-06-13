@@ -1,10 +1,9 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { OperationRouteId, OperationRoutePublicId } from './type.js'
+import { OperationRouteId } from './type.js'
 
 export interface OperationRouteTable extends Timestamps {
     id: GeneratedAlways<OperationRouteId>
-    publicId: GeneratedAlways<OperationRoutePublicId>
     fromLocation: string
     toLocation: string
     distanceKm: number

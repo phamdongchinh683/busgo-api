@@ -29,17 +29,17 @@ export async function findAllByCompanyId(params: {
             return eb.and(cond)
         })
         .select([
-            'tpt.id as cursorId',
-            'tpt.publicId as id',
+            'tpt.id',
+            'tpt.id',
             'tpt.price',
             'tpt.status',
-            'r.publicId as routeId',
+            'r.id as routeId',
             'r.fromLocation as routeFromLocation',
             'r.toLocation as routeToLocation',
-            's.publicId as fromStationId',
+            's.id as fromStationId',
             's.address as fromStationAddress',
             's.city as fromStationCity',
-            's2.publicId as toStationId',
+            's2.id as toStationId',
             's2.address as toStationAddress',
             's2.city as toStationCity',
         ])
@@ -55,10 +55,10 @@ export async function getPublicById(id: OperationTripPriceTemplateId) {
         .innerJoin('operation.station as fromStation', 'fromStation.id', 'tpt.fromStationId')
         .innerJoin('operation.station as toStation', 'toStation.id', 'tpt.toStationId')
         .select([
-            'tpt.publicId as id',
-            'r.publicId as routeId',
-            'fromStation.publicId as fromStationId',
-            'toStation.publicId as toStationId',
+            'tpt.id',
+            'r.id as routeId',
+            'fromStation.id as fromStationId',
+            'toStation.id as toStationId',
             'tpt.price',
             'tpt.status',
         ])
@@ -81,6 +81,6 @@ export async function updateOneById(
             return eb.and(cond)
         })
         .returningAll()
-        .returning(['id as internalId', 'publicId as id'])
+        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
