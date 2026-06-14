@@ -4,7 +4,7 @@ import { dal } from '../../database/index.js'
 import { TicketFilter, TicketSupportFilter } from '../../model/query/ticket/index.js'
 import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
-import { OperationTripId, OperationTripStatus } from '../../database/operation/trip/type.js'
+import { OperationTripStatus } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { BookingId, PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
 

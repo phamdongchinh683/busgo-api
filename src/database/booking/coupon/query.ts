@@ -14,7 +14,6 @@ export async function findAll(q: CouponFilter) {
     let query = db
         .selectFrom('booking.coupon as c')
         .selectAll()
-        .select(['c.id'])
         .where(eb => {
             const filters: Expression<SqlBool>[] = []
             filters.push(eb('c.startDate', '<=', now).or(eb('c.startDate', 'is', null)))

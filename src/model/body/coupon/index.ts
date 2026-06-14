@@ -6,7 +6,7 @@ export const CouponResponse = z.object({
     discountType: BookingDiscountType,
     discountValue: z.number(),
     minOrderAmount: z.number(),
-    maxDiscountAmount: z.number(),
+    maxDiscountAmount: z.number().nullable(),
     totalQuantity: z.number(),
     usedQuantity: z.number(),
     startDate: z.date().nullable(),

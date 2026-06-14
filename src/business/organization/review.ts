@@ -29,10 +29,12 @@ export async function createOne(params: { userId: AuthUserId; body: BusCompanyRe
         )
     }
 
-    const trip = await dal.operation.trip.query.findById(body.tripId)
+    if (bookingInfo.isRate === true) {
+        throw new HttpErr.BadRequest('Chuyến đi đã đánh giá rồi.')
+    }
 
     await dal.organization.busCompanyReview.cmd.upsertOne({
-        companyId: trip.companyId,
+        companyId: bookingInfo.companyId,
         userId,
         ticketId: body.ticketId,
         rating: body.rating,
@@ -40,9 +42,9 @@ export async function createOne(params: { userId: AuthUserId; body: BusCompanyRe
     })
 
     await Promise.all([
-        utils.cache.delCacheByPattern(`bus-company-review:list:${trip.companyId}:*`),
+        utils.cache.delCacheByPattern(`bus-company-review:list:${bookingInfo.companyId}:*`),
         utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(trip.companyId),
+        clearTripScheduleListCache(bookingInfo.companyId),
     ])
 
     return { message: 'Thành công' }

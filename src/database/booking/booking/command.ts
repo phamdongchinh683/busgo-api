@@ -12,6 +12,7 @@ import { BookingTableInsert } from './table.js'
 import { dal } from '../../index.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { HttpErr } from '../../../app/index.js'
+import { TicketStatus } from '../ticket/type.js'
 
 export async function createOneWayBooking(params: BookingRequest, userId: AuthUserId) {
     const { outBound } = params
@@ -42,6 +43,7 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
                 fromStationId: outBound.fromStationId,
                 toStationId: outBound.toStationId,
                 isRate: false,
+                status: TicketStatus.enum.active,
             },
             tx
         )
@@ -65,121 +67,123 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
     })
 }
 
-// export async function createRoundTripBooking(params: BookingRequest, userId: AuthUserId) {
-//     const { outBound, returnBound } = params
-//     let total = 0
-//     let original = 0
-//     let discount = 0
+export async function createRoundTripBooking(params: BookingRequest, userId: AuthUserId) {
+    const { outBound, returnBound } = params
+    let total = 0
+    let original = 0
+    let discount = 0
 
-//     if (outBound && returnBound) {
-//         return db.transaction().execute(async tx => {
-//             const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
-//             if (seatConflict) {
-//                 throw new HttpErr.UnprocessableEntity(
-//                     'Ghế đã được giữ hoặc đã được đặt.',
-//                     'SEAT_CONFLICT_OUTBOUND'
-//                 )
-//             }
+    if (outBound && returnBound) {
+        return db.transaction().execute(async tx => {
+            const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
+            if (seatConflict) {
+                throw new HttpErr.UnprocessableEntity(
+                    'Ghế đã được giữ hoặc đã được đặt.',
+                    'SEAT_CONFLICT_OUTBOUND'
+                )
+            }
 
-//             const seatConflictReturn = await dal.booking.seatSegment.cmd.checkSeatConflict(
-//                 returnBound,
-//                 tx
-//             )
-//             if (seatConflictReturn) {
-//                 throw new HttpErr.UnprocessableEntity(
-//                     'Ghế đã được giữ hoặc đã được đặt.',
-//                     'SEAT_CONFLICT_RETURNBOUND'
-//                 )
-//             }
+            const seatConflictReturn = await dal.booking.seatSegment.cmd.checkSeatConflict(
+                returnBound,
+                tx
+            )
+            if (seatConflictReturn) {
+                throw new HttpErr.UnprocessableEntity(
+                    'Ghế đã được giữ hoặc đã được đặt.',
+                    'SEAT_CONFLICT_RETURNBOUND'
+                )
+            }
 
-//             for (const trip of [outBound, returnBound]) {
-//                 const result = await dal.operation.tripPriceTemplate.cmd.getPriceByCompanyId(
-//                     {
-//                         companyId: trip.companyId,
-//                         fromStationId: trip.fromStationId,
-//                         toStationId: trip.toStationId,
-//                     },
-//                     tx
-//                 )
-//                 if (!result) {
-//                     throw new HttpErr.NotFound(
-//                         'Không tìm thấy giá chuyến đi cho chặng đã chọn.',
-//                         {
-//                             companyId: trip.companyId,
-//                             fromStationId: trip.fromStationId,
-//                             toStationId: trip.toStationId,
-//                         },
-//                         'TRIP_PRICE_NOT_FOUND'
-//                     )
-//                 }
-//                 total += result.price
-//             }
+            for (const trip of [outBound, returnBound]) {
+                const result = await dal.operation.tripPriceTemplate.cmd.getPriceByCompanyId(
+                    {
+                        companyId: trip.companyId,
+                        fromStationId: trip.fromStationId,
+                        toStationId: trip.toStationId,
+                    },
+                    tx
+                )
+                if (!result) {
+                    throw new HttpErr.NotFound(
+                        'Không tìm thấy giá chuyến đi cho chặng đã chọn.',
+                        {
+                            companyId: trip.companyId,
+                            fromStationId: trip.fromStationId,
+                            toStationId: trip.toStationId,
+                        },
+                        'TRIP_PRICE_NOT_FOUND'
+                    )
+                }
+                total += result.price
+            }
 
-//             const booking = await createBookingTransaction(
-//                 {
-//                     userId,
-//                     code: utils.random.generateRandomNumber(20).toString(),
-//                     bookingType: BookingType.enum.round_trip,
-//                     totalAmount: total,
-//                     companyId: outBound.companyId,
-//                     discountAmount: discount,
-//                     originalAmount: original,
-//                     expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
-//                 },
-//                 tx
-//             )
+            const booking = await createBookingTransaction(
+                {
+                    userId,
+                    code: utils.random.generateRandomNumber(20).toString(),
+                    bookingType: BookingType.enum.round_trip,
+                    totalAmount: total,
+                    companyId: outBound.companyId,
+                    discountAmount: discount,
+                    originalAmount: original,
+                    expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
+                },
+                tx
+            )
 
-//             const ticket = await dal.booking.ticket.cmd.insertManyTicketsTransaction(
-//                 [
-//                     {
-//                         bookingId: booking.id,
-//                         tripId: outBound.tripId,
-//                         seatId: outBound.seatId,
-//                         fromStationId: outBound.fromStationId,
-//                         toStationId: outBound.toStationId,
-//                         checkedInAt: null,
-//                     },
-//                     {
-//                         bookingId: booking.id,
-//                         tripId: returnBound.tripId,
-//                         seatId: returnBound.seatId,
-//                         fromStationId: returnBound.fromStationId,
-//                         toStationId: returnBound.toStationId,
-//                         checkedInAt: null,
-//                     },
-//                 ],
-//                 tx
-//             )
+            const ticket = await dal.booking.ticket.cmd.insertManyTicketsTransaction(
+                [
+                    {
+                        bookingId: booking.id,
+                        tripId: outBound.tripId,
+                        seatId: outBound.seatId,
+                        fromStationId: outBound.fromStationId,
+                        toStationId: outBound.toStationId,
+                        status: TicketStatus.enum.active,
+                        isRate: false,
+                    },
+                    {
+                        bookingId: booking.id,
+                        tripId: returnBound.tripId,
+                        seatId: returnBound.seatId,
+                        fromStationId: returnBound.fromStationId,
+                        toStationId: returnBound.toStationId,
+                        status: TicketStatus.enum.active,
+                        isRate: false,
+                    },
+                ],
+                tx
+            )
 
-//             await dal.booking.seatSegment.cmd.insertManySeatSegmentsTransaction(
-//                 [
-//                     {
-//                         tripId: outBound.tripId,
-//                         seatId: outBound.seatId,
-//                         fromStationId: outBound.fromStationId,
-//                         toStationId: outBound.toStationId,
-//                         ticketId: ticket[0].id,
-//                     },
-//                     {
-//                         tripId: returnBound.tripId,
-//                         seatId: returnBound.seatId,
-//                         fromStationId: returnBound.fromStationId,
-//                         toStationId: returnBound.toStationId,
-//                         ticketId: ticket[1].id,
-//                     },
-//                 ],
-//                 tx
-//             )
+            await dal.booking.seatSegment.cmd.insertManySeatSegmentsTransaction(
+                [
+                    {
+                        tripId: outBound.tripId,
+                        seatId: outBound.seatId,
+                        fromStationId: outBound.fromStationId,
+                        toStationId: outBound.toStationId,
+                        ticketId: ticket[0].id,
+                    },
+                    {
+                        tripId: returnBound.tripId,
+                        seatId: returnBound.seatId,
+                        fromStationId: returnBound.fromStationId,
+                        toStationId: returnBound.toStationId,
+                        ticketId: ticket[1].id,
+                    },
+                ],
+                tx
+            )
 
-//             return {
-//                 id: booking.id,
-//                 expiredAt: booking.expiredAt,
-//                 message:
-//                     'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
-//             }
-//         })
-//     }
-// }
+            return {
+                id: booking.id,
+                expiredAt: booking.expiredAt,
+                message:
+                    'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
+            }
+        })
+    }
+}
 
 async function createBookingTransaction(params: BookingTableInsert, trx: Transaction<Database>) {
     const data = _.omitBy(params, v => _.isNil(v)) as BookingTableInsert

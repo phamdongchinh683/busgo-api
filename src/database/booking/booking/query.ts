@@ -48,7 +48,13 @@ export async function getBookingByUserIdAndBookingId(
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .selectAll()
-        .select(['trip.status as tripStatus', 'trip.departureDate', 'b.method', 'b.status'])
+        .select([
+            'trip.status as tripStatus',
+            'trip.departureDate',
+            'b.method',
+            'b.status',
+            't.isRate',
+        ])
         .where(eb => {
             const cond = []
             cond.push(eb('b.userId', '=', userId))

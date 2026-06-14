@@ -7,7 +7,6 @@ import { BookingId } from '../booking/type.js'
 import { db } from '../../../datasource/db.js'
 import { dal } from '../../index.js'
 import { PaymentMethod, PaymentStatus } from '../booking/type.js'
-import { OperationTripId } from '../../operation/trip/type.js'
 import { service } from '../../../service/index.js'
 
 export async function createTicketTransaction(

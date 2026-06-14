@@ -20,7 +20,7 @@ export const BookingTicketRequestBody = BookingTicketRequest
 export const BookingRequest = z.object({
     type: BookingType,
     outBound: BookingTicketRequest,
-    // returnBound: BookingTicketRequest.optional(),
+    returnBound: BookingTicketRequest.optional(),
 })
 
 export type BookingRequest = z.infer<typeof BookingRequest>

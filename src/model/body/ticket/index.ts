@@ -6,7 +6,7 @@ import { OperationTripStatus } from '../../../database/operation/trip/type.js'
 
 export const TicketBody = z.object({
     status: PaymentStatus.nullable(),
-    isRated: z.boolean(),
+    isRate: z.boolean(),
     bookingType: BookingType,
     originalAmount: z.number(),
     discountAmount: z.number(),
@@ -27,8 +27,10 @@ export const TicketsResponse = z.object({
         TicketBody.extend({
             id: BookingTicketId,
             bookingId: BookingId,
-            departureDate: z.date().nullable(),
-            tripStatus: OperationTripStatus.nullable(),
+            from: z.string(),
+            to: z.string(),
+            departureDate: z.date(),
+            tripStatus: OperationTripStatus,
             expiredAt: z.date().nullable(),
         })
     ),
