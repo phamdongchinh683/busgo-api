@@ -81,6 +81,5 @@ export async function updateOneById(
             return eb.and(cond)
         })
         .returningAll()
-        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }

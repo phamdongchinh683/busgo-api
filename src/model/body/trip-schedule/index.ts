@@ -27,7 +27,6 @@ export const TripScheduleResponse = z.object({
             endDate: z.coerce.date(),
             status: StatusFlag,
             durationMinutes: z.number(),
-            totalStars: z.number().min(0).max(5),
         })
     ),
     next: OperationTripScheduleId.nullable(),

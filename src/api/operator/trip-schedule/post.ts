@@ -1,7 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { jwt } from '../../../app/index.js'
-import { OPERATOR_ROLES } from '../../../database/auth/user/type.js'
+import { AuthUserRole } from '../../../database/auth/user/type.js'
 import {
     TripScheduleRequestBody,
     TripScheduleUpdateResponse,
@@ -13,7 +13,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        const userInfo = await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
+        const userInfo = await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.operator])
         const { routeId } = request.body
         return bus.operation.tripSchedule.createTripSchedule({
             body: {

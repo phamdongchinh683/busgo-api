@@ -17,13 +17,19 @@ export const VehicleBody = z.object({
 export type VehicleBody = z.infer<typeof VehicleBody>
 
 export const VehicleResponse = z.object({
-    vehicle: VehicleBody.omit({ companyId: true }).extend({}),
+    vehicle: VehicleBody.omit({ companyId: true }).extend({
+        id: OrganizationVehicleId,
+    }),
 })
 
 export type VehicleResponse = z.infer<typeof VehicleResponse>
 
 export const VehicleListResponse = z.object({
-    vehicles: z.array(VehicleBody.omit({ companyId: true }).extend({})),
+    vehicles: z.array(
+        VehicleBody.omit({ companyId: true }).extend({
+            id: OrganizationVehicleId,
+        })
+    ),
     next: OrganizationVehicleId.nullable(),
 })
 

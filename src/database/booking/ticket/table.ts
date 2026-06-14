@@ -1,6 +1,6 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { BookingTicketId, BookingTicketStatus } from './type.js'
+import { BookingTicketId } from './type.js'
 import { OrganizationSeatId } from '../../organization/seat/type.js'
 import { OperationStationId } from '../../operation/station/type.js'
 import { BookingId } from '../booking/type.js'
@@ -13,7 +13,7 @@ export interface BookingTicketTable extends Timestamps {
     seatId: OrganizationSeatId
     fromStationId: OperationStationId
     toStationId: OperationStationId
-    status: BookingTicketStatus
+    isRate: boolean
 }
 
 export type BookingTicketTableInsert = Insertable<BookingTicketTable>

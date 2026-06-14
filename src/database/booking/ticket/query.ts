@@ -7,12 +7,12 @@ import {
     TicketFilter,
     TicketSupportFilter,
 } from '../../../model/query/ticket/index.js'
-import { BookingTicketId, BookingTicketStatus } from './type.js'
-import { BookingStatus } from '../booking/type.js'
+import { BookingTicketId } from './type.js'
+import { PaymentStatus } from '../booking/type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { Transaction, sql } from 'kysely'
 
-export async function findAll(q: TicketFilter, userId: AuthUserId) {
+export async function findAllByUserId(q: TicketFilter, userId: AuthUserId) {
     const { limit, next } = q
     return db
         .selectFrom('booking.ticket as t')
@@ -22,11 +22,10 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             const cond = [eb('b.userId', '=', userId)]
             if (next) cond.push(eb('t.id', '<', next))
             if (q.type) cond.push(eb('b.bookingType', '=', q.type))
-            if (q.status) cond.push(eb('t.status', '=', q.status))
+            if (q.status) cond.push(eb('b.status', '=', q.status))
             return eb.and(cond)
         })
-        .select([
-            't.id',
+        .select(eb => [
             't.id',
             'trip.id as tripId',
             'b.code',
@@ -39,13 +38,22 @@ export async function findAll(q: TicketFilter, userId: AuthUserId) {
             'b.status',
             'trip.status as tripStatus',
             'b.expiredAt',
+            eb
+                .exists(
+                    eb
+                        .selectFrom('organization.bus_company_review as r')
+                        .select('r.id')
+                        .whereRef('r.ticketId', '=', 't.id')
+                )
+                .$castTo<boolean>()
+                .as('isRated'),
         ])
         .orderBy('t.id', 'desc')
         .limit(limit + 1)
         .execute()
 }
 
-export async function findAllPublic(q: TicketFilter, userId: AuthUserId) {
+export async function findAll(q: TicketFilter, userId: AuthUserId) {
     const { limit, next } = q
     return db
         .selectFrom('booking.ticket as t')
@@ -61,12 +69,12 @@ export async function findAllPublic(q: TicketFilter, userId: AuthUserId) {
                 cond.push(eb('b.bookingType', '=', q.type))
             }
             if (q.status) {
-                cond.push(eb('t.status', '=', q.status))
+                cond.push(eb('b.status', '=', q.status))
             }
 
             return eb.and(cond)
         })
-        .select([
+        .select(eb => [
             't.id',
             'trip.id as tripId',
             'b.code',
@@ -79,6 +87,15 @@ export async function findAllPublic(q: TicketFilter, userId: AuthUserId) {
             'b.status',
             'trip.status as tripStatus',
             'b.expiredAt',
+            eb
+                .exists(
+                    eb
+                        .selectFrom('organization.bus_company_review as r')
+                        .select('r.id')
+                        .whereRef('r.ticketId', '=', 't.id')
+                )
+                .$castTo<boolean>()
+                .as('isRated'),
         ])
         .orderBy('t.id', 'desc')
         .limit(limit + 1)
@@ -103,7 +120,7 @@ export async function findById(id: BookingTicketId, userId: AuthUserId) {
             cond.push(eb('b.userId', '=', userId))
             return eb.and(cond)
         })
-        .select([
+        .select(eb => [
             't.id',
             'b.code',
             'b.bookingType',
@@ -118,6 +135,15 @@ export async function findById(id: BookingTicketId, userId: AuthUserId) {
             'route.toLocation',
             'tsp.departureTime',
             'trip.departureDate',
+            eb
+                .exists(
+                    eb
+                        .selectFrom('organization.bus_company_review as r')
+                        .select('r.id')
+                        .whereRef('r.ticketId', '=', 't.id')
+                )
+                .$castTo<boolean>()
+                .as('isRated'),
         ])
         .executeTakeFirstOrThrow()
 }
@@ -143,13 +169,8 @@ export async function findPassengersByDriverAndTripId(
             const cond = []
             cond.push(eb('trip.id', '=', tripId))
             cond.push(sql<boolean>`trip.driver_ids @> ARRAY[${driverId}]::int[]`)
-            cond.push(eb('b.status', 'in', [BookingStatus.enum.paid, BookingStatus.enum.pending]))
             cond.push(
-                eb('t.status', 'in', [
-                    BookingTicketStatus.enum.paid,
-                    BookingTicketStatus.enum.checked_in,
-                    BookingTicketStatus.enum.reserved,
-                ])
+                eb('b.status', 'in', [PaymentStatus.enum.success, PaymentStatus.enum.pending])
             )
             if (phoneNumber) {
                 cond.push(eb('u.phone', '=', phoneNumber))
@@ -161,12 +182,11 @@ export async function findPassengersByDriverAndTripId(
         })
         .select([
             't.id',
-            'u.phone as phoneNumber',
+            'u.phone',
             'u.firstName',
             'u.lastName',
             'seat.seatNumber',
             'b.status',
-            't.status as ticketStatus',
             'fs.address as pickup',
             'ts.address as dropoff',
             'b.bookingType',
@@ -188,11 +208,7 @@ export async function countUncheckedActivePassengersByTripId(
         .where(eb =>
             eb.and([
                 eb('t.tripId', '=', tripId),
-                eb('b.status', 'in', [BookingStatus.enum.pending, BookingStatus.enum.paid]),
-                eb('t.status', 'in', [
-                    BookingTicketStatus.enum.reserved,
-                    BookingTicketStatus.enum.paid,
-                ]),
+                eb('b.status', 'in', [PaymentStatus.enum.pending, PaymentStatus.enum.success]),
             ])
         )
         .executeTakeFirstOrThrow()
@@ -212,7 +228,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             const cond = []
             cond.push(eb('tsp.companyId', '=', companyId))
             if (status) {
-                cond.push(eb('t.status', '=', status))
+                cond.push(eb('b.status', '=', status))
             }
             if (code) {
                 cond.push(eb('b.code', '=', code))
@@ -228,7 +244,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
 
             return eb.and(cond)
         })
-        .select([
+        .select(eb => [
             't.id',
             'b.code',
             'b.bookingType',
@@ -241,6 +257,15 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'b.status',
             'trip.departureDate',
             'b.expiredAt',
+            eb
+                .exists(
+                    eb
+                        .selectFrom('organization.bus_company_review as r')
+                        .select('r.id')
+                        .whereRef('r.ticketId', '=', 't.id')
+                )
+                .$castTo<boolean>()
+                .as('isRated'),
         ])
         .orderBy('t.id', 'desc')
         .limit(limit + 1)
@@ -259,7 +284,7 @@ export async function findByIdSupport(id: BookingTicketId, companyId: Organizati
             cond.push(eb('t.id', '=', id))
             return eb.and(cond)
         })
-        .select([
+        .select(eb => [
             't.id',
             'b.code',
             'b.bookingType',
@@ -268,6 +293,15 @@ export async function findByIdSupport(id: BookingTicketId, companyId: Organizati
             'b.totalAmount',
             'b.status',
             'trip.departureDate',
+            eb
+                .exists(
+                    eb
+                        .selectFrom('organization.bus_company_review as r')
+                        .select('r.id')
+                        .whereRef('r.ticketId', '=', 't.id')
+                )
+                .$castTo<boolean>()
+                .as('isRated'),
         ])
         .executeTakeFirstOrThrow()
 }

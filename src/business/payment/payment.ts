@@ -5,6 +5,8 @@ import { PaymentMethod, PaymentStatus } from '../../database/booking/booking/typ
 import { service } from '../../service/index.js'
 import { HttpErr } from '../../app/index.js'
 import { BookingId, BookingType } from '../../database/booking/booking/type.js'
+import { BookingCouponId } from '../../database/booking/coupon/type.js'
+import { applyCoupon, validateCoupon } from '../booking/coupon.js'
 import { db } from '../../datasource/db.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
@@ -58,6 +60,9 @@ async function preparePayment(
     method: PaymentMethod | null,
     tx?: Transaction<Database>
 ) {
+    const currentTotal = (await dal.booking.booking.query.getAmountByBookingId(bookingId, tx))
+        .totalAmount
+
     const payment = await dal.booking.booking.query.getPayment(bookingId, undefined, tx)
 
     if (payment) {
@@ -78,7 +83,7 @@ async function preparePayment(
             )
         }
 
-        if (payment.method === method) {
+        if (payment.status === method) {
             return payment
         }
 
@@ -88,13 +93,11 @@ async function preparePayment(
                 transactionCode: utils.random.generateRandomNumber(12).toString(),
                 method,
                 status: PaymentStatus.enum.pending,
-                amount: payment.amount ?? undefined,
+                amount: currentTotal,
             },
             tx
         )
     }
-
-    const amount = (await dal.booking.booking.query.getAmountByBookingId(bookingId, tx)).totalAmount
 
     return dal.booking.booking.cmd.upsertPayment(
         {
@@ -102,14 +105,62 @@ async function preparePayment(
             transactionCode: utils.random.generateRandomNumber(12).toString(),
             method,
             status: PaymentStatus.enum.pending,
-            amount,
+            amount: currentTotal,
         },
         tx
     )
 }
 
+async function applyCouponToPendingBooking(bookingId: BookingId, couponId: BookingCouponId) {
+    await db.transaction().execute(async trx => {
+        const booking = await trx
+            .selectFrom('booking.booking')
+            .select(['id', 'status', 'couponId', 'originalAmount', 'totalAmount'])
+            .where('id', '=', bookingId)
+            .forUpdate()
+            .executeTakeFirstOrThrow()
+
+        if (booking.status === 'success') {
+            return
+        }
+
+        if (booking.couponId === couponId) {
+            return
+        }
+
+        if (booking.couponId != null) {
+            await dal.booking.coupon.cmd.upCountUsedQuantity(booking.couponId, '-', trx)
+        }
+
+        const gross = booking.originalAmount ?? booking.totalAmount ?? 0
+
+        const coupon = await dal.booking.coupon.cmd.getCouponByCodeTransaction(
+            { id: couponId, orderTotal: gross },
+            trx
+        )
+
+        if (!coupon) {
+            throw new HttpErr.UnprocessableEntity('Mã giảm giá không hợp lệ.', 'COUPON_NOT_FOUND')
+        }
+
+        validateCoupon(coupon, gross)
+
+        const { discountAmount, finalTotal } = applyCoupon(coupon, gross)
+
+        await trx
+            .updateTable('booking.booking')
+            .set({
+                couponId,
+                discountAmount,
+                totalAmount: finalTotal,
+            })
+            .where('id', '=', bookingId)
+            .execute()
+    })
+}
+
 export async function createPayment(params: PaymentMethodRequest, userId: AuthUserId, ip: string) {
-    const { method } = params
+    const { method, couponId } = params
     const bookingId = params.id
 
     const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
@@ -131,13 +182,17 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
         )
     }
 
+    if (couponId) {
+        await applyCouponToPendingBooking(bookingId, couponId)
+    }
+
     switch (method) {
         case PaymentMethod.enum.vnpay:
-            return createVnpayPayment(params, ip, bookingId)
+            return createVnpayPayment(params, ip)
         case PaymentMethod.enum.cash:
             return createCashPayment(params, bookingId)
         case PaymentMethod.enum.stripe:
-            return createStripePayment(params, userId, bookingId)
+            return createStripePayment(params, userId)
         default:
             throw new HttpErr.UnprocessableEntity(
                 'Phương thức thanh toán không hợp lệ.',
@@ -146,10 +201,10 @@ export async function createPayment(params: PaymentMethodRequest, userId: AuthUs
     }
 }
 
-export async function createCashPayment(params: PaymentMethodRequest, bookingId: BookingId) {
+export async function createCashPayment(params: PaymentMethodRequest, _bookingId?: BookingId) {
     const payment = await db.transaction().execute(async tx => {
-        const result = await preparePayment(bookingId, PaymentMethod.enum.cash, tx)
-        await dal.booking.booking.cmd.updateExpiredBooking(bookingId, tx)
+        const result = await preparePayment(params.id, PaymentMethod.enum.cash, tx)
+        await dal.booking.booking.cmd.updateExpiredBooking(params.id, tx)
         return result
     })
 
@@ -159,15 +214,11 @@ export async function createCashPayment(params: PaymentMethodRequest, bookingId:
     }
 }
 
-export async function createVnpayPayment(
-    params: PaymentMethodRequest,
-    ip: string,
-    bookingId: BookingId
-) {
-    const payment = await preparePayment(bookingId, PaymentMethod.enum.vnpay)
+export async function createVnpayPayment(params: PaymentMethodRequest, ip: string) {
+    const payment = await preparePayment(params.id, PaymentMethod.enum.vnpay)
 
-    const amt = (payment as any).amount ?? (payment as any).paymentAmount ?? 0
-    const txCode = (payment as any).transactionCode ?? ''
+    const amt = payment.totalAmount
+    const txCode = payment.transactionCode ?? ''
     return {
         message: 'Thành công',
         paymentUrl: service.vnpay.init.initiatePayment(amt, txCode, ip),
@@ -198,7 +249,7 @@ async function confirmVnpayPayment(query: Record<string, string>) {
             return { RspCode: '00', Message: 'Thanh toán đã được xác nhận' }
         }
 
-        if (payment.amount !== Number(vnp_Amount) / 100) {
+        if (payment.totalAmount !== Number(vnp_Amount) / 100) {
             return { RspCode: '04', Message: 'Số tiền thanh toán không hợp lệ' }
         }
 
@@ -287,14 +338,10 @@ export async function stripeStatus(p: UserInfo): Promise<StripeStatusResponse> {
     })
 }
 
-async function createStripePayment(
-    params: PaymentMethodRequest,
-    userId: AuthUserId,
-    bookingId: BookingId
-) {
+async function createStripePayment(params: PaymentMethodRequest, userId: AuthUserId) {
     const payment = await db.transaction().execute(async tx => {
-        await dal.booking.booking.query.lockBookingForPayment(bookingId, tx)
-        return preparePayment(bookingId, PaymentMethod.enum.stripe, tx)
+        await dal.booking.booking.query.lockBookingForPayment(params.id, tx)
+        return preparePayment(params.id, PaymentMethod.enum.stripe, tx)
     })
 
     const user = await dal.auth.user.query.getOne({ id: userId })
@@ -305,15 +352,7 @@ async function createStripePayment(
         )
     }
 
-    const companyRow = await dal.booking.booking.query.getCompanyIdByBookingId(bookingId)
-    if (!companyRow?.companyId) {
-        throw new HttpErr.UnprocessableEntity(
-            'Không tìm thấy công ty cho đặt vé này.',
-            'COMPANY_NOT_FOUND'
-        )
-    }
-
-    const companyAdmin = await dal.auth.user.query.getCompanyStripeAccountId(companyRow.companyId)
+    const companyAdmin = await dal.auth.user.query.getCompanyStripeAccountId(payment.companyId)
 
     if (!companyAdmin?.accountStripeId) {
         throw new HttpErr.UnprocessableEntity(
@@ -322,8 +361,8 @@ async function createStripePayment(
         )
     }
 
-    const txCode = (payment as any).transactionCode ?? ''
-    const amt = (payment as any).amount ?? (payment as any).paymentAmount ?? 0
+    const txCode = payment.transactionCode ?? ''
+    const amt = payment.totalAmount
     const successUrl = buildStripePaymentReturnUrl('success', txCode)
     const cancelUrl = buildStripePaymentReturnUrl('cancelled', txCode)
 

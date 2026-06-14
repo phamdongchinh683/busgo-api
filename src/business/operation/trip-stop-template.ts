@@ -54,9 +54,7 @@ export async function createStoppingPoint(params: {
     await utils.cache.delCache(`trip-schedule:pickup-stops:${data.scheduleId}`)
 
     return {
-        stoppingPoint: await dal.operation.tripStopTemplate.query.getPublicById(
-            stoppingPoint.internalId
-        ),
+        stoppingPoint,
     }
 }
 

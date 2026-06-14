@@ -15,7 +15,6 @@ export interface OrganizationBusCompanyTable extends Timestamps {
     star3: number
     star4: number
     star5: number
-    reviewCount: number
 }
 
 export type OrganizationBusCompanyTableInsert = Insertable<OrganizationBusCompanyTable>

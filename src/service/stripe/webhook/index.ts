@@ -26,7 +26,6 @@ export async function handleWebhook(rawBody: string | Buffer, signature: string)
                 await handlePaymentSuccess(event.data.object)
                 break
             case 'payment_intent.payment_failed':
-                // A failed intent can be retried, and another Stripe payment flow may still be active.
                 break
         }
     } catch (err: any) {
@@ -79,19 +78,19 @@ async function updateStripePaymentSuccess(transactionCode: string, paymentIntent
             transactionCode,
             tx
         )
-        if (!payment || payment.paymentMethod !== PaymentMethod.enum.stripe) {
+        if (!payment || payment.method !== PaymentMethod.enum.stripe) {
             return StripePaymentSuccessResult.ignored
         }
 
         if (
             payment.transactionNo === paymentIntentId &&
-            (payment.paymentStatus === PaymentStatus.enum.success ||
-                payment.paymentStatus === PaymentStatus.enum.refunded)
+            (payment.status === PaymentStatus.enum.success ||
+                payment.status === PaymentStatus.enum.refunded)
         ) {
             return StripePaymentSuccessResult.alreadyRecorded
         }
 
-        if (payment.paymentStatus !== PaymentStatus.enum.pending) {
+        if (payment.status !== PaymentStatus.enum.pending) {
             return StripePaymentSuccessResult.refundRequired
         }
 

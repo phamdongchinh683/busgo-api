@@ -1,14 +1,13 @@
-import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
+import { BookingTicketId } from '../../../database/booking/ticket/type.js'
 import z from 'zod'
-import { BookingType } from '../../../database/booking/booking/type.js'
+import { PaymentStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { Phone } from '../../common.js'
 
 export const TicketFilter = z.object({
     limit: z.coerce.number().optional().default(10),
     next: BookingTicketId.optional(),
     type: BookingType.optional(),
-    status: BookingTicketStatus.optional(),
-    search: z.string().trim().optional(),
+    status: PaymentStatus.optional(),
 })
 
 export type TicketFilter = z.infer<typeof TicketFilter>

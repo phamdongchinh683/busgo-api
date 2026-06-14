@@ -77,15 +77,12 @@ export async function recallMessage(params: {
     boxId: ChatBoxId
     messageId: ChatMessageId
 }) {
-    const result = await dal.chat.message.cmd.updateOne({
+    await dal.chat.message.cmd.updateOne({
         id: params.messageId,
         boxId: params.boxId,
         senderId: params.userInfo.id,
         body: 'Tin nhắn này đã bị thu hồi',
     })
-
-    const receiverId =
-        result.box.receiverId === params.userInfo.id ? result.box.senderId : result.box.receiverId
 
     return {
         message: 'Thành công',

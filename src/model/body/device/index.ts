@@ -8,6 +8,7 @@ export const DeviceBody = z.object({
 export type DeviceBody = z.infer<typeof DeviceBody>
 
 export const DeviceResponse = z.object({
+    id: AuthUserDeviceId,
     fcmToken: z.string(),
 })
 

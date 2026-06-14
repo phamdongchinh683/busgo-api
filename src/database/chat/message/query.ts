@@ -1,4 +1,3 @@
-import { sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { ChatMessageQuery } from '../../../model/query/chat/index.js'
 import { AuthUserId } from '../../auth/user/type.js'

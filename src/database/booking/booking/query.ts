@@ -2,7 +2,7 @@ import { Transaction, sql } from 'kysely'
 import { db } from '../../../datasource/db.js'
 import { Database } from '../../../datasource/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
-import { BookingId, PaymentMethod, PaymentStatus } from './type.js'
+import { BookingId, PaymentStatus } from './type.js'
 import { BookingTicketId } from '../ticket/type.js'
 import { utils } from '../../../utils/index.js'
 import { PeriodBookingQuery } from '../../../model/query/booking/index.js'
@@ -48,13 +48,7 @@ export async function getBookingByUserIdAndBookingId(
         .innerJoin('booking.ticket as t', 't.bookingId', 'b.id')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .selectAll()
-        .select([
-            'b.status as bookingStatus',
-            'trip.status as tripStatus',
-            'trip.departureDate',
-            'b.paymentMethod as paymentMethod',
-            'b.paymentStatus as paymentStatus',
-        ])
+        .select(['trip.status as tripStatus', 'trip.departureDate', 'b.method', 'b.status'])
         .where(eb => {
             const cond = []
             cond.push(eb('b.userId', '=', userId))
@@ -76,13 +70,7 @@ export async function getBookingByTicketId(
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .innerJoin('operation.trip_schedule as ts', 'ts.id', 'trip.scheduleId')
         .selectAll()
-        .select([
-            'b.status as bookingStatus',
-            'trip.status as tripStatus',
-            'trip.departureDate',
-            'b.paymentMethod as paymentMethod',
-            'b.paymentStatus as paymentStatus',
-        ])
+        .select(['b.status', 'trip.status as tripStatus', 'trip.departureDate', 'b.method'])
         .where('t.id', '=', ticketId)
         .where('ts.companyId', '=', companyId)
         .executeTakeFirst()
@@ -152,7 +140,7 @@ export async function updatePaymentTransactionByCode(
     return (trx ?? db)
         .updateTable('booking.booking')
         .set({
-            paymentStatus: params.status ?? undefined,
+            status: params.status ?? undefined,
             paidAt: params.paidAt ?? undefined,
             transactionNo: params.transactionNo ?? undefined,
             payDate: params.payDate ?? undefined,
@@ -169,19 +157,7 @@ export async function getPayment(
 ) {
     return (trx ?? db)
         .selectFrom('booking.booking as b')
-        .select([
-            'b.id',
-            'b.companyId',
-            'b.paymentAmount as amount',
-            'b.paymentMethod as method',
-            'b.paymentStatus as status',
-            'b.transactionCode',
-            'b.transactionNo',
-            'b.payDate',
-            'b.paidAt',
-            'b.createdAt',
-            'b.expiredAt',
-        ])
+        .selectAll()
         .where(eb => {
             const cond = []
             if (bookingId) cond.push(eb('b.id', '=', bookingId))
@@ -216,7 +192,7 @@ export async function getCompanyIdByBookingId(bookingId: number, trx?: Transacti
 export async function getTotalRevenue(trx?: Transaction<Database>) {
     const r = await (trx ?? db)
         .selectFrom('booking.booking as b')
-        .where('b.paymentStatus', '=', PaymentStatus.enum.success)
+        .where('b.status', '=', PaymentStatus.enum.success)
         .select(sql<number>`coalesce(sum(${sql.ref('b.payment_amount')}), 0)`.as('total'))
         .executeTakeFirstOrThrow()
     return Number(r.total)
@@ -228,7 +204,7 @@ export async function getTotalRevenueByCompanyId(
 ) {
     return (trx ?? db)
         .selectFrom('booking.booking as b')
-        .where('b.paymentStatus', '=', PaymentStatus.enum.success)
+        .where('b.status', '=', PaymentStatus.enum.success)
         .where('b.companyId', '=', companyId)
         .select(sql<number>`coalesce(sum(${sql.ref('b.payment_amount')}), 0)`.as('total'))
         .executeTakeFirstOrThrow()
@@ -292,8 +268,8 @@ function companyRevenueExportJoin(q: RevenueExportQuery) {
         .innerJoin('organization.bus_company as bc', 'bc.id', 'b.companyId')
         .where('b.paidAt', '>=', start)
         .where('b.paidAt', '<=', end)
-        .where('b.paymentStatus', '=', PaymentStatus.enum.success)
-        .where('b.paymentMethod', '=', q.method)
+        .where('b.status', '=', PaymentStatus.enum.success)
+        .where('b.method', '=', q.method)
 }
 
 export async function getRevenueByCompanyYearlyForPeriod(

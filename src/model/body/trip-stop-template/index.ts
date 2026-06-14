@@ -3,7 +3,6 @@ import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
-import { OperationTripStopTemplateId } from '../../../database/operation/trip-stop-template/type.js'
 
 export const TripStopTemplateBody = z.object({
     companyId: OrganizationBusCompanyId,

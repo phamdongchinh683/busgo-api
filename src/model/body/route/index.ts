@@ -22,12 +22,18 @@ export const OperationRouteBody = z.object({
 export type OperationRouteBody = z.infer<typeof OperationRouteBody>
 
 export const OperationRouteInsertResponse = z.object({
-    route: OperationRouteBody.extend({}),
+    route: OperationRouteBody.extend({
+        id: OperationRouteId,
+    }),
 })
 export type OperationRouteInsertResponse = z.infer<typeof OperationRouteInsertResponse>
 
 export const OperationRoutesResponse = z.object({
-    routes: z.array(OperationRouteBody.extend({})),
+    routes: z.array(
+        OperationRouteBody.extend({
+            id: OperationRouteId,
+        })
+    ),
     next: OperationRouteId.nullable(),
 })
 export type OperationRoutesResponse = z.infer<typeof OperationRoutesResponse>

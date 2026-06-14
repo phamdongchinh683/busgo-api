@@ -7,10 +7,9 @@ import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js
 
 export async function getStoppingPointByScheduleId(params: {
     scheduleId: OperationTripScheduleId
-    routeId?: OperationRouteId
     companyId: OrganizationBusCompanyId
 }) {
-    const { scheduleId, routeId, companyId } = params
+    const { scheduleId, companyId } = params
     return db
         .selectFrom('operation.trip_stop_template as ts')
         .innerJoin('operation.station as s', 'ts.stationId', 's.id')
@@ -21,9 +20,6 @@ export async function getStoppingPointByScheduleId(params: {
             cond.push(eb('ts.scheduleId', '=', scheduleId))
             cond.push(eb('ts.companyId', '=', companyId))
             cond.push(eb('schedule.companyId', '=', companyId))
-            if (routeId) {
-                cond.push(eb('r.id', '=', routeId))
-            }
             return eb.and(cond)
         })
         .select([

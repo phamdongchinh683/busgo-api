@@ -6,9 +6,6 @@ export type BookingId = z.infer<typeof BookingId>
 export const BookingType = z.enum(['one_way', 'round_trip'])
 export type BookingType = z.infer<typeof BookingType>
 
-export const BookingStatus = z.enum(['pending', 'paid', 'cancelled', 'expired'])
-export type BookingStatus = z.infer<typeof BookingStatus>
-
 export const PaymentMethod = z.enum(['vnpay', 'cash', 'stripe'])
 export type PaymentMethod = z.infer<typeof PaymentMethod>
 

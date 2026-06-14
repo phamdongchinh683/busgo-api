@@ -1,6 +1,6 @@
 import { GeneratedAlways, Insertable, Selectable, Updateable } from 'kysely'
 import { Timestamps } from '../../../datasource/helpers/common.js'
-import { BookingId, BookingStatus, BookingType, PaymentMethod, PaymentStatus } from './type.js'
+import { BookingId, BookingType, PaymentMethod, PaymentStatus } from './type.js'
 import { BookingCouponId } from '../coupon/type.js'
 import { AuthUserId } from '../../auth/user/type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
@@ -14,12 +14,10 @@ export interface BookingTable extends Timestamps {
     originalAmount: number
     discountAmount: number
     totalAmount: number
-    status: BookingStatus
     expiredAt: Date | null
-    companyId: OrganizationBusCompanyId | null
-    paymentAmount: number | null
-    paymentMethod: PaymentMethod | null
-    paymentStatus: PaymentStatus | null
+    companyId: OrganizationBusCompanyId
+    method: PaymentMethod | null
+    status: PaymentStatus | null
     transactionCode: string | null
     paidAt: Date | null
     payDate: string | null

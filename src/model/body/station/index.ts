@@ -9,14 +9,20 @@ export const StationBody = z.object({
 export type StationBody = z.infer<typeof StationBody>
 
 export const StationResponse = z.object({
-    stations: z.array(StationBody.extend({})),
+    stations: z.array(
+        StationBody.extend({
+            id: OperationStationId,
+        })
+    ),
     next: OperationStationId.nullable(),
 })
 
 export type StationResponse = z.infer<typeof StationResponse>
 
 export const StationUpsertResponse = z.object({
-    station: StationBody.extend({}),
+    station: StationBody.extend({
+        id: OperationStationId,
+    }),
 })
 
 export type StationUpsertResponse = z.infer<typeof StationUpsertResponse>

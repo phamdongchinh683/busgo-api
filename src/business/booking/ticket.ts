@@ -1,4 +1,4 @@
-import { BookingTicketId, BookingTicketStatus } from '../../database/booking/ticket/type.js'
+import { BookingTicketId } from '../../database/booking/ticket/type.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
 import { TicketFilter, TicketSupportFilter } from '../../model/query/ticket/index.js'
@@ -6,29 +6,15 @@ import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
 import { OperationTripId, OperationTripStatus } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
-import { BookingStatus } from '../../database/booking/booking/type.js'
-import { PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
-import { applyTicketNaturalLanguageFilter } from './ticket-search.js'
+import { BookingId, PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
 
 export async function getTickets(q: TicketFilter, userId: AuthUserId) {
-    const filter = applyTicketNaturalLanguageFilter(q)
-    const tickets = await dal.booking.ticket.query.findAllPublic(filter, userId)
-    const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
+    const tickets = await dal.booking.ticket.query.findAllByUserId(q, userId)
+    const { data, next } = utils.common.paginateByCursor(tickets, q.limit)
 
     return {
         tickets: data,
         next: next,
-    }
-}
-
-export async function getTicketsInternal(q: TicketFilter, userId: AuthUserId) {
-    const filter = applyTicketNaturalLanguageFilter(q)
-    const tickets = await dal.booking.ticket.query.findAll(filter, userId)
-    const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
-
-    return {
-        tickets: data,
-        next,
     }
 }
 
@@ -58,11 +44,7 @@ export async function cancelTicket(id: BookingTicketId, userId: AuthUserId) {
     }
 }
 
-export async function checkInTicket(params: {
-    id: BookingTicketId
-    status: BookingTicketStatus
-    tripId?: OperationTripId
-}) {
+export async function updateTicket(params: { id: BookingId; status: PaymentStatus }) {
     const ticket = await dal.booking.ticket.cmd.updateStatusTicket(params)
     return {
         message: 'Thành công',
@@ -74,9 +56,8 @@ export async function getTicketsSupport(
     q: TicketSupportFilter,
     companyId: OrganizationBusCompanyId
 ) {
-    const filter = applyTicketNaturalLanguageFilter(q)
-    const tickets = await dal.booking.ticket.query.findAllSupport(filter, companyId)
-    const { data, next } = utils.common.paginateByCursor(tickets, filter.limit)
+    const tickets = await dal.booking.ticket.query.findAllSupport(q, companyId)
+    const { data, next } = utils.common.paginateByCursor(tickets, q.limit)
 
     return {
         tickets: data,
@@ -108,10 +89,9 @@ export async function deleteTicket(id: BookingTicketId, companyId: OrganizationB
 }
 
 function assertTicketCanBeCancelled(params: {
-    bookingStatus: BookingStatus
     departureDate: Date
-    paymentMethod: PaymentMethod | null
-    paymentStatus: PaymentStatus | null
+    method: PaymentMethod | null
+    status: PaymentStatus | null
     tripStatus: OperationTripStatus
 }) {
     if (
@@ -138,13 +118,8 @@ function assertTicketCanBeCancelled(params: {
 }
 
 function canCancelWithoutRefundWindow(params: {
-    bookingStatus: BookingStatus
-    paymentMethod: PaymentMethod | null
-    paymentStatus: PaymentStatus | null
+    method: PaymentMethod | null
+    status: PaymentStatus | null
 }) {
-    return (
-        params.paymentMethod === PaymentMethod.enum.cash ||
-        params.paymentStatus === PaymentStatus.enum.pending ||
-        params.bookingStatus === BookingStatus.enum.pending
-    )
+    return params.method === PaymentMethod.enum.cash || params.status === PaymentStatus.enum.pending
 }

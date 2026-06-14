@@ -23,9 +23,7 @@ export async function createTripPriceTemplate(params: {
     )
 
     return {
-        tripPriceTemplate: await dal.operation.tripPriceTemplate.query.getPublicById(
-            tripPriceTemplate.internalId
-        ),
+        tripPriceTemplate,
     }
 }
 
@@ -73,9 +71,7 @@ export async function updateTripPriceTemplates(params: {
     )
 
     return {
-        tripPriceTemplate: await dal.operation.tripPriceTemplate.query.getPublicById(
-            tripPriceTemplate.internalId
-        ),
+        tripPriceTemplate,
     }
 }
 

@@ -11,7 +11,6 @@ api.route({
 
     handler: async request => {
         const userInfo = await jwt.auth.requiredAuthenticate(request.headers)
-        const { id } = request.params
         return bus.auth.device.removeDevice(request.params.id, userInfo.id)
     },
 

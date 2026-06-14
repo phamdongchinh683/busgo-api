@@ -24,8 +24,6 @@ export async function findAllByFilter(
         .innerJoin('organization.bus_company as bc', 'bc.id', 'ts.companyId')
         .select([
             'ts.id',
-            'ts.id as internalId',
-            'ts.id',
             'ts.departureTime',
             'bc.name',
             'bc.logoUrl',
@@ -39,16 +37,6 @@ export async function findAllByFilter(
             sql<string>`to_char(ts.start_date, 'YYYY-MM-DD')`.as('startDate'),
             sql<string>`to_char(ts.end_date, 'YYYY-MM-DD')`.as('endDate'),
             'r.durationMinutes',
-            sql<number>`
-                CASE 
-                    WHEN (bc.star_1 + bc.star_2 + bc.star_3 + bc.star_4 + bc.star_5) > 0 
-                    THEN round(
-                        (1*bc.star_1 + 2*bc.star_2 + 3*bc.star_3 + 4*bc.star_4 + 5*bc.star_5)::numeric 
-                        / (bc.star_1 + bc.star_2 + bc.star_3 + bc.star_4 + bc.star_5), 1
-                    )
-                    ELSE 0 
-                END
-            `.as('totalStars'),
         ])
         .where(eb => {
             const cond: Expression<SqlBool>[] = []
@@ -92,7 +80,6 @@ export async function findAllByFilter(
         })
         .limit(limit + 1)
         .orderBy('ts.departureTime', orderBy)
-        .orderBy('totalStars', orderBy)
         .execute()
 }
 

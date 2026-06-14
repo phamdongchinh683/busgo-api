@@ -6,11 +6,6 @@ export type AuthUserId = z.infer<typeof AuthUserId>
 export const AuthUserPublicId = z.uuid().brand<'auth.user.public_id'>()
 export type AuthUserPublicId = z.infer<typeof AuthUserPublicId>
 
-export const AuthOperatorRole = z.enum(['operator'])
-export type AuthOperatorRole = z.infer<typeof AuthOperatorRole>
-
-export const OPERATOR_ROLES: AuthOperatorRole[] = AuthOperatorRole.options
-
 export const AuthUserRole = z.enum(['operator', 'driver', 'customer', 'super_admin'])
 export type AuthUserRole = z.infer<typeof AuthUserRole>
 

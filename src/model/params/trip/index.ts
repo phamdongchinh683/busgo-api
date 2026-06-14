@@ -1,7 +1,9 @@
-import { OperationTripId } from '../../../database/operation/trip/type.js'
 import z from 'zod'
+import { OperationTripId } from '../../../database/operation/trip/type.js'
 
-export const TripIdParam = z.object({})
+export const TripIdParam = z.object({
+    id: OperationTripId,
+})
 export type TripIdParam = z.infer<typeof TripIdParam>
 
 export const TripSeatParam = z.object({

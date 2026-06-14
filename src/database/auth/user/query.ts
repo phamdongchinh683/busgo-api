@@ -44,12 +44,7 @@ export async function findAllDrivers(query: DriverQuery, companyId: Organization
 }
 
 export async function insertOne(params: AuthUserTableInsert) {
-    return db
-        .insertInto('auth.user')
-        .values(params)
-        .returningAll()
-        .returning(['id as internalId', 'id'])
-        .executeTakeFirstOrThrow()
+    return db.insertInto('auth.user').values(params).returningAll().executeTakeFirstOrThrow()
 }
 
 export async function getPeriod(q: PeriodUserQuery) {
@@ -121,7 +116,6 @@ export function getOne(params: {
     const { email, phone, id, facebookId, googleId } = params
     return db
         .selectFrom('auth.user as u')
-        .leftJoin('organization.company_member as cm', 'u.id', 'cm.userId')
         .selectAll()
         .where(eb => {
             const cond = []

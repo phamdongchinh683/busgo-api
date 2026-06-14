@@ -19,53 +19,48 @@ interface Headers {
     authorization?: string
     Authorization?: string
 }
-const verifyToken = async (headers: Headers): Promise<any | null> => {
-    const { authorization, Authorization } = headers
-    const authHeader = authorization ?? Authorization
+
+const verifyToken = async (headers: Headers) => {
+    const authHeader = headers['authorization'] ?? headers['Authorization']
     if (!authHeader) return null
 
     const bearer = 'Bearer '
     const token = authHeader.startsWith(bearer) ? authHeader.slice(bearer.length) : authHeader
 
-    let payload: unknown
+    let payload: any
     try {
         payload = verify(token)
     } catch (error) {
-        console.error(error)
         throw new Unauthorized('Header xác thực không hợp lệ.')
     }
 
-    let userInfo: any
-    try {
-        userInfo = payload
-    } catch (error) {
-        console.error(error)
+    if (!payload?.id || payload.tokenVersion === undefined) {
         throw new Unauthorized('Thông tin token không hợp lệ.')
     }
 
-    const cachedTokenVersion = await getCachedTokenVersion(userInfo.id)
+    const cachedTokenVersion = await getCachedTokenVersion(payload.id)
     if (cachedTokenVersion !== null) {
-        if (cachedTokenVersion !== userInfo.tokenVersion) {
+        if (cachedTokenVersion !== payload.tokenVersion) {
             throw new Unauthorized('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
         }
-
-        return userInfo
+        return payload
     }
 
     const user = await db
         .selectFrom('auth.user as u')
         .select(['u.id', 'u.tokenVersion'])
-        .where('u.id', '=', userInfo.id)
+        .where('u.id', '=', payload.id)
         .executeTakeFirst()
 
-    if (!user || user.tokenVersion !== userInfo.tokenVersion) {
+    if (!user || user.tokenVersion !== payload.tokenVersion) {
         throw new Unauthorized('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.')
     }
 
     await setCachedTokenVersion(user.id, user.tokenVersion)
 
-    return userInfo
+    return payload
 }
+
 export const requiredAuthenticate = async (headers: Headers): Promise<any> => {
     const userInfo = await verifyToken(headers)
     if (!userInfo) throw new Unauthorized()

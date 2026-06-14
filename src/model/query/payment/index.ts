@@ -1,6 +1,7 @@
 import z from 'zod'
 import { BookingId, PaymentMethod, PaymentStatus } from '../../../database/booking/booking/type.js'
 import { PeriodFilter } from '../../common.js'
+import { BookingCouponId } from '../../../database/booking/coupon/type.js'
 
 export const PaymentTransactionCodeParam = z.object({
     code: z.string(),
@@ -10,6 +11,7 @@ export type PaymentTransactionCodeParam = z.infer<typeof PaymentTransactionCodeP
 
 export const PaymentMethodRequest = z.object({
     id: BookingId,
+    couponId: BookingCouponId.optional(),
     method: PaymentMethod,
 })
 

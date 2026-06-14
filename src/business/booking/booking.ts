@@ -5,12 +5,12 @@ import { BookingType } from '../../database/booking/booking/type.js'
 import { PeriodBookingQuery } from '../../model/query/booking/index.js'
 
 export async function initBooking(params: BookingRequest, userId: AuthUserId) {
-    const { type, returnBound } = params
-    if (type === BookingType.enum.one_way) {
+    const { type } = params
+    if (type === BookingType.enum.one_way)
         return dal.booking.booking.cmd.createOneWayBooking(params, userId)
-    } else if (type === BookingType.enum.round_trip && returnBound) {
-        return dal.booking.booking.cmd.createRoundTripBooking(params, userId)
-    }
+    // } else if (type === BookingType.enum.round_trip && returnBound) {
+    //     return dal.booking.booking.cmd.createRoundTripBooking(params, userId)
+    // }
 }
 
 export async function getPeriodBookings(params: PeriodBookingQuery) {

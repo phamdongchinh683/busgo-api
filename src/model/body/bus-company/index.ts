@@ -16,7 +16,6 @@ export const BusCompanyListResponse = z.object({
     companies: z.array(
         BusCompanyBody.extend({
             id: OrganizationBusCompanyId,
-            reviewCount: z.number().int().min(0),
             star1: z.number().int().min(0),
             star2: z.number().int().min(0),
             star3: z.number().int().min(0),
@@ -30,7 +29,6 @@ export type BusCompanyListResponse = z.infer<typeof BusCompanyListResponse>
 
 export const BusCompanyResponse = z.object({
     company: BusCompanyBody.extend({
-        reviewCount: z.number().int().min(0),
         star1: z.number().int().min(0),
         star2: z.number().int().min(0),
         star3: z.number().int().min(0),

@@ -2,8 +2,8 @@ import _ from 'lodash'
 import { db } from '../../../datasource/db.js'
 import { BookingRequest } from '../../../model/body/booking/index.js'
 import { utils } from '../../../utils/index.js'
-import { BookingId, BookingStatus, BookingType, PaymentMethod, PaymentStatus } from './type.js'
-import { BookingTicketStatus } from '../ticket/type.js'
+import { BookingId, BookingType, PaymentMethod, PaymentStatus } from './type.js'
+
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { BookingCouponId } from '../coupon/type.js'
 import { Database } from '../../../datasource/type.js'
@@ -14,22 +14,21 @@ import { AuthUserId } from '../../auth/user/type.js'
 import { HttpErr } from '../../../app/index.js'
 
 export async function createOneWayBooking(params: BookingRequest, userId: AuthUserId) {
-    const { couponId, outBound } = params
+    const { outBound } = params
 
     return db.transaction().execute(async tx => {
         const { originalAmount, discountAmount, totalAmount } =
-            await dal.booking.coupon.cmd.resultAmountOneWay(outBound, tx, couponId)
+            await dal.booking.coupon.cmd.resultAmountOneWay(outBound, tx)
 
         const booking = await createBookingTransaction(
             {
                 userId: userId,
-                couponId: couponId ?? null,
                 code: utils.random.generateRandomNumber(20).toString(),
                 bookingType: BookingType.enum.one_way,
                 originalAmount,
+                companyId: outBound.companyId,
                 totalAmount: totalAmount,
                 discountAmount: discountAmount,
-                status: BookingStatus.enum.pending,
                 expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
             },
             tx
@@ -42,7 +41,7 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
                 seatId: outBound.seatId,
                 fromStationId: outBound.fromStationId,
                 toStationId: outBound.toStationId,
-                status: BookingTicketStatus.enum.reserved,
+                isRate: false,
             },
             tx
         )
@@ -58,183 +57,134 @@ export async function createOneWayBooking(params: BookingRequest, userId: AuthUs
             tx
         )
 
-        if (couponId) {
-            await dal.booking.coupon.cmd.upCountUsedQuantity(couponId, '+', tx)
-        }
-
         return {
             id: booking.id,
-            internalId: booking.id,
             expiredAt: booking.expiredAt,
             message: 'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
         }
     })
 }
 
-export async function createRoundTripBooking(params: BookingRequest, userId: AuthUserId) {
-    const { couponId, outBound, returnBound } = params
-    let total = 0
-    let original = 0
-    let discount = 0
+// export async function createRoundTripBooking(params: BookingRequest, userId: AuthUserId) {
+//     const { outBound, returnBound } = params
+//     let total = 0
+//     let original = 0
+//     let discount = 0
 
-    if (outBound && returnBound) {
-        return db.transaction().execute(async tx => {
-            const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
-            if (seatConflict) {
-                throw new HttpErr.UnprocessableEntity(
-                    'Ghế đã được giữ hoặc đã được đặt.',
-                    'SEAT_CONFLICT_OUTBOUND'
-                )
-            }
+//     if (outBound && returnBound) {
+//         return db.transaction().execute(async tx => {
+//             const seatConflict = await dal.booking.seatSegment.cmd.checkSeatConflict(outBound, tx)
+//             if (seatConflict) {
+//                 throw new HttpErr.UnprocessableEntity(
+//                     'Ghế đã được giữ hoặc đã được đặt.',
+//                     'SEAT_CONFLICT_OUTBOUND'
+//                 )
+//             }
 
-            const seatConflictReturn = await dal.booking.seatSegment.cmd.checkSeatConflict(
-                returnBound,
-                tx
-            )
-            if (seatConflictReturn) {
-                throw new HttpErr.UnprocessableEntity(
-                    'Ghế đã được giữ hoặc đã được đặt.',
-                    'SEAT_CONFLICT_RETURNBOUND'
-                )
-            }
+//             const seatConflictReturn = await dal.booking.seatSegment.cmd.checkSeatConflict(
+//                 returnBound,
+//                 tx
+//             )
+//             if (seatConflictReturn) {
+//                 throw new HttpErr.UnprocessableEntity(
+//                     'Ghế đã được giữ hoặc đã được đặt.',
+//                     'SEAT_CONFLICT_RETURNBOUND'
+//                 )
+//             }
 
-            for (const trip of [outBound, returnBound]) {
-                const result = await dal.operation.tripPriceTemplate.cmd.getPriceByCompanyId(
-                    {
-                        companyId: trip.companyId,
-                        fromStationId: trip.fromStationId,
-                        toStationId: trip.toStationId,
-                    },
-                    tx
-                )
-                if (!result) {
-                    throw new HttpErr.NotFound(
-                        'Không tìm thấy giá chuyến đi cho chặng đã chọn.',
-                        {
-                            companyId: trip.companyId,
-                            fromStationId: trip.fromStationId,
-                            toStationId: trip.toStationId,
-                        },
-                        'TRIP_PRICE_NOT_FOUND'
-                    )
-                }
-                total += result.price
-            }
+//             for (const trip of [outBound, returnBound]) {
+//                 const result = await dal.operation.tripPriceTemplate.cmd.getPriceByCompanyId(
+//                     {
+//                         companyId: trip.companyId,
+//                         fromStationId: trip.fromStationId,
+//                         toStationId: trip.toStationId,
+//                     },
+//                     tx
+//                 )
+//                 if (!result) {
+//                     throw new HttpErr.NotFound(
+//                         'Không tìm thấy giá chuyến đi cho chặng đã chọn.',
+//                         {
+//                             companyId: trip.companyId,
+//                             fromStationId: trip.fromStationId,
+//                             toStationId: trip.toStationId,
+//                         },
+//                         'TRIP_PRICE_NOT_FOUND'
+//                     )
+//                 }
+//                 total += result.price
+//             }
 
-            if (couponId) {
-                const { originalAmount, discountAmount, totalAmount } =
-                    await dal.booking.coupon.cmd.resultAmountRoundTrip(total, tx, couponId)
-                original += originalAmount
-                discount += discountAmount
-                total = totalAmount
-            }
+//             const booking = await createBookingTransaction(
+//                 {
+//                     userId,
+//                     code: utils.random.generateRandomNumber(20).toString(),
+//                     bookingType: BookingType.enum.round_trip,
+//                     totalAmount: total,
+//                     companyId: outBound.companyId,
+//                     discountAmount: discount,
+//                     originalAmount: original,
+//                     expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
+//                 },
+//                 tx
+//             )
 
-            const booking = await createBookingTransaction(
-                {
-                    userId,
-                    couponId: couponId ?? null,
-                    code: utils.random.generateRandomNumber(20).toString(),
-                    bookingType: BookingType.enum.round_trip,
-                    totalAmount: total,
-                    discountAmount: discount,
-                    originalAmount: original,
-                    status: BookingStatus.enum.pending,
-                    expiredAt: utils.time.getNext({ milliseconds: utils.time.coolDownTime }),
-                },
-                tx
-            )
+//             const ticket = await dal.booking.ticket.cmd.insertManyTicketsTransaction(
+//                 [
+//                     {
+//                         bookingId: booking.id,
+//                         tripId: outBound.tripId,
+//                         seatId: outBound.seatId,
+//                         fromStationId: outBound.fromStationId,
+//                         toStationId: outBound.toStationId,
+//                         checkedInAt: null,
+//                     },
+//                     {
+//                         bookingId: booking.id,
+//                         tripId: returnBound.tripId,
+//                         seatId: returnBound.seatId,
+//                         fromStationId: returnBound.fromStationId,
+//                         toStationId: returnBound.toStationId,
+//                         checkedInAt: null,
+//                     },
+//                 ],
+//                 tx
+//             )
 
-            const ticket = await dal.booking.ticket.cmd.insertManyTicketsTransaction(
-                [
-                    {
-                        bookingId: booking.id,
-                        tripId: outBound.tripId,
-                        seatId: outBound.seatId,
-                        fromStationId: outBound.fromStationId,
-                        toStationId: outBound.toStationId,
-                        status: BookingTicketStatus.enum.reserved,
-                    },
-                    {
-                        bookingId: booking.id,
-                        tripId: returnBound.tripId,
-                        seatId: returnBound.seatId,
-                        fromStationId: returnBound.fromStationId,
-                        toStationId: returnBound.toStationId,
-                        status: BookingTicketStatus.enum.reserved,
-                    },
-                ],
-                tx
-            )
+//             await dal.booking.seatSegment.cmd.insertManySeatSegmentsTransaction(
+//                 [
+//                     {
+//                         tripId: outBound.tripId,
+//                         seatId: outBound.seatId,
+//                         fromStationId: outBound.fromStationId,
+//                         toStationId: outBound.toStationId,
+//                         ticketId: ticket[0].id,
+//                     },
+//                     {
+//                         tripId: returnBound.tripId,
+//                         seatId: returnBound.seatId,
+//                         fromStationId: returnBound.fromStationId,
+//                         toStationId: returnBound.toStationId,
+//                         ticketId: ticket[1].id,
+//                     },
+//                 ],
+//                 tx
+//             )
 
-            await dal.booking.seatSegment.cmd.insertManySeatSegmentsTransaction(
-                [
-                    {
-                        tripId: outBound.tripId,
-                        seatId: outBound.seatId,
-                        fromStationId: outBound.fromStationId,
-                        toStationId: outBound.toStationId,
-                        ticketId: ticket[0].id,
-                    },
-                    {
-                        tripId: returnBound.tripId,
-                        seatId: returnBound.seatId,
-                        fromStationId: returnBound.fromStationId,
-                        toStationId: returnBound.toStationId,
-                        ticketId: ticket[1].id,
-                    },
-                ],
-                tx
-            )
-
-            if (couponId) {
-                await dal.booking.coupon.cmd.upCountUsedQuantity(couponId, '+', tx)
-            }
-
-            return {
-                id: booking.id,
-                internalId: booking.id,
-                expiredAt: booking.expiredAt,
-                message:
-                    'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
-            }
-        })
-    }
-}
+//             return {
+//                 id: booking.id,
+//                 expiredAt: booking.expiredAt,
+//                 message:
+//                     'Vé của bạn sẽ được giữ trong 10 phút. Vui lòng chọn phương thức thanh toán.',
+//             }
+//         })
+//     }
+// }
 
 async function createBookingTransaction(params: BookingTableInsert, trx: Transaction<Database>) {
     const data = _.omitBy(params, v => _.isNil(v)) as BookingTableInsert
 
     return trx.insertInto('booking.booking').values(data).returningAll().executeTakeFirstOrThrow()
-}
-
-export async function updateBookingStatus(
-    bookingId: BookingId,
-    status: BookingStatus,
-    trx: Transaction<Database>
-) {
-    const booking = await trx
-        .selectFrom('booking.booking as b')
-        .select(['b.status', 'b.couponId'])
-        .where('b.id', '=', bookingId)
-        .forUpdate('b')
-        .executeTakeFirstOrThrow()
-
-    const updatedBooking = await trx
-        .updateTable('booking.booking')
-        .set({ status })
-        .returning('booking.booking.couponId')
-        .where('id', '=', bookingId)
-        .execute()
-
-    if (
-        booking.status === BookingStatus.enum.pending &&
-        (status === BookingStatus.enum.cancelled || status === BookingStatus.enum.expired) &&
-        booking.couponId !== null
-    ) {
-        await dal.booking.coupon.cmd.upCountUsedQuantity(booking.couponId, '-', trx)
-    }
-
-    return updatedBooking
 }
 
 export async function updateExpiredBooking(id: BookingId, trx?: Transaction<Database>) {
@@ -244,8 +194,6 @@ export async function updateExpiredBooking(id: BookingId, trx?: Transaction<Data
         .where('id', '=', id)
         .executeTakeFirstOrThrow()
 }
-
-// --- Payment related (consolidated; payment data now lives in booking.booking) ---
 
 export async function upsertPaymentForBooking(
     bookingId: BookingId,
@@ -267,9 +215,9 @@ export async function upsertPaymentForBooking(
         .set({
             companyId: params.companyId ?? undefined,
             couponId: params.couponId ?? undefined,
-            paymentAmount: params.amount ?? undefined,
-            paymentMethod: params.method ?? undefined,
-            paymentStatus: params.status ?? undefined,
+            totalAmount: params.amount ?? undefined,
+            method: params.method ?? undefined,
+            status: params.status ?? undefined,
             transactionCode: params.transactionCode,
             paidAt: params.paidAt ?? undefined,
             payDate: params.payDate ?? undefined,
@@ -294,9 +242,9 @@ export async function upsertPayment(
         .updateTable('booking.booking')
         .set({
             transactionCode: params.transactionCode,
-            paymentMethod: params.method ?? undefined,
-            paymentStatus: params.status ?? undefined,
-            paymentAmount: params.amount ?? undefined,
+            method: params.method ?? undefined,
+            status: params.status ?? undefined,
+            totalAmount: params.amount ?? undefined,
         })
         .where('id', '=', params.bookingId)
         .returningAll()
@@ -320,11 +268,10 @@ export async function updatePaymentStatusSuccess(
     await (trx ?? db)
         .updateTable('booking.booking')
         .set({
-            paymentStatus: PaymentStatus.enum.success,
+            status: PaymentStatus.enum.success,
             paidAt: utils.time.getNow().toDate(),
             payDate,
             transactionNo,
-            status: 'paid' as any,
         })
         .where('id', '=', booking.id)
         .execute()
@@ -341,8 +288,7 @@ export async function updatePaymentStatusFailed(
     await (tx ?? db)
         .updateTable('booking.booking')
         .set({
-            paymentStatus: PaymentStatus.enum.failed,
-            status: 'cancelled' as any,
+            status: PaymentStatus.enum.failed,
         })
         .where('transactionCode', '=', transactionCode)
         .execute()
@@ -372,19 +318,7 @@ export async function updatePaymentStatusByBookingId(
 ) {
     await (trx ?? db)
         .updateTable('booking.booking')
-        .set({ paymentStatus: params.status })
+        .set({ status: params.status })
         .where('id', '=', params.id)
-        .execute()
-}
-
-export async function updateStatusPaymentTransaction(
-    status: PaymentStatus,
-    bookingId: BookingId,
-    trx?: Transaction<Database>
-) {
-    await (trx ?? db)
-        .updateTable('booking.booking')
-        .set({ paymentStatus: status })
-        .where('id', '=', bookingId)
         .execute()
 }

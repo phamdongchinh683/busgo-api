@@ -23,7 +23,6 @@ export async function createTrip(params: OperationTripTableInsert, trx: Transact
             })
         )
         .returningAll()
-        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
 
@@ -51,11 +50,6 @@ export async function createTripTransaction({ scheduleId, departureDate, company
             trx
         )
         if (existingTrip) {
-            assertTripIsBookable({
-                status: existingTrip.status,
-                departureDate: existingTrip.departureDate,
-                departureTime: existingTrip.departureTime,
-            })
             return {
                 id: existingTrip.id,
                 companyId: existingTrip.companyId,
@@ -72,6 +66,7 @@ export async function createTripTransaction({ scheduleId, departureDate, company
                 'TRIP_SCHEDULE_COMPANY_MISMATCH'
             )
         }
+
         assertTripIsBookable({
             status: OperationTripStatus.enum.scheduled,
             departureDate,
@@ -140,7 +135,6 @@ export async function updateStatus(
         })
         .where('id', '=', params.id)
         .returningAll()
-        .returning(['id as internalId', 'id'])
         .executeTakeFirstOrThrow()
 }
 

@@ -5,13 +5,13 @@ import {
     OrganizationVehicleType,
 } from '../../../database/organization/vehicle/type.js'
 import { OrganizationSeatType } from '../../../database/organization/seat/type.js'
-import { OperationStationId } from '../../../database/operation/station/type.js'
 import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
-import { BookingTicketId, BookingTicketStatus } from '../../../database/booking/ticket/type.js'
-import { BookingStatus, BookingType } from '../../../database/booking/booking/type.js'
+import { BookingTicketId } from '../../../database/booking/ticket/type.js'
+import { PaymentStatus, BookingType } from '../../../database/booking/booking/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { AuthUserId } from '../../../database/auth/user/type.js'
+import { OperationStationId } from '../../../database/operation/station/type.js'
 
 export const TripItem = z.object({
     routeId: OperationRouteId.optional(),
@@ -55,6 +55,7 @@ export const TripStopResponse = z.object({
             city: z.string(),
             stopOrder: z.number(),
             price: z.number(),
+            stationId: OperationStationId,
         })
     ),
 })
@@ -65,6 +66,7 @@ export const TripStopPickUpItem = z.object({
     address: z.string(),
     city: z.string(),
     stopOrder: z.number(),
+    stationId: OperationStationId,
 })
 
 export type TripStopPickUpItem = z.infer<typeof TripStopPickUpItem>
@@ -146,8 +148,8 @@ export const TripPassengerResponse = z.object({
             lastName: z.string(),
             phoneNumber: z.string().nullable(),
             seatNumber: z.string().nullable(),
-            status: BookingStatus,
-            ticketStatus: BookingTicketStatus,
+            status: PaymentStatus,
+            checkedInAt: z.date().nullable(),
             pickup: z.string().nullable(),
             bookingType: BookingType,
             totalAmount: z.number(),

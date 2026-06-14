@@ -1,7 +1,7 @@
 import { api, endpoint, tags, bearer } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { jwt } from '../../../app/index.js'
-import { OPERATOR_ROLES } from '../../../database/auth/user/type.js'
+import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { RouteFilter } from '../../../model/query/route/index.js'
 import { OperationRoutesResponse } from '../../../model/body/route/index.js'
 
@@ -11,7 +11,7 @@ api.route({
     ...endpoint(__filename),
 
     handler: async request => {
-        await jwt.auth.requireRoles(request.headers, OPERATOR_ROLES)
+        await jwt.auth.requireRoles(request.headers, [AuthUserRole.enum.operator])
         return bus.operation.route.getRoutes(request.query)
     },
 

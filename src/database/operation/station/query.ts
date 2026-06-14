@@ -6,7 +6,7 @@ import { OperationStationId } from './type.js'
 export async function findById(id: OperationStationId, companyId: OrganizationBusCompanyId) {
     return db
         .selectFrom('operation.station as s')
-        .select('s.id')
+        .selectAll()
         .where('s.id', '=', id)
         .where('s.companyId', '=', companyId)
         .executeTakeFirst()
@@ -30,7 +30,6 @@ export async function findAllByCompanyId(params: {
             return eb.and(cond)
         })
         .selectAll()
-        .select(['s.id'])
         .limit(params.q.limit + 1)
         .orderBy('s.id')
         .execute()

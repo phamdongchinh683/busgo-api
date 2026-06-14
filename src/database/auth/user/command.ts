@@ -6,7 +6,7 @@ import { db } from '../../../datasource/db.js'
 import { sql, Transaction } from 'kysely'
 import { Database } from '../../../datasource/type.js'
 import { AuthCompanyAdminSignUpBody } from '../../../model/body/auth/index.js'
-import { AuthOperatorRole, AuthUserId, AuthUserStatus } from './type.js'
+import { AuthUserId, AuthUserRole, AuthUserStatus } from './type.js'
 import { OrganizationBusCompanyId } from '../../organization/bus_company/type.js'
 import { utils } from '../../../utils/index.js'
 import { service } from '../../../service/index.js'
@@ -75,10 +75,7 @@ export async function insertOne(params: AuthUserTableInsert, trx?: Transaction<D
         .executeTakeFirstOrThrow()
 }
 
-export async function createOneOperator(
-    params: AuthCompanyAdminSignUpBody,
-    role: AuthOperatorRole
-) {
+export async function createOneOperator(params: AuthCompanyAdminSignUpBody, role: AuthUserRole) {
     const user = await db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
             const company = await dal.organization.busCompany.cmd.createOne(
@@ -94,7 +91,6 @@ export async function createOneOperator(
                     star3: 0,
                     star4: 0,
                     star5: 0,
-                    reviewCount: 0,
                 },
                 trx
             )
@@ -147,6 +143,13 @@ export async function createOneOperator(
                     throw new HttpErr.UnprocessableEntity(
                         `Số điện thoại ${params.contactInfo.phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
+                    )
+                }
+
+                if (error.constraint === 'bus_company_name_hotline') {
+                    throw new HttpErr.UnprocessableEntity(
+                        `${params.name} và ${params.contactInfo.phone} đã được đăng ký.`,
+                        'COMPANY_ALREADY_EXISTS'
                     )
                 }
             }

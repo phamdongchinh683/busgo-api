@@ -1,4 +1,4 @@
-import { api, bearer, endpoint, tags } from '../../../app/api.js'
+import { api, endpoint, tags } from '../../../app/api.js'
 import { bus } from '../../../business/index.js'
 import { AuthOtpBody } from '../../../model/body/auth/index.js'
 import { MessageResponse } from '../../../model/common.js'
@@ -20,6 +20,5 @@ api.route({
         body: AuthOtpBody,
         response: { 200: MessageResponse },
         tags: tags(__filename),
-        security: bearer,
     },
 })
