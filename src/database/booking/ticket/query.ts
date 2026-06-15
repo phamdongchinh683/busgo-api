@@ -49,55 +49,6 @@ export async function findAllByUserId(q: TicketFilter, userId: AuthUserId) {
         .execute()
 }
 
-export async function findAll(q: TicketFilter, userId: AuthUserId) {
-    const { limit, next } = q
-    return db
-        .selectFrom('booking.ticket as t')
-        .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
-        .leftJoin('operation.trip as trip', 'trip.id', 't.tripId')
-        .where(eb => {
-            const cond = []
-            cond.push(eb('b.userId', '=', userId))
-            if (next) {
-                cond.push(eb('t.id', '<', next))
-            }
-            if (q.type) {
-                cond.push(eb('b.bookingType', '=', q.type))
-            }
-            if (q.status) {
-                cond.push(eb('b.status', '=', q.status))
-            }
-
-            return eb.and(cond)
-        })
-        .select(eb => [
-            't.id',
-            'trip.id as tripId',
-            'b.code',
-            'b.bookingType',
-            'b.id as bookingId',
-            'trip.departureDate',
-            'b.originalAmount',
-            'b.discountAmount',
-            'b.totalAmount',
-            'b.status',
-            'trip.status as tripStatus',
-            'b.expiredAt',
-            eb
-                .exists(
-                    eb
-                        .selectFrom('organization.bus_company_review as r')
-                        .select('r.id')
-                        .whereRef('r.ticketId', '=', 't.id')
-                )
-                .$castTo<boolean>()
-                .as('isRated'),
-        ])
-        .orderBy('t.id', 'desc')
-        .limit(limit + 1)
-        .execute()
-}
-
 export async function findById(id: BookingTicketId, userId: AuthUserId) {
     return db
         .selectFrom('booking.ticket as t')
@@ -220,6 +171,8 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
         .innerJoin('booking.booking as b', 'b.id', 't.bookingId')
         .innerJoin('operation.trip as trip', 'trip.id', 't.tripId')
         .innerJoin('operation.trip_schedule as tsp', 'tsp.id', 'trip.scheduleId')
+        .innerJoin('operation.route as r', 'r.id', 'tsp.routeId')
+
         .where(eb => {
             const cond = []
             cond.push(eb('tsp.companyId', '=', companyId))
@@ -240,7 +193,7 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
 
             return eb.and(cond)
         })
-        .select(eb => [
+        .select([
             't.id',
             'b.code',
             'b.bookingType',
@@ -251,17 +204,11 @@ export async function findAllSupport(q: TicketSupportFilter, companyId: Organiza
             'trip.status as tripStatus',
             'b.id as bookingId',
             'b.status',
+            'r.fromLocation as from',
+            'r.toLocation as to',
             'trip.departureDate',
             'b.expiredAt',
-            eb
-                .exists(
-                    eb
-                        .selectFrom('organization.bus_company_review as r')
-                        .select('r.id')
-                        .whereRef('r.ticketId', '=', 't.id')
-                )
-                .$castTo<boolean>()
-                .as('isRated'),
+            't.isRate',
         ])
         .orderBy('t.id', 'desc')
         .limit(limit + 1)
