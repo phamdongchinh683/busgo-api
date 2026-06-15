@@ -28,7 +28,9 @@ export async function getSeatsByTripId(
 
 export async function createSeat(body: SeatCreateBody, companyId: OrganizationBusCompanyId) {
     await dal.organization.vehicle.cmd.findById(body.vehicleId, companyId)
+    
     const seats = await dal.organization.seat.cmd.getSeatsByVehicle(body.vehicleId)
+    
     if (seats.length > 0) {
         throw new HttpErr.UnprocessableEntity('Xe này đã được cấu hình ghế.')
     }

@@ -81,11 +81,11 @@ export async function updateOneById(params: {
         })
         .returning([
             'ts.id',
-            'ts.id',
             'ts.departureTime',
             'ts.startDate',
             'ts.endDate',
             'ts.status',
+            'ts.vehicleType',
         ])
         .returning('ts.id')
         .executeTakeFirstOrThrow()

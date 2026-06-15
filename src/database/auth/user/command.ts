@@ -274,14 +274,17 @@ async function clearUserTokenCache(userId: AuthUserId) {
     await utils.cache.delCache(`auth:token-version:${userId}`)
 }
 
-export async function insertDriver(
-    params: AuthUserTableInsert,
+export async function insertDriver(params: {
+    data: AuthUserTableInsert
     companyId: OrganizationBusCompanyId
-) {
+}) {
     return db.transaction().execute(async (trx: Transaction<Database>) => {
         try {
-            const user = await dal.auth.user.cmd.insertOne(params, trx)
-            await dal.organization.companyMember.cmd.upsertOne({ userId: user.id, companyId }, trx)
+            const user = await dal.auth.user.cmd.insertOne(params.data, trx)
+            await dal.organization.companyMember.cmd.upsertOne(
+                { userId: user.id, companyId: params.companyId },
+                trx
+            )
 
             await dal.auth.notification.cmd.insertOne(
                 {
@@ -308,19 +311,19 @@ export async function insertDriver(
             )
 
             return {
-                message: 'Yêu cầu tạo tài khoản cho tài xế đã được gửi đến quản trị viên công ty',
+                message: 'Yêu cầu tạo tài khoản cho tài xế đã được gửi đến công ty',
             }
         } catch (error) {
             if (error instanceof DatabaseError && error.code === '23505') {
                 if (error.constraint === 'user_email_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `Email ${params.email} đã được đăng ký.`,
+                        `Email ${params.data.email} đã được đăng ký.`,
                         'EMAIL_ALREADY_EXISTS'
                     )
                 }
                 if (error.constraint === 'user_phone_key') {
                     throw new HttpErr.UnprocessableEntity(
-                        `Số điện thoại ${params.phone} đã được đăng ký.`,
+                        `Số điện thoại ${params.data.phone} đã được đăng ký.`,
                         'PHONE_ALREADY_EXISTS'
                     )
                 }

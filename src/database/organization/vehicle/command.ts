@@ -41,19 +41,12 @@ export async function createOrganizationVehicle(
     params: OrganizationVehicleTableInsert,
     trx?: Transaction<Database>
 ) {
-    const vehicle = await (trx ?? db)
+    return (trx ?? db)
         .insertInto('organization.vehicle')
         .values(params)
         .onConflict(oc => oc.column('plateNumber').doNothing())
         .returningAll()
-        .returning('id')
-        .executeTakeFirst()
-
-    if (!vehicle) {
-        throw new HttpErr.UnprocessableEntity('Biển số xe đã tồn tại.', 'VEHICLE_ALREADY_EXISTS')
-    }
-
-    return vehicle
+        .executeTakeFirstOrThrow()
 }
 
 export async function updateOrganizationVehicle(

@@ -9,17 +9,14 @@ export const SeatBody = z.object({
 
 export type SeatBody = z.infer<typeof SeatBody>
 
-export const SeatCount = z.enum(['24', '36'])
-
-export type SeatCount = z.infer<typeof SeatCount>
-
 export const SeatCreateBody = z.object({
     vehicleId: OrganizationVehicleId,
-    seatCount: SeatCount,
+    floors: z.number().min(1).max(3).default(2),
+    rowsPerFloor: z.number().min(1).max(10).default(6),
 })
 
 export type SeatCreateBody = z.infer<typeof SeatCreateBody>
 
-export const SeatCreateRequestBody = SeatCreateBody.extend({})
+export const SeatCreateRequestBody = SeatCreateBody.omit({ vehicleId: true })
 
 export type SeatCreateRequestBody = z.infer<typeof SeatCreateRequestBody>

@@ -1,10 +1,14 @@
-import { BookingTicketId } from '../../database/booking/ticket/type.js'
+import { BookingTicketId, TicketStatus } from '../../database/booking/ticket/type.js'
 import { AuthUserId } from '../../database/auth/user/type.js'
 import { dal } from '../../database/index.js'
-import { TicketFilter, TicketSupportFilter } from '../../model/query/ticket/index.js'
+import {
+    PassengerTicketFilter,
+    TicketFilter,
+    TicketSupportFilter,
+} from '../../model/query/ticket/index.js'
 import { HttpErr } from '../../app/index.js'
 import { utils } from '../../utils/index.js'
-import { OperationTripStatus } from '../../database/operation/trip/type.js'
+import { OperationTripStatus, OperationTripId } from '../../database/operation/trip/type.js'
 import { OrganizationBusCompanyId } from '../../database/organization/bus_company/type.js'
 import { BookingId, PaymentMethod, PaymentStatus } from '../../database/booking/booking/type.js'
 
@@ -15,13 +19,6 @@ export async function getTickets(q: TicketFilter, userId: AuthUserId) {
     return {
         tickets: data,
         next: next,
-    }
-}
-
-export async function detailTicket(id: BookingTicketId, userId: AuthUserId) {
-    const ticket = await dal.booking.ticket.query.findById(id, userId)
-    return {
-        ticket: ticket,
     }
 }
 
@@ -62,15 +59,6 @@ export async function getTicketsSupport(
     return {
         tickets: data,
         next: next,
-    }
-}
-
-export async function detailTicketSupport(
-    id: BookingTicketId,
-    companyId: OrganizationBusCompanyId
-) {
-    return {
-        ticket: await dal.booking.ticket.query.findByIdSupport(id, companyId),
     }
 }
 
@@ -122,4 +110,53 @@ function canCancelWithoutRefundWindow(params: {
     status: PaymentStatus | null
 }) {
     return params.method === PaymentMethod.enum.cash || params.status === PaymentStatus.enum.pending
+}
+
+export async function getTripPassengers(
+    tripId: OperationTripId,
+    driverId: AuthUserId,
+    query: PassengerTicketFilter
+) {
+    const passengers = await dal.booking.ticket.query.findPassengersByDriverAndTripId(
+        { driverId, tripId },
+        query
+    )
+    const { data, next } = utils.common.paginateByCursor(passengers, query.limit)
+
+    return {
+        passengers: data,
+        next,
+    }
+}
+
+export async function updateTicketStatusForDriver(params: {
+    tripId: OperationTripId
+    ticketId: BookingTicketId
+    driverId: AuthUserId
+    status: TicketStatus
+}) {
+    const { tripId, ticketId, driverId, status } = params
+
+    const ticket = await dal.booking.ticket.query.findTicketByTripAndDriver({
+        ticketId,
+        tripId,
+        driverId,
+    })
+
+    if (!ticket) {
+        throw new HttpErr.Forbidden('Vé không thuộc chuyến đi của bạn.', {}, 'TICKET_NOT_FOUND')
+    }
+
+    const now = utils.time.getNow().toDate()
+
+    const updated = await dal.booking.ticket.cmd.updateById(ticketId, {
+        status,
+        checkedInAt: status === TicketStatus.enum.checked_in ? now : ticket.checkedInAt,
+    })
+
+    return {
+        id: updated.id,
+        status: updated.status,
+        checkedInAt: updated.checkedInAt,
+    }
 }

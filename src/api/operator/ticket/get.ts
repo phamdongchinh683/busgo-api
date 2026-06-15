@@ -3,7 +3,7 @@ import { jwt } from '../../../app/index.js'
 import { bus } from '../../../business/index.js'
 import { AuthUserRole } from '../../../database/auth/user/type.js'
 import { TicketSupportFilter } from '../../../model/query/ticket/index.js'
-import { TicketsResponse } from '../../../model/body/ticket/index.js'
+import { TicketSupportResponse } from '../../../model/body/ticket/index.js'
 
 const __filename = new URL('', import.meta.url).pathname
 
@@ -17,7 +17,7 @@ api.route({
 
     schema: {
         querystring: TicketSupportFilter,
-        response: { 200: TicketsResponse },
+        response: { 200: TicketSupportResponse },
         tags: tags(__filename),
         security: bearer,
     },

@@ -19,3 +19,18 @@ export async function getStatsByDriverId(id: AuthUserId, companyId: Organization
         .selectAll('dms')
         .execute()
 }
+
+export async function getStatsByDriverIdOnly(id: AuthUserId) {
+    const now = utils.time.getNow()
+
+    return db
+        .selectFrom('organization.driver_monthly_stat as dms')
+        .where(eb => {
+            const cond = []
+            cond.push(eb('dms.driverId', '=', id))
+            cond.push(eb('dms.year', '=', now.year()))
+            return eb.and(cond)
+        })
+        .selectAll('dms')
+        .execute()
+}

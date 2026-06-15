@@ -9,24 +9,17 @@ import { OrganizationSeatType } from './type.js'
 import type { TripSeatParam } from '../../../model/params/trip/index.js'
 import { OrganizationBusCompanyId } from '../bus_company/type.js'
 
-type SeatLabel = {
-    seatNumber: string
-    type: OrganizationSeatType
-}
-
-function seatLabels(count: 24 | 36): SeatLabel[] {
-    const perFloor = count / 2
-    const floors = [
-        { suffix: 'A', type: 1 },
-        { suffix: 'B', type: 2 },
-    ] as const
-    const labels: SeatLabel[] = []
-
-    for (const floor of floors) {
-        for (let n = 1; n <= perFloor; n++) {
+function generateSeatLabels(floors: number, rowsPerFloor: number): Array<{ seatNumber: string; type: OrganizationSeatType }> {
+    const labels: Array<{ seatNumber: string; type: OrganizationSeatType }> = []
+    const rowLabels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    
+    for (let floor = 1; floor <= floors; floor++) {
+        const floorType = floor as OrganizationSeatType
+        for (let row = 0; row < rowsPerFloor; row++) {
+            const rowLetter = rowLabels[row]
             labels.push({
-                seatNumber: `${n}${floor.suffix}`,
-                type: floor.type,
+                seatNumber: `${rowLetter}${floor}`,
+                type: floorType,
             })
         }
     }
@@ -137,9 +130,8 @@ export async function getSeatsWithAvailabilityByTripId(
 }
 
 export async function createOne(body: SeatCreateBody) {
-    const { vehicleId, seatCount } = body
-    const count = Number(seatCount) as 24 | 36
-    const labels = seatLabels(count)
+    const { vehicleId, floors, rowsPerFloor } = body
+    const labels = generateSeatLabels(floors, rowsPerFloor)
     const values: OrganizationSeatTableInsert[] = labels.map(({ seatNumber, type }) => ({
         vehicleId,
         seatNumber,

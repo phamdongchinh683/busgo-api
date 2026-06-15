@@ -19,11 +19,6 @@ Provides REST APIs for customers, drivers, bus company operators, payments (Stri
 | PostgreSQL | 15+              |
 | Docker     | Recommended      |
 
-Enable Yarn:
-
-```bash
-corepack enable
-```
 
 ### 2. Install & Run
 

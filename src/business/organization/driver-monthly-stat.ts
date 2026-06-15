@@ -7,3 +7,9 @@ export async function getDriverDetail(id: AuthUserId, companyId: OrganizationBus
         stats: await dal.organization.driverMonthlyStat.query.getStatsByDriverId(id, companyId),
     }
 }
+
+export async function getDriverStats(id: AuthUserId) {
+    return {
+        stats: await dal.organization.driverMonthlyStat.query.getStatsByDriverIdOnly(id),
+    }
+}

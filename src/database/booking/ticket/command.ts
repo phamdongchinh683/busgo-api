@@ -1,5 +1,5 @@
 import { Transaction } from 'kysely'
-import { BookingTicketTableInsert } from './table.js'
+import { BookingTicketTableInsert, BookingTicketTableUpdate } from './table.js'
 import { Database } from '../../../datasource/type.js'
 import _ from 'lodash'
 import { BookingTicketId, TicketStatus } from './type.js'
@@ -8,6 +8,7 @@ import { db } from '../../../datasource/db.js'
 import { dal } from '../../index.js'
 import { PaymentMethod, PaymentStatus } from '../booking/type.js'
 import { service } from '../../../service/index.js'
+import { BookingCouponTableUpdate } from '../coupon/table.js'
 
 export async function createTicketTransaction(
     params: BookingTicketTableInsert,
@@ -40,10 +41,10 @@ export async function cancelTicketTransaction(id: BookingTicketId) {
             .execute()
 
         if (completedTickets.length > 0) {
-            throw new Error('Không thể hủy vé khi đã có vé trong chuyến đi đã hoàn thành.');
+            throw new Error('Không thể hủy vé khi đã có vé trong chuyến đi đã hoàn thành.')
         }
 
-        const ticketsToCancel = [ticket];
+        const ticketsToCancel = [ticket]
 
         await dal.booking.seatSegment.cmd.deleteByTicketIds(
             ticketsToCancel.map(t => t.id),
@@ -104,4 +105,18 @@ async function handlePaymentCancellation(trx: Transaction<Database>, bookingId: 
             trx
         )
     }
+}
+
+export async function updateById(
+    id: BookingTicketId,
+    params: BookingTicketTableUpdate,
+    trx?: Transaction<Database>
+) {
+    const query = (trx ?? db)
+        .updateTable('booking.ticket')
+        .set(params)
+        .where('id', '=', id)
+        .returningAll()
+
+    return query.executeTakeFirstOrThrow()
 }

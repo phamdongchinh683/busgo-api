@@ -17,7 +17,7 @@ export interface BookingTable extends Timestamps {
     expiredAt: Date | null
     companyId: OrganizationBusCompanyId
     method: PaymentMethod | null
-    status: PaymentStatus | null
+    status: PaymentStatus
     transactionCode: string | null
     paidAt: Date | null
     payDate: string | null

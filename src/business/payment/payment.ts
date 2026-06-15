@@ -78,13 +78,9 @@ async function preparePayment(
             (payment.expiredAt && payment.expiredAt < utils.time.getNow().toDate())
         ) {
             throw new HttpErr.UnprocessableEntity(
-                'Thanh toán đã thất bại hoặc đã hết hạn.',
+                'Thanh toán thất bại hoặc đã hết hạn.',
                 'PAYMENT_FAILED_OR_EXPIRED'
             )
-        }
-
-        if (payment.status === method) {
-            return payment
         }
 
         return dal.booking.booking.cmd.upsertPayment(

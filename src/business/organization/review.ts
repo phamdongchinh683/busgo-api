@@ -6,10 +6,10 @@ import { BusCompanyReviewFilter } from '../../model/query/review/index.js'
 import { clearTripScheduleListCache } from '../operation/trip-schedule.js'
 import { HttpErr } from '../../app/index.js'
 import { OperationTripStatus } from '../../database/operation/trip/type.js'
+import { db } from '../../datasource/db.js'
 
 export async function createOne(params: { userId: AuthUserId; body: BusCompanyReviewBody }) {
     const { userId, body } = params
-
     const bookingInfo = await dal.booking.booking.query.getBookingByUserIdAndBookingId({
         userId,
         ticketId: body.ticketId,
@@ -33,21 +33,31 @@ export async function createOne(params: { userId: AuthUserId; body: BusCompanyRe
         throw new HttpErr.BadRequest('Chuyến đi đã đánh giá rồi.')
     }
 
-    await dal.organization.busCompanyReview.cmd.upsertOne({
-        companyId: bookingInfo.companyId,
-        userId,
-        ticketId: body.ticketId,
-        rating: body.rating,
-        comment: body.comment ?? null,
+    return db.transaction().execute(async trx => {
+        await dal.organization.busCompanyReview.cmd.upsertOne({
+            companyId: bookingInfo.companyId,
+            userId,
+            ticketId: body.ticketId,
+            rating: body.rating,
+            comment: body.comment ?? null,
+        })
+
+        await dal.booking.ticket.cmd.updateById(
+            body.ticketId,
+            {
+                isRate: true,
+            },
+            trx
+        )
+
+        await Promise.all([
+            utils.cache.delCacheByPattern(`bus-company-review:list:${bookingInfo.companyId}:*`),
+            utils.cache.delCacheByPattern('bus-company:list:*'),
+            clearTripScheduleListCache(bookingInfo.companyId),
+        ])
+
+        return { message: 'Thành công' }
     })
-
-    await Promise.all([
-        utils.cache.delCacheByPattern(`bus-company-review:list:${bookingInfo.companyId}:*`),
-        utils.cache.delCacheByPattern('bus-company:list:*'),
-        clearTripScheduleListCache(bookingInfo.companyId),
-    ])
-
-    return { message: 'Thành công' }
 }
 
 export async function getReviewByCompany(query: BusCompanyReviewFilter) {

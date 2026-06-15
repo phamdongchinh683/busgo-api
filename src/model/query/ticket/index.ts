@@ -15,7 +15,7 @@ export type TicketFilter = z.infer<typeof TicketFilter>
 export const PassengerTicketFilter = z.object({
     limit: z.coerce.number().optional().default(10),
     next: BookingTicketId.optional(),
-    phoneNumber: Phone.optional(),
+    phone: Phone.optional(),
 })
 
 export type PassengerTicketFilter = z.infer<typeof PassengerTicketFilter>

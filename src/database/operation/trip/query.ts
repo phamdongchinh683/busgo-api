@@ -105,7 +105,6 @@ export async function findAllByDriverId(params: DriverTripQuery, userId: AuthUse
         })
         .select([
             't.id',
-            't.id',
             'v.plateNumber',
             'v.type',
             't.status',

@@ -144,16 +144,17 @@ export type DriverTripBody = z.infer<typeof DriverTripBody>
 export const TripPassengerResponse = z.object({
     passengers: z.array(
         z.object({
+            id: BookingTicketId,
             firstName: z.string(),
             lastName: z.string(),
-            phoneNumber: z.string().nullable(),
-            seatNumber: z.string().nullable(),
+            phone: z.string().nullable(),
+            seatNumber: z.string(),
             status: PaymentStatus,
             checkedInAt: z.date().nullable(),
-            pickup: z.string().nullable(),
+            pickup: z.string(),
             bookingType: BookingType,
             totalAmount: z.number(),
-            dropoff: z.string().nullable(),
+            dropoff: z.string(),
         })
     ),
     next: BookingTicketId.nullable(),

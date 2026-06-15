@@ -1,5 +1,6 @@
+
 import z from 'zod'
-import { OperationTripScheduleId } from '../../../database/operation/trip-schedule/type.js'
+import { OperationTripScheduleId, VehicleServiceType } from '../../../database/operation/trip-schedule/type.js'
 import { OrganizationBusCompanyId } from '../../../database/organization/bus_company/type.js'
 import { StatusFlag } from '../../common.js'
 import { OperationRouteId } from '../../../database/operation/route/type.js'
@@ -9,6 +10,7 @@ export const TripScheduleItemResponse = z.object({
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
     status: StatusFlag,
+    vehicleType: VehicleServiceType.nullable(),
 })
 
 export type TripScheduleItemResponse = z.infer<typeof TripScheduleItemResponse>
@@ -27,6 +29,7 @@ export const TripScheduleResponse = z.object({
             endDate: z.coerce.date(),
             status: StatusFlag,
             durationMinutes: z.number(),
+            vehicleType: VehicleServiceType.nullable(),
         })
     ),
     next: OperationTripScheduleId.nullable(),
@@ -47,6 +50,7 @@ export const TripScheduleBody = z.object({
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
     status: StatusFlag,
+    vehicleType: VehicleServiceType.optional(),
 })
 
 export const TripScheduleUpdateBody = z.object({
@@ -54,6 +58,7 @@ export const TripScheduleUpdateBody = z.object({
     startDate: z.coerce.date(),
     endDate: z.coerce.date(),
     status: StatusFlag.optional(),
+    vehicleType: VehicleServiceType.optional(),
 })
 
 export type TripScheduleUpdateBody = z.infer<typeof TripScheduleUpdateBody>

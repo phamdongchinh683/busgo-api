@@ -37,6 +37,7 @@ export async function findAllByFilter(
             sql<string>`to_char(ts.start_date, 'YYYY-MM-DD')`.as('startDate'),
             sql<string>`to_char(ts.end_date, 'YYYY-MM-DD')`.as('endDate'),
             'r.durationMinutes',
+            'ts.vehicleType',
         ])
         .where(eb => {
             const cond: Expression<SqlBool>[] = []

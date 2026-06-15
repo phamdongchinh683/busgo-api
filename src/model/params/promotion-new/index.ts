@@ -1,5 +1,8 @@
 import z from 'zod'
+import { BookingPromotionNewsId } from '../../../database/booking/promotion_new/type.js'
 
-export const PromotionNewsIdParam = z.object({})
+export const PromotionNewsIdParam = z.object({
+    id: BookingPromotionNewsId,
+})
 
 export type PromotionNewsIdParam = z.infer<typeof PromotionNewsIdParam>
