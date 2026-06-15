@@ -33,6 +33,7 @@ export async function deleteByTicketIds(ticketIds: BookingTicketId[], trx?: Tran
     return (trx ?? db)
         .deleteFrom('booking.seat_segment')
         .where('ticketId', 'in', ticketIds)
+        .returning('id')
         .execute()
 }
 

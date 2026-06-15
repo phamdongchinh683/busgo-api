@@ -2,7 +2,7 @@ import { Transaction } from 'kysely'
 import { BookingTicketTableInsert } from './table.js'
 import { Database } from '../../../datasource/type.js'
 import _ from 'lodash'
-import { BookingTicketId } from './type.js'
+import { BookingTicketId, TicketStatus } from './type.js'
 import { BookingId } from '../booking/type.js'
 import { db } from '../../../datasource/db.js'
 import { dal } from '../../index.js'
@@ -27,26 +27,32 @@ export async function insertManyTicketsTransaction(
 
 export async function cancelTicketTransaction(id: BookingTicketId) {
     return db.transaction().execute(async trx => {
-        const ticket = await (trx ?? db)
+        const ticket = await trx
             .selectFrom('booking.ticket as t')
-            .select(['t.id', 't.bookingId'])
+            .select(['t.id', 't.bookingId', 't.status'])
             .where('t.id', '=', id)
             .executeTakeFirstOrThrow()
 
-        const tickets = await (trx ?? db)
+        const completedTickets = await trx
             .selectFrom('booking.ticket as t')
-            .select(['t.id'])
             .where('t.bookingId', '=', ticket.bookingId)
+            .where('t.status', '=', TicketStatus.enum.completed)
             .execute()
 
+        if (completedTickets.length > 0) {
+            throw new Error('Không thể hủy vé khi đã có vé trong chuyến đi đã hoàn thành.');
+        }
+
+        const ticketsToCancel = [ticket];
+
         await dal.booking.seatSegment.cmd.deleteByTicketIds(
-            tickets.map(t => t.id),
+            ticketsToCancel.map(t => t.id),
             trx
         )
 
         await handlePaymentCancellation(trx, ticket.bookingId)
 
-        return tickets
+        return ticketsToCancel
     })
 }
 
